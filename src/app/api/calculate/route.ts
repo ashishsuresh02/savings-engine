@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     // Fetch brand with associated vouchers & coupons
-    const { data: brand, error } = await supabase
+    const { data: brand, error } = await (supabase
       .from('brands')
       .select(`
         id, name, slug, logo_url,
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         brand_coupons (*)
       `)
       .eq('slug', brandSlug)
-      .single();
+      .single() as any);
 
     if (error || !brand) {
       return NextResponse.json({ error: 'Brand not found' }, { status: 404 });
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     // 1. Direct Coupon Route
     let directCouponSaving = 0;
-    let appliedCoupon = null;
+    let appliedCoupon: any = null; // Explicit type added to fix TS2339 error
 
     if (brand.brand_coupons && brand.brand_coupons.length > 0) {
       const validCoupons = brand.brand_coupons.filter(
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     // 2. Discounted E-Voucher Route
     let voucherSaving = 0;
     let voucherBuyPrice = numCart;
-    const voucher = brand.brand_vouchers?.[0];
+    const voucher: any = brand.brand_vouchers?.[0];
 
     if (voucher) {
       voucherSaving = (numCart * Number(voucher.resale_discount_pct)) / 100;
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
         couponCut: directCouponSaving,
         voucherCut: bestRoute === 'STACKED' ? stackedVoucherSaving : voucherSaving,
         cardCashback: hasSbiCard ? Number((bestCost * 0.05).toFixed(2)) : 0,
-        couponCode: appliedCoupon?.coupon_code || null,
+        couponCode: appliedCoupon ? appliedCoupon.coupon_code : null,
         buyUrl: voucher?.direct_buy_url || brand.brand_coupons?.[0]?.affiliate_redirect_url || '#'
       }
     });
