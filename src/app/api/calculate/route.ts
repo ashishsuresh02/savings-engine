@@ -7,14 +7,14 @@ export async function POST(req: Request) {
     const numCart = Number(cartValue);
 
     if (!brandSlug || isNaN(numCart) || numCart <= 0) {
-      return NextResponse.json({ error: 'Valid brand and cart value required' }, { status: 400 });
+      return NextResponse.json({ error: 'Valid brand and amount required' }, { status: 400 });
     }
 
-    // Fetch brand with associated vouchers & coupons
+    // Fetch live brand data with relations
     const { data: brand, error } = await (supabase
       .from('brands')
       .select(`
-        id, name, slug, logo_url,
+        id, name, slug,
         brand_vouchers (*),
         brand_coupons (*)
       `)
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     // 1. Direct Coupon Route
     let directCouponSaving = 0;
-    let appliedCoupon: any = null; // Explicit type added to fix TS2339 error
+    let appliedCoupon: any = null;
 
     if (brand.brand_coupons && brand.brand_coupons.length > 0) {
       const validCoupons = brand.brand_coupons.filter(
@@ -35,9 +35,14 @@ export async function POST(req: Request) {
       );
 
       validCoupons.forEach((c: any) => {
-        let saving = (numCart * Number(c.discount_value)) / 100;
-        if (c.max_discount_cap && saving > Number(c.max_discount_cap)) {
-          saving = Number(c.max_discount_cap);
+        let saving = 0;
+        if (c.discount_type === 'FLAT') {
+          saving = Number(c.discount_value);
+        } else {
+          saving = (numCart * Number(c.discount_value)) / 100;
+          if (c.max_discount_cap && saving > Number(c.max_discount_cap)) {
+            saving = Number(c.max_discount_cap);
+          }
         }
         if (saving > directCouponSaving) {
           directCouponSaving = saving;
@@ -46,11 +51,11 @@ export async function POST(req: Request) {
       });
     }
 
-    const directPayable = numCart - directCouponSaving;
+    const directPayable = Math.max(0, numCart - directCouponSaving);
     const directCardReward = hasSbiCard ? directPayable * 0.05 : 0;
     const directEffectiveCost = directPayable - directCardReward;
 
-    // 2. Discounted E-Voucher Route
+    // 2. E-Voucher Route
     let voucherSaving = 0;
     let voucherBuyPrice = numCart;
     const voucher: any = brand.brand_vouchers?.[0];
@@ -63,19 +68,19 @@ export async function POST(req: Request) {
     const voucherCardReward = hasSbiCard ? voucherBuyPrice * 0.05 : 0;
     const voucherEffectiveCost = voucherBuyPrice - voucherCardReward;
 
-    // 3. Stacking Route (If coupon permits voucher)
+    // 3. Stacking Route (If coupon allows vouchers)
     let stackedEffectiveCost = 999999;
     let stackedVoucherSaving = 0;
 
     if (appliedCoupon && appliedCoupon.stackable_with_voucher && voucher) {
-      const postCouponCart = numCart - directCouponSaving;
+      const postCouponCart = Math.max(0, numCart - directCouponSaving);
       stackedVoucherSaving = (postCouponCart * Number(voucher.resale_discount_pct)) / 100;
       const stackedBuyPrice = postCouponCart - stackedVoucherSaving;
       const stackedCardReward = hasSbiCard ? stackedBuyPrice * 0.05 : 0;
       stackedEffectiveCost = stackedBuyPrice - stackedCardReward;
     }
 
-    // Determine absolute lowest cost
+    // Determine Lowest Route
     let bestRoute: 'VOUCHER' | 'COUPON' | 'STACKED' = 'VOUCHER';
     let bestCost = voucherEffectiveCost;
 
@@ -89,7 +94,16 @@ export async function POST(req: Request) {
 
     const totalSaved = numCart - bestCost;
 
+    // Async log for analytics (does not block response)
+    supabase.from('calculation_analytics').insert({
+      brand_slug: brandSlug,
+      cart_value: numCart,
+      recommended_route: bestRoute,
+      calculated_savings: totalSaved
+    }).then();
+
     return NextResponse.json({
+      brandId: brand.id,
       brandName: brand.name,
       originalCart: numCart,
       bestRoute,
@@ -98,9 +112,9 @@ export async function POST(req: Request) {
       breakdown: {
         couponCut: directCouponSaving,
         voucherCut: bestRoute === 'STACKED' ? stackedVoucherSaving : voucherSaving,
-        cardCashback: hasSbiCard ? Number((bestCost * 0.05).toFixed(2)) : 0,
+        cardCashback: Number((hasSbiCard ? (bestRoute === 'COUPON' ? directCardReward : (bestRoute === 'STACKED' ? (numCart - directCouponSaving - stackedVoucherSaving) * 0.05 : voucherCardReward)) : 0).toFixed(2)),
         couponCode: appliedCoupon ? appliedCoupon.coupon_code : null,
-        buyUrl: voucher?.direct_buy_url || brand.brand_coupons?.[0]?.affiliate_redirect_url || '#'
+        buyUrl: voucher?.direct_buy_url || brand.website_url
       }
     });
 

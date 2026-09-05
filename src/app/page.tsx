@@ -16,136 +16,96 @@ import {
   ChevronDown, 
   ShieldCheck, 
   CheckCircle2,
-  Tag
+  LogOut,
+  Wallet
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-interface CalculationResult {
-  brandName: string;
-  originalCart: number;
-  bestRoute: 'VOUCHER' | 'COUPON' | 'STACKED';
-  bestEffectiveCost: number;
-  totalSavings: number;
-  breakdown: {
-    couponCut: number;
-    voucherCut: number;
-    cardCashback: number;
-    couponCode: string | null;
-    buyUrl: string;
-  };
+interface BrandItem {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string;
+  brand_vouchers?: { resale_discount_pct: number; direct_buy_url: string }[];
+  brand_coupons?: { coupon_code: string; title: string; stackable_with_voucher: boolean }[];
 }
 
-const BRANDS = [
-  { name: "Domino's", slug: "dominos", offer: "Flat 16% Off", color: "border-blue-500/30 hover:border-blue-500" },
-  { name: "Swiggy", slug: "swiggy", offer: "6% Off Voucher", color: "border-orange-500/30 hover:border-orange-500" },
-  { name: "Zomato", slug: "zomato", offer: "7.5% Off", color: "border-rose-500/30 hover:border-rose-500" },
-  { name: "Myntra", slug: "myntra", offer: "10% Off Voucher", color: "border-pink-500/30 hover:border-pink-500" },
-  { name: "Blinkit", slug: "blinkit", offer: "Instant 5% Off", color: "border-yellow-500/30 hover:border-yellow-500" },
-  { name: "Amazon Pay", slug: "amazon", offer: "2.5% Savings", color: "border-emerald-500/30 hover:border-emerald-500" },
-];
-
-const VOUCHER_CARDS = [
-  {
-    brand: "Domino's Pizza",
-    value: 500,
-    price: 415,
-    discount: "Save ₹85 (17% Off)",
-    category: "Food & Dining",
-    glow: "from-blue-600/20 via-slate-900 to-indigo-950/40",
-    tag: "Best Seller"
-  },
-  {
-    brand: "Myntra Shopping",
-    value: 2000,
-    price: 1810,
-    discount: "Save ₹190 (9.5% Off)",
-    category: "Fashion",
-    glow: "from-pink-600/20 via-slate-900 to-rose-950/40",
-    tag: "Trending"
-  },
-  {
-    brand: "Swiggy Food & Instamart",
-    value: 1000,
-    price: 940,
-    discount: "Save ₹60 (6% Off)",
-    category: "Food Delivery",
-    glow: "from-amber-600/20 via-slate-900 to-orange-950/40",
-    tag: "Instant Load"
-  },
-  {
-    brand: "MakeMyTrip Flights",
-    value: 5000,
-    price: 4600,
-    discount: "Save ₹400 (8% Off)",
-    category: "Travel",
-    glow: "from-cyan-600/20 via-slate-900 to-teal-950/40",
-    tag: "Big Savings"
-  }
-];
-
-const COUPONS = [
-  { brand: "Domino's", code: "DOM50", offer: "Flat ₹50 Off on orders above ₹300", stackable: true },
-  { brand: "Myntra", code: "MYNTRA200", offer: "Flat ₹200 Off on fashion items", stackable: true },
-  { brand: "Swiggy", code: "WELCOME50", offer: "50% Off up to ₹100 on first 3 orders", stackable: false },
-  { brand: "Blinkit", code: "FRESH20", offer: "Flat ₹20 Off on grocery cart above ₹499", stackable: false },
-];
-
-const BANK_CARDS = [
-  {
-    name: "SBI Cashback Credit Card",
-    bank: "SBI Card",
-    reward: "5% Flat Cashback on all online spends",
-    joining: "Joining Fee: ₹999",
-    tag: "Recommended for Maximum Savings",
-    url: "https://gromo.in/referral/sbi-cashback"
-  },
-  {
-    name: "Axis Bank Flipkart Card",
-    bank: "Axis Bank",
-    reward: "5% Unlimited Cashback on Shopping",
-    joining: "Joining Fee: ₹500",
-    tag: "Best for E-Commerce",
-    url: "https://gromo.in/referral/axis-flipkart"
-  },
-  {
-    name: "HDFC Millennia Credit Card",
-    bank: "HDFC Bank",
-    reward: "5% Cashback on Amazon, Swiggy & Zomato",
-    joining: "Joining Fee: ₹1,000",
-    tag: "Best for Food Delivery",
-    url: "https://gromo.in/referral/hdfc-millennia"
-  }
-];
-
-const FAQS = [
-  {
-    q: "Ye normal coupon websites se kaise alag hai?",
-    a: "Normal websites par 90% coupons expire ho chuke hote hain. Humara engine calculation karta hai: Brand Coupon + Discounted Voucher + Payment Card Cashback teeno ko ek sath jodkar batata hai ki aapko sabse sasta kahan padega."
-  },
-  {
-    q: "Discounted Voucher kya hota hai aur ye kaise use hota hai?",
-    a: "Voucher ek tarah ka prepaid digital gift card hota hai. Jaise ₹500 ka Domino's voucher aapko ₹415 me mil gaya. Khareedte hi code milta hai, jise Domino's app me 'Gift Card' section me daal kar payment ₹0 ho jati hai."
-  },
-  {
-    q: "Kya credit card cashback sach me milta hai?",
-    a: "Haan! Agar aap voucher buy karte waqt eligible card (jaise SBI Cashback ya HDFC) use karte hain, to 5% extra cashback aapke card ke statement me add ho jata hai."
-  }
-];
+interface BankCardItem {
+  id: string;
+  name: string;
+  issuer_bank: string;
+  base_online_cashback_pct: number;
+  joining_fee: number;
+  apply_referral_url: string;
+}
 
 export default function Home() {
+  // Dynamic Data States
+  const [brands, setBrands] = useState<BrandItem[]>([]);
+  const [bankCards, setBankCards] = useState<BankCardItem[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  // Calculation States
   const [selectedBrand, setSelectedBrand] = useState('dominos');
   const [cartAmount, setCartAmount] = useState('500');
   const [hasSbiCard, setHasSbiCard] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<CalculationResult | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  // User & Auth States
+  const [user, setUser] = useState<any>(null);
+  const [lifetimeSavings, setLifetimeSavings] = useState(0);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [authStatus, setAuthStatus] = useState<'IDLE' | 'SENT' | 'ERROR'>('IDLE');
+
+  // UI Interactive States
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isScratched, setIsScratched] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState({ minutes: 22, seconds: 15 });
 
-  const [timeLeft, setTimeLeft] = useState({ minutes: 18, seconds: 45 });
+  // 1. Initial Load: Fetch Brands, Cards & User from Supabase
   useEffect(() => {
+    async function loadData() {
+      try {
+        // Fetch Brands with Vouchers & Coupons
+        const { data: brandsData } = await supabase
+          .from('brands')
+          .select(`
+            id, name, slug, logo_url,
+            brand_vouchers (resale_discount_pct, direct_buy_url),
+            brand_coupons (coupon_code, title, stackable_with_voucher)
+          `)
+          .eq('is_active', true)
+          .order('name');
+
+        if (brandsData) setBrands(brandsData as any);
+
+        // Fetch Bank Cards
+        const { data: cardsData } = await supabase
+          .from('payment_instruments')
+          .select('*')
+          .eq('is_active', true);
+
+        if (cardsData) setBankCards(cardsData as any);
+
+        // Check Auth User
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData.user) {
+          setUser(authData.user);
+          loadUserLedger(authData.user.id);
+        }
+      } catch (err) {
+        console.error('Error fetching Supabase data:', err);
+      } finally {
+        setDataLoading(false);
+      }
+    }
+
+    loadData();
+
+    // Timer countdown loop
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
@@ -153,12 +113,27 @@ export default function Home() {
         return { minutes: 30, seconds: 0 };
       });
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
-  const calculateSavings = async () => {
+  // 2. Fetch User Lifetime Savings Ledger
+  const loadUserLedger = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_savings_ledger')
+      .select('rupees_saved')
+      .eq('user_id', userId);
+
+    if (data) {
+      const total = data.reduce((acc, row) => acc + Number(row.rupees_saved), 0);
+      setLifetimeSavings(total);
+    }
+  };
+
+  // 3. Calculation Dispatch
+  const handleCalculate = async () => {
     if (!cartAmount || Number(cartAmount) <= 0) return;
-    setLoading(true);
+    setCalcLoading(true);
     try {
       const res = await fetch('/api/calculate', {
         method: 'POST',
@@ -174,8 +149,54 @@ export default function Home() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      setCalcLoading(false);
     }
+  };
+
+  // 4. Claim Deal & Record to Savings Ledger
+  const handleClaimDeal = async (buyUrl: string) => {
+    if (user && result) {
+      // Record transaction to Supabase ledger
+      await supabase.from('user_savings_ledger').insert({
+        user_id: user.id,
+        brand_id: result.brandId,
+        original_amount: result.originalCart,
+        effective_amount_paid: result.bestEffectiveCost,
+        rupees_saved: result.totalSavings,
+        route_chosen: result.bestRoute === 'VOUCHER' ? 'DISCOUNTED_VOUCHER' : 'STACKED_OFFER'
+      });
+      // Refresh local balance
+      loadUserLedger(user.id);
+    }
+    // Redirect to purchase
+    window.open(buyUrl, '_blank');
+  };
+
+  // 5. Auth Handlers (Magic Link / Google)
+  const handleMagicLinkLogin = async () => {
+    if (!emailInput) return;
+    const { error } = await supabase.auth.signInWithOtp({
+      email: emailInput,
+      options: { emailRedirectTo: window.location.origin }
+    });
+    if (error) {
+      setAuthStatus('ERROR');
+    } else {
+      setAuthStatus('SENT');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setLifetimeSavings(0);
   };
 
   const copyCoupon = (code: string) => {
@@ -187,19 +208,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#070709] text-zinc-100 font-sans antialiased selection:bg-emerald-400 selection:text-black">
       
-      {/* Soft Ambient Background Light */}
+      {/* Background Ambience */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
-      {/* 1. TOP NOTIFICATION BAR */}
+      {/* 1. TOP ANNOUNCEMENT BAR */}
       <div className="bg-[#0D0D11] border-b border-white/[0.06] py-2.5 px-4 text-center text-xs text-zinc-300">
         <span className="inline-flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <strong className="text-white font-semibold">Today's Best Deal:</strong> 
-          Domino's ₹500 voucher available at just ₹415 + extra 5% card cashback.
+          <strong className="text-white font-semibold">Live Arbitrage Active:</strong> 
+          Discovering verified discounts across {brands.length || '12'} top Indian platforms.
         </span>
       </div>
 
-      {/* 2. MAIN NAVIGATION */}
+      {/* 2. NAVIGATION BAR */}
       <header className="border-b border-white/[0.08] backdrop-blur-xl sticky top-0 z-40 bg-[#070709]/80">
         <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -210,7 +231,7 @@ export default function Home() {
               <span className="text-lg font-bold tracking-tight text-white block leading-none">
                 Bachat<span className="text-emerald-400">Engine</span>
               </span>
-              <span className="text-xs text-zinc-400">Smart Savings Assistant</span>
+              <span className="text-xs text-zinc-400">Smart Savings Platform</span>
             </div>
           </div>
 
@@ -221,21 +242,38 @@ export default function Home() {
             <a href="#cards" className="hover:text-emerald-400 transition">Bank Offers</a>
           </div>
 
-          <button
-            onClick={() => setIsAuthOpen(true)}
-            className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 py-2 rounded-xl text-xs font-semibold text-white transition active:scale-95"
-          >
-            <User className="w-4 h-4 text-emerald-400" />
-            <span>Member Login</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] px-3.5 py-1.5 rounded-xl">
+                <div className="text-right">
+                  <p className="text-[10px] text-zinc-400 font-medium leading-none">Total Saved</p>
+                  <p className="text-xs font-bold text-emerald-400 mt-0.5">₹{lifetimeSavings.toFixed(2)}</p>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  title="Logout" 
+                  className="text-zinc-500 hover:text-white transition ml-1"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 py-2 rounded-xl text-xs font-semibold text-white transition active:scale-95"
+              >
+                <User className="w-4 h-4 text-emerald-400" />
+                <span>Member Login</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* 3. HERO SECTION */}
+      {/* 3. HERO SHOWCASE */}
       <section className="max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
-          {/* Left Hero Content */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
               <Zap className="w-3.5 h-3.5 fill-current" />
@@ -250,7 +288,7 @@ export default function Home() {
             </h1>
 
             <p className="text-base sm:text-lg text-zinc-300 max-w-xl font-normal leading-relaxed">
-              We find hidden discounted vouchers, valid coupons, and bank card cashback to calculate the lowest price you actually have to pay.
+              We scrape live wholesale vouchers, apply merchant coupons, and stack bank card cashback to calculate the single lowest price you have to pay.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-2">
@@ -264,25 +302,24 @@ export default function Home() {
 
               <div className="flex items-center gap-2.5 text-xs text-zinc-400">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Over ₹1.2 Lakh saved this week</span>
+                <span>Verified with real-time checkout terms</span>
               </div>
             </div>
           </div>
 
-          {/* Right: Clean Interactive Scratch Card */}
+          {/* Interactive Scratch Card Box */}
           <div className="lg:col-span-5">
             <div className="rounded-3xl p-6 bg-[#0E0E14] border border-white/[0.08] shadow-2xl space-y-4">
               <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold text-zinc-300">Live Deal Example</span>
-                <span className="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md font-medium">17% Instant Discount</span>
+                <span className="font-semibold text-zinc-300">Live Hack Example</span>
+                <span className="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md font-medium">17% Instant Off</span>
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-white">Domino's ₹500 Voucher</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">Click below to see how much you actually pay.</p>
+                <h3 className="text-lg font-bold text-white">Domino's ₹500 Pizza Voucher</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">Click below to reveal the actual purchase cost.</p>
               </div>
 
-              {/* The Scratch Card */}
               <div 
                 onClick={() => setIsScratched(true)}
                 className={`cursor-pointer rounded-2xl p-6 border transition-all duration-300 flex flex-col items-center justify-center min-h-[140px] text-center ${
@@ -296,7 +333,7 @@ export default function Home() {
                     <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
                       <Gift className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-semibold text-white">Tap here to reveal secret price</p>
+                    <p className="text-xs font-semibold text-white">Tap to scratch and reveal</p>
                   </div>
                 ) : (
                   <div className="space-y-1.5 animate-in zoom-in-95">
@@ -306,14 +343,14 @@ export default function Home() {
                       <span className="text-sm text-zinc-500 line-through">₹500</span>
                     </div>
                     <p className="text-xs text-zinc-300">
-                      With SBI Card: <strong className="text-emerald-400 font-bold">₹394.25 only</strong>
+                      With SBI Card: <strong className="text-emerald-400 font-bold">₹394.25 final cost</strong>
                     </p>
                   </div>
                 )}
               </div>
 
               <p className="text-[11px] text-zinc-400 text-center">
-                Instant delivery via WhatsApp & SMS after checkout.
+                Delivered instantly on SMS & WhatsApp. Use like cash in app.
               </p>
             </div>
           </div>
@@ -321,47 +358,48 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. FLASH SALE BANNER */}
+      {/* 4. FLASH SALE TICKER */}
       <div className="border-y border-white/[0.06] bg-[#0A0A0F] py-3.5 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-            <span className="text-white font-semibold">Flash Voucher Offer Ends In:</span>
+            <span className="text-white font-semibold">Limited Voucher Drops Ending:</span>
             <div className="flex items-center gap-1 bg-rose-500/10 text-rose-400 px-2.5 py-0.5 rounded-md font-mono font-bold">
               <Clock className="w-3.5 h-3.5" />
               <span>{timeLeft.minutes}m {timeLeft.seconds}s</span>
             </div>
           </div>
           <div className="text-zinc-400">
-            Swiggy ₹1,000 at ₹940 (6 left) • Myntra ₹2,000 at ₹1,810 (3 left)
+            Swiggy ₹1,000 at ₹940 (6 left) • Myntra ₹2,000 at ₹1,810 (2 left)
           </div>
         </div>
       </div>
 
-      {/* 5. THE CLEAN SAVINGS CALCULATOR (MAIN TOOL) */}
+      {/* 5. THE REAL-TIME SAVINGS CALCULATOR */}
       <section id="calculator" className="max-w-4xl mx-auto px-6 py-20 space-y-8">
         <div className="text-center space-y-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-            Real-Time Savings Engine
+            Calculation Engine
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            Calculate Your Best Price
+            Calculate Your Bottom Line
           </h2>
           <p className="text-sm text-zinc-400">
-            Choose where you are ordering from, enter your cart amount, and see your exact savings.
+            Select an app, enter order amount, and toggle card benefit to see how much you save.
           </p>
         </div>
 
         <div className="bg-[#0E0E14] border border-white/[0.08] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
           
-          {/* Brand Picker */}
+          {/* Dynamic Brands from Supabase */}
           <div>
             <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2.5">
-              1. Select Brand / App
+              1. Choose Store / Brand
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {BRANDS.map((b) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              {brands.map((b) => {
                 const active = selectedBrand === b.slug;
+                const discount = b.brand_vouchers?.[0]?.resale_discount_pct || 5;
                 return (
                   <button
                     key={b.slug}
@@ -372,15 +410,15 @@ export default function Home() {
                         : 'bg-white/[0.02] border-white/[0.06] text-zinc-300 hover:border-white/[0.15]'
                     }`}
                   >
-                    <span className="text-xs text-emerald-400 font-semibold block">{b.offer}</span>
-                    <span className="font-bold text-sm text-white block mt-0.5">{b.name}</span>
+                    <span className="text-xs text-emerald-400 font-semibold block">{discount}% Off Voucher</span>
+                    <span className="font-bold text-sm text-white block mt-0.5 truncate">{b.name}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Amount & Payment Selection */}
+          {/* Amount and Card Controls */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
@@ -426,34 +464,34 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Calculate Action */}
+          {/* Calculate Button */}
           <button
-            onClick={calculateSavings}
-            disabled={loading}
+            onClick={handleCalculate}
+            disabled={calcLoading}
             className="w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Zap className="w-4 h-4 fill-black" />
-            {loading ? 'Finding Best Discounts...' : 'Calculate Lowest Effective Price'}
+            {calcLoading ? 'Calculating Savings...' : 'Calculate Lowest Effective Price'}
           </button>
 
-          {/* Output Breakdown Card */}
+          {/* Output Card */}
           {result && (
-            <div className="mt-6 bg-[#08080C] border border-emerald-400/30 rounded-2xl p-6 space-y-4 shadow-xl">
+            <div className="mt-6 bg-[#08080C] border border-emerald-400/30 rounded-2xl p-6 space-y-4 shadow-xl animate-in fade-in">
               <div className="flex justify-between items-center border-b border-white/[0.06] pb-3 text-xs">
                 <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Best Savings Route Found
+                  <CheckCircle2 className="w-4 h-4" /> Optimal Route: {result.bestRoute}
                 </span>
-                <span className="text-zinc-400">Regular Cart: <del>₹{result.originalCart}</del></span>
+                <span className="text-zinc-400">Retail Cart: <del>₹{result.originalCart}</del></span>
               </div>
 
               <div className="grid grid-cols-2 gap-4 items-baseline">
                 <div>
-                  <p className="text-xs text-zinc-400">You Actually Pay</p>
+                  <p className="text-xs text-zinc-400">Net Payable Cost</p>
                   <p className="text-3xl sm:text-4xl font-black text-white mt-0.5">₹{result.bestEffectiveCost}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-emerald-400 font-medium">Your Total Savings</p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-0.5">Save ₹{result.totalSavings}</p>
+                  <p className="text-xs text-emerald-400 font-medium">Your Savings</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-0.5">+₹{result.totalSavings}</p>
                 </div>
               </div>
 
@@ -472,76 +510,81 @@ export default function Home() {
                 )}
                 {result.breakdown.cardCashback > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">SBI Card 5% Cashback:</span>
+                    <span className="text-zinc-400">Card Cashback (5%):</span>
                     <span className="text-emerald-400 font-semibold">-₹{result.breakdown.cardCashback}</span>
                   </div>
                 )}
               </div>
 
-              <a
-                href={result.breakdown.buyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full text-center py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+              <button
+                onClick={() => handleClaimDeal(result.breakdown.buyUrl)}
+                className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
               >
-                Buy Voucher & Save Money Now
+                Claim Deal & Buy Voucher
                 <ArrowUpRight className="w-4 h-4" />
-              </a>
+              </button>
             </div>
           )}
         </div>
       </section>
 
-      {/* 6. GIFT CARDS & VOUCHERS CATALOG */}
+      {/* 6. DYNAMIC VOUCHERS CATALOG */}
       <section id="vouchers" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-2">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Direct Discounts</span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">Popular Discounted Gift Cards</h2>
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Instant Arbitrage</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Popular Discounted Vouchers</h2>
           </div>
-          <span className="text-xs text-zinc-400">Delivered instantly on WhatsApp & SMS</span>
+          <span className="text-xs text-zinc-400">Instant code delivery via SMS & WhatsApp</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {VOUCHER_CARDS.map((v, i) => (
-            <div
-              key={i}
-              className="bg-[#0E0E14] border border-white/[0.08] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">{v.category}</span>
-                  <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">{v.tag}</span>
-                </div>
-                <h3 className="text-base font-bold text-white">{v.brand}</h3>
-                <p className="text-xs font-semibold text-emerald-400">{v.discount}</p>
-              </div>
-
-              <div className="space-y-3 pt-3 border-t border-white/[0.06]">
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="text-[11px] text-zinc-400 block">Offer Price</span>
-                    <span className="text-2xl font-bold text-white">₹{v.price}</span>
+          {brands.slice(0, 4).map((b) => {
+            const disc = b.brand_vouchers?.[0]?.resale_discount_pct || 8;
+            const faceVal = 1000;
+            const buyPrice = faceVal - (faceVal * disc) / 100;
+            return (
+              <div
+                key={b.id}
+                className="bg-[#0E0E14] border border-white/[0.08] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-400">Prepaid Card</span>
+                    <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">
+                      {disc}% Instant Off
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[11px] text-zinc-500 block">Value</span>
-                    <span className="text-sm text-zinc-500 line-through">₹{v.value}</span>
-                  </div>
+                  <h3 className="text-base font-bold text-white">{b.name}</h3>
+                  <p className="text-xs font-semibold text-emerald-400">Save ₹{faceVal - buyPrice} instantly</p>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setSelectedBrand(v.brand.toLowerCase().includes('domino') ? 'dominos' : 'swiggy');
-                    setCartAmount(v.value.toString());
-                    window.scrollTo({ top: 750, behavior: 'smooth' });
-                  }}
-                  className="w-full py-2.5 bg-white/[0.06] hover:bg-emerald-400 hover:text-black text-white text-xs font-bold rounded-xl transition"
-                >
-                  Buy for ₹{v.price}
-                </button>
+                <div className="space-y-3 pt-3 border-t border-white/[0.06]">
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span className="text-[11px] text-zinc-400 block">Offer Price</span>
+                      <span className="text-2xl font-bold text-white">₹{buyPrice}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[11px] text-zinc-500 block">Value</span>
+                      <span className="text-sm text-zinc-500 line-through">₹{faceVal}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedBrand(b.slug);
+                      setCartAmount(faceVal.toString());
+                      window.scrollTo({ top: 750, behavior: 'smooth' });
+                    }}
+                    className="w-full py-2.5 bg-white/[0.06] hover:bg-emerald-400 hover:text-black text-white text-xs font-bold rounded-xl transition"
+                  >
+                    Calculate for ₹{faceVal}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -549,32 +592,32 @@ export default function Home() {
       <section id="coupons" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-pink-400">Tested Codes</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Verified Brand Coupons</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Active Store Coupons</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {COUPONS.map((c, i) => (
+          {brands.flatMap(b => b.brand_coupons?.map(c => ({ ...c, brandName: b.name })) || []).slice(0, 4).map((c, i) => (
             <div
               key={i}
               className="bg-[#0E0E14] border border-white/[0.08] rounded-2xl p-5 flex items-center justify-between gap-4"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white">{c.brand}</span>
-                  {c.stackable && (
+                  <span className="text-base font-bold text-white">{c.brandName}</span>
+                  {c.stackable_with_voucher && (
                     <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-medium">
-                      Works with Vouchers
+                      Works with Voucher
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-zinc-400">{c.offer}</p>
+                <p className="text-xs text-zinc-400">{c.title}</p>
               </div>
 
               <button
-                onClick={() => copyCoupon(c.code)}
+                onClick={() => copyCoupon(c.coupon_code)}
                 className="px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition active:scale-95 shrink-0"
               >
-                {copiedCode === c.code ? (
+                {copiedCode === c.coupon_code ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="text-emerald-400">Copied</span>
@@ -582,7 +625,7 @@ export default function Home() {
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>{c.code}</span>
+                    <span>{c.coupon_code}</span>
                   </>
                 )}
               </button>
@@ -591,31 +634,33 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 8. BANK CARDS */}
+      {/* 8. HIGH-YIELD BANK CARDS (DIRECT MONETIZATION) */}
       <section id="cards" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Double Your Savings</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Recommended Cashback Credit Cards</h2>
+          <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Stack Extra 5%</span>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Recommended Cashback Cards</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {BANK_CARDS.map((card, i) => (
+          {bankCards.map((card) => (
             <div
-              key={i}
+              key={card.id}
               className="bg-[#0E0E14] border border-white/[0.08] hover:border-cyan-500/30 rounded-2xl p-6 flex flex-col justify-between space-y-5 transition"
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-cyan-400 font-semibold">{card.tag}</span>
-                  <span className="text-zinc-500">{card.bank}</span>
+                  <span className="text-cyan-400 font-semibold">{card.base_online_cashback_pct}% Online Reward</span>
+                  <span className="text-zinc-500">{card.issuer_bank}</span>
                 </div>
                 <h3 className="text-lg font-bold text-white">{card.name}</h3>
-                <p className="text-xs text-zinc-300 leading-relaxed">{card.reward}</p>
-                <p className="text-xs text-zinc-500">{card.joining}</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  Earn unlimited {card.base_online_cashback_pct}% cashback on online shopping and vouchers.
+                </p>
+                <p className="text-xs text-zinc-500">Joining Fee: ₹{card.joining_fee}</p>
               </div>
 
               <a
-                href={card.url}
+                href={card.apply_referral_url}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-3 bg-white/[0.06] hover:bg-cyan-400 hover:text-black text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5"
@@ -628,35 +673,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 9. FREQUENTLY ASKED QUESTIONS */}
-      <section className="max-w-3xl mx-auto px-6 py-16 space-y-6">
-        <div className="text-center space-y-1">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Frequently Asked Questions</h2>
-          <p className="text-xs text-zinc-400">Everything you need to know about vouchers and discounts</p>
-        </div>
-
-        <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <div
-              key={i}
-              onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              className="bg-[#0E0E14] border border-white/[0.08] rounded-xl p-5 cursor-pointer transition"
-            >
-              <div className="flex justify-between items-center gap-4">
-                <h4 className="text-sm font-semibold text-white">{faq.q}</h4>
-                <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${openFaq === i ? 'rotate-180 text-emerald-400' : ''}`} />
-              </div>
-              {openFaq === i && (
-                <p className="text-xs text-zinc-400 mt-2.5 pt-2.5 border-t border-white/[0.06] leading-relaxed">
-                  {faq.a}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 10. LOGIN MODAL */}
+      {/* 9. AUTH / LOGIN MODAL */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#101018] border border-white/[0.1] rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl animate-in zoom-in-95">
@@ -671,46 +688,52 @@ export default function Home() {
               <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
                 <User className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-bold text-white">Login to Track Savings</h3>
-              <p className="text-xs text-zinc-400">Enter your mobile number to view your lifetime savings ledger.</p>
+              <h3 className="text-xl font-bold text-white">Member Login</h3>
+              <p className="text-xs text-zinc-400">Save deals to your lifetime savings ledger.</p>
             </div>
 
             <div className="space-y-3">
-              <div className="flex">
-                <span className="bg-white/[0.04] border border-r-0 border-white/[0.1] px-3 py-2.5 rounded-l-xl text-zinc-400 text-sm flex items-center">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter 10-digit number"
-                  className="w-full bg-white/[0.02] border border-white/[0.1] rounded-r-xl py-2.5 px-3.5 text-white text-sm outline-none focus:border-emerald-400"
-                />
+              <button
+                onClick={handleGoogleLogin}
+                className="w-full py-3 bg-white hover:bg-zinc-200 text-black text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+              >
+                Continue with Google
+              </button>
+
+              <div className="text-center text-[10px] text-zinc-500 uppercase tracking-widest font-mono py-1">
+                OR MAGIC LINK EMAIL
               </div>
 
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="Enter your email address"
+                className="w-full bg-white/[0.02] border border-white/[0.1] rounded-xl py-2.5 px-3.5 text-white text-sm outline-none focus:border-emerald-400"
+              />
+
               <button
-                onClick={() => alert("Verification code sent to your mobile number.")}
+                onClick={handleMagicLinkLogin}
                 className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold rounded-xl transition"
               >
-                Send OTP
+                {authStatus === 'SENT' ? 'Magic Link Sent to Email!' : 'Send Magic Link'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 11. SIMPLE CLEAN FOOTER */}
+      {/* 10. CLEAN FOOTER */}
       <footer className="border-t border-white/[0.06] bg-[#050507] py-12 text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
             <span className="text-white font-bold block">BachatEngine Technologies</span>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Helping Indian shoppers discover the lowest price before checkout.</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Discovering the lowest checkout price across India since 2026.</p>
           </div>
           <div className="flex gap-6 text-[11px]">
             <span className="hover:text-zinc-400 cursor-pointer">Privacy Policy</span>
             <span className="hover:text-zinc-400 cursor-pointer">Terms of Service</span>
-            <span className="hover:text-zinc-400 cursor-pointer">Contact Support</span>
+            <span className="hover:text-zinc-400 cursor-pointer">Security Protocol</span>
           </div>
         </div>
       </footer>
