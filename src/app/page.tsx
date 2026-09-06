@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowUpRight, 
   CreditCard, 
@@ -16,14 +16,14 @@ import {
   ChevronDown, 
   ShieldCheck, 
   CheckCircle2,
-  Percent,
   Flame,
   BadgeCheck,
-  TrendingUp
+  Send,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-// Brand specific graphics & custom visual styling
+// Brand specific graphics, logo visual fallbacks and color palettes
 const BRAND_VISUALS: Record<string, { banner: string; accent: string; iconText: string }> = {
   dominos: {
     banner: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=700&auto=format&fit=crop&q=60',
@@ -94,7 +94,15 @@ const FAQS = [
 ];
 
 // --- 3D INTERACTIVE TILT VOUCHER CARD COMPONENT ---
-function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any; nominalVal: number; onSelect: () => void }) {
+function Interactive3DVoucherCard({ 
+  brand, 
+  nominalVal, 
+  onSelect 
+}: { 
+  brand: any; 
+  nominalVal: number; 
+  onSelect: () => void 
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
@@ -144,7 +152,7 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
         }}
         className="relative h-[390px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-white/[0.08] bg-[#0c0c12] shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 cursor-pointer select-none group"
       >
-        {/* Cursor Glow / Glare Reflection */}
+        {/* Dynamic Interactive Glare / Shine Effect */}
         <div
           className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300"
           style={{
@@ -157,7 +165,7 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
         <div 
           className="absolute top-0 left-0 w-full h-44 bg-cover bg-center opacity-35 group-hover:opacity-45 transition-opacity duration-500 z-0"
           style={{ 
-            backgroundImage: `url(${visual.banner})`,
+            backgroundImage: `url(${brand.banner_url || visual.banner})`,
             maskImage: 'linear-gradient(to bottom, black 35%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, black 35%, transparent 100%)'
           }}
@@ -165,8 +173,12 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
 
         {/* Card Header (Icon & Floating Discount Badge) */}
         <div className="relative z-10 flex items-center justify-between" style={{ transform: 'translateZ(30px)' }}>
-          <div className="w-13 h-13 rounded-2xl bg-white/[0.07] border border-white/15 flex items-center justify-center text-2xl shadow-xl backdrop-blur-md">
-            {visual.iconText}
+          <div className="w-12 h-12 rounded-2xl bg-white/[0.07] border border-white/15 flex items-center justify-center text-2xl shadow-xl backdrop-blur-md">
+            {brand.logo_url ? (
+              <img src={brand.logo_url} alt={brand.name} className="w-7 h-7 object-contain" />
+            ) : (
+              visual.iconText
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs tracking-wider">
@@ -182,7 +194,7 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
             <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" />
           </div>
 
-          <h3 className="text-xl font-extrabold text-white tracking-tight mb-1">
+          <h3 className="text-xl font-extrabold text-white tracking-tight mb-1 truncate">
             {brand.name}
           </h3>
 
@@ -216,6 +228,163 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
   );
 }
 
+// --- SUBMIT COMMUNITY COUPON MODAL ---
+function SubmitCouponModal({
+  isOpen,
+  onClose,
+  brands,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  brands: any[];
+  onSuccess: (newCoupon: any) => void;
+}) {
+  const [selectedSlug, setSelectedSlug] = useState(brands[0]?.slug || 'dominos');
+  const [code, setCode] = useState('');
+  const [title, setTitle] = useState('');
+  const [stackable, setStackable] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/coupons/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandSlug: selectedSlug,
+          code,
+          title,
+          stackable,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Coupon submission failed');
+      }
+
+      const brandObj = brands.find((b) => b.slug === selectedSlug);
+      onSuccess({
+        brandName: brandObj?.name || 'Store',
+        code: code.trim().toUpperCase(),
+        title: title || `Flat discount code (${code.trim().toUpperCase()})`,
+        stackable: stackable,
+      });
+
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-[#0E0E14] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 relative shadow-2xl animate-in zoom-in-95">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-zinc-400 hover:text-white transition"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5" />
+            Live Crowd-Sourced Registry
+          </div>
+          <h3 className="text-xl font-black text-white">Share a Working Code</h3>
+          <p className="text-xs text-zinc-400">
+            Unused Google Pay, Cred ya PhonePe codes ko instant live database me drop karein.
+          </p>
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+              Select Merchant / Brand
+            </label>
+            <select
+              value={selectedSlug}
+              onChange={(e) => setSelectedSlug(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-emerald-400"
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.slug} className="bg-[#0E0E14] text-white">
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+              Coupon Code (e.g. PIZZA50)
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="FLAT100"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-mono tracking-wider outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+              Offer Description (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Flat ₹100 off on bills above ₹499"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-zinc-300 font-medium cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={stackable}
+              onChange={(e) => setStackable(e.target.checked)}
+              className="w-4 h-4 rounded border-zinc-700 text-emerald-400 focus:ring-0 cursor-pointer"
+            />
+            Stackable with Gift Vouchers
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20"
+          >
+            {loading ? 'Publishing to Database...' : 'Publish to Live Registry'}
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN HOMEPAGE EXPORT ---
 export default function Home() {
   // Database States
   const [brands, setBrands] = useState<any[]>(INITIAL_BRANDS);
@@ -236,21 +405,24 @@ export default function Home() {
   const [isScratched, setIsScratched] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [timeLeft, setTimeLeft] = useState({ minutes: 24, seconds: 35 });
 
-  // 1. Fetch Live Data From Supabase Database
+  // 1. Fetch Dynamic Live Data From Supabase Database
   useEffect(() => {
     async function loadDatabaseData() {
       try {
         if (!supabase) return;
 
+        // Categories Fetch
         const { data: catData } = await supabase
           .from('categories')
           .select('id, name, slug, icon_name')
           .order('display_order');
         if (catData && catData.length > 0) setCategories(catData);
 
+        // Brands & Vouchers Fetch
         const { data: brandsData } = await supabase
           .from('brands')
           .select(`
@@ -265,6 +437,7 @@ export default function Home() {
             id: b.id,
             name: b.name,
             slug: b.slug,
+            logo_url: b.logo_url,
             category_name: b.categories?.name || 'General',
             discount: b.brand_vouchers?.[0]?.resale_discount_pct || 5.0,
             buy_url: b.brand_vouchers?.[0]?.direct_buy_url || b.website_url,
@@ -274,6 +447,7 @@ export default function Home() {
           setBrands(mappedBrands);
         }
 
+        // Verified Coupons Fetch
         const { data: couponsData } = await supabase
           .from('brand_coupons')
           .select(`
@@ -292,6 +466,7 @@ export default function Home() {
           setCoupons(mappedCoupons);
         }
 
+        // Payment Cards Fetch
         const { data: cardsData } = await supabase
           .from('payment_instruments')
           .select('id, name, issuer_bank, base_online_cashback_pct, joining_fee, apply_referral_url')
@@ -310,12 +485,13 @@ export default function Home() {
         }
 
       } catch (err) {
-        console.error('Supabase fetch notice:', err);
+        console.error('Supabase fetch error:', err);
       }
     }
 
     loadDatabaseData();
 
+    // Urgency timer
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
@@ -327,7 +503,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Execute Calculation
+  // 2. Calculation Engine API Call
   const handleCalculate = async () => {
     if (!cartAmount || Number(cartAmount) <= 0) return;
     setCalcLoading(true);
@@ -363,12 +539,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#070709] text-zinc-100 font-sans antialiased selection:bg-emerald-400 selection:text-black overflow-x-hidden">
       
-      {/* 3D Animated Ambient Background Orbs */}
-      <div className="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse" />
+      {/* 3D Ambient Lighting Glows */}
+      <div className="fixed top-[-120px] left-1/2 -translate-x-1/2 w-[750px] h-[450px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse" />
       <div className="fixed top-[450px] -right-[150px] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none -z-10" />
-      <div className="fixed top-[900px] -left-[150px] w-[450px] h-[450px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+      <div className="fixed top-[950px] -left-[150px] w-[450px] h-[450px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
-      {/* TOP ANNOUNCEMENT BANNER */}
+      {/* 1. TOP ANNOUNCEMENT TICKER */}
       <div className="bg-[#0D0D11] border-b border-white/[0.06] py-2.5 px-4 text-center text-xs text-zinc-300">
         <span className="inline-flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -377,7 +553,7 @@ export default function Home() {
         </span>
       </div>
 
-      {/* NAVIGATION BAR */}
+      {/* 2. NAVIGATION BAR */}
       <header className="border-b border-white/[0.08] backdrop-blur-xl sticky top-0 z-40 bg-[#070709]/85">
         <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -409,10 +585,9 @@ export default function Home() {
         </div>
       </header>
 
-      {/* HERO SECTION WITH 3D FLOATING ELEMENTS */}
+      {/* 3. HERO SECTION WITH 3D FLOATING BADGES */}
       <section className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-12">
-        
-        {/* Floating 3D Badge Left */}
+        {/* Floating Badge Left */}
         <div className="hidden xl:flex absolute -left-12 top-28 items-center gap-3 bg-[#0d0d14]/80 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl shadow-2xl animate-[bounce_4s_infinite]">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xl">
             🍕
@@ -423,7 +598,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Floating 3D Badge Right */}
+        {/* Floating Badge Right */}
         <div className="hidden xl:flex absolute -right-8 top-44 items-center gap-3 bg-[#0d0d14]/80 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl shadow-2xl animate-[bounce_5s_infinite_reverse]">
           <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-xl">
             ⚡
@@ -435,7 +610,6 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
               <Zap className="w-3.5 h-3.5 fill-current" />
@@ -469,7 +643,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Interactive Scratch Box */}
+          {/* Interactive Scratch Card */}
           <div className="lg:col-span-5">
             <div className="rounded-3xl p-6 bg-[#0E0E14] border border-white/[0.08] shadow-2xl space-y-4 relative overflow-hidden group">
               <div className="flex justify-between items-center text-xs">
@@ -516,11 +690,10 @@ export default function Home() {
               </p>
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* FLASH SALE TICKER */}
+      {/* 4. FLASH SALE URGENCY TICKER */}
       <div className="border-y border-white/[0.06] bg-[#0A0A0F] py-3.5 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
@@ -537,7 +710,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* SAVINGS CALCULATOR (LIVE FROM DATABASE) */}
+      {/* 5. SAVINGS CALCULATOR */}
       <section id="calculator" className="max-w-4xl mx-auto px-6 py-20 space-y-8">
         <div className="text-center space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -552,8 +725,7 @@ export default function Home() {
         </div>
 
         <div className="bg-[#0E0E14] border border-white/[0.08] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-          
-          {/* Brand Picker with Category Tabs */}
+          {/* Brand Picker */}
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
@@ -601,7 +773,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Amount and Payment Toggles */}
+          {/* Amount & Stacking Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div>
               <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
@@ -647,7 +819,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Calculate Action */}
+          {/* Action Button */}
           <button
             onClick={handleCalculate}
             disabled={calcLoading}
@@ -657,7 +829,7 @@ export default function Home() {
             {calcLoading ? 'Comparing Vouchers, Coupons & Cards...' : 'Calculate Lowest Effective Price'}
           </button>
 
-          {/* Results Breakdown */}
+          {/* Results Display */}
           {result && (
             <div className="mt-6 bg-[#08080C] border border-emerald-400/30 rounded-2xl p-6 space-y-4 shadow-xl animate-in fade-in">
               <div className="flex justify-between items-center border-b border-white/[0.06] pb-3 text-xs">
@@ -679,19 +851,19 @@ export default function Home() {
               </div>
 
               <div className="bg-black/40 border border-white/[0.06] rounded-xl p-3.5 text-xs space-y-2 text-zinc-300">
-                {result.breakdown.voucherCut > 0 && (
+                {result.breakdown?.voucherCut > 0 && (
                   <div className="flex justify-between">
                     <span className="text-zinc-400">E-Voucher Instant Discount:</span>
                     <span className="text-emerald-400 font-semibold">-₹{result.breakdown.voucherCut}</span>
                   </div>
                 )}
-                {result.breakdown.couponCut > 0 && (
+                {result.breakdown?.couponCut > 0 && (
                   <div className="flex justify-between">
                     <span className="text-zinc-400">Merchant Code ({result.breakdown.couponCode}):</span>
                     <span className="text-emerald-400 font-semibold">-₹{result.breakdown.couponCut}</span>
                   </div>
                 )}
-                {result.breakdown.cardCashback > 0 && (
+                {result.breakdown?.cardCashback > 0 && (
                   <div className="flex justify-between">
                     <span className="text-zinc-400">Card Cashback (5%):</span>
                     <span className="text-emerald-400 font-semibold">-₹{result.breakdown.cardCashback}</span>
@@ -700,7 +872,7 @@ export default function Home() {
               </div>
 
               <a
-                href={result.breakdown.buyUrl}
+                href={result.breakdown?.buyUrl || '#'}
                 target="_blank"
                 rel="noreferrer"
                 className="block w-full text-center py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-extrabold uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
@@ -713,7 +885,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3D INTERACTIVE GIFT CARDS CATALOG (WITH REAL BRAND IMAGERY) */}
+      {/* 6. 3D INTERACTIVE GIFT CARDS CATALOG */}
       <section id="vouchers" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-2">
           <div>
@@ -727,7 +899,6 @@ export default function Home() {
           <span className="text-xs text-zinc-400 font-medium">Interactive Gyroscopic Perspective • Real-Time Stock</span>
         </div>
 
-        {/* 3D Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {brands.map((b) => (
             <Interactive3DVoucherCard
@@ -745,11 +916,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* VERIFIED PROMO CODES */}
+      {/* 7. VERIFIED PROMO CODES (WITH SUBMIT MODAL TRIGGER) */}
       <section id="coupons" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-pink-400">Promotional Registry</span>
-          <h2 className="text-3xl font-black text-white tracking-tight">Verified Coupons In Database</h2>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-pink-400">Promotional Registry</span>
+            <h2 className="text-3xl font-black text-white tracking-tight">Verified Coupons In Database</h2>
+          </div>
+          
+          <button
+            onClick={() => setIsSubmitModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 text-pink-400 text-xs font-bold transition active:scale-95 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Submit A Working Code</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -789,9 +970,19 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {/* Modal render */}
+        <SubmitCouponModal
+          isOpen={isSubmitModalOpen}
+          onClose={() => setIsSubmitModalOpen(false)}
+          brands={brands}
+          onSuccess={(newCoupon) => {
+            setCoupons((prev) => [newCoupon, ...prev]);
+          }}
+        />
       </section>
 
-      {/* BANK CARDS */}
+      {/* 8. BANK CARDS REGISTRY */}
       <section id="cards" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">High-Yield Financial Rails</span>
@@ -832,7 +1023,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FREQUENTLY ASKED QUESTIONS */}
+      {/* 9. FREQUENTLY ASKED QUESTIONS */}
       <section className="max-w-3xl mx-auto px-6 py-16 space-y-6">
         <div className="text-center space-y-1">
           <h2 className="text-3xl font-black text-white">Frequently Asked Questions</h2>
@@ -860,7 +1051,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AUTH MODAL */}
+      {/* 10. AUTH MODAL */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#101018] border border-white/[0.1] rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl animate-in zoom-in-95">
@@ -904,7 +1095,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* FOOTER */}
+      {/* 11. FOOTER */}
       <footer className="border-t border-white/[0.06] bg-[#050507] py-12 text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
