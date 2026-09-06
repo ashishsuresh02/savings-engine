@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync-coupons?secret=bachat-engine-sync-key",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}
