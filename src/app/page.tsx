@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   ArrowUpRight, 
   CreditCard, 
@@ -16,15 +16,47 @@ import {
   ChevronDown, 
   ShieldCheck, 
   CheckCircle2,
-  Utensils,
-  ShoppingBag,
-  Zap as QuickZap,
-  Plane,
-  Laptop
+  Percent,
+  Flame,
+  BadgeCheck,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-// Fallback initial data in exact schema format
+// Brand specific graphics & custom visual styling
+const BRAND_VISUALS: Record<string, { banner: string; accent: string; iconText: string }> = {
+  dominos: {
+    banner: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=700&auto=format&fit=crop&q=60',
+    accent: '#006491',
+    iconText: '🍕',
+  },
+  swiggy: {
+    banner: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&auto=format&fit=crop&q=60',
+    accent: '#fc8019',
+    iconText: '🛵',
+  },
+  zomato: {
+    banner: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&auto=format&fit=crop&q=60',
+    accent: '#e23744',
+    iconText: '🍽️',
+  },
+  myntra: {
+    banner: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=700&auto=format&fit=crop&q=60',
+    accent: '#ff3f6c',
+    iconText: '👗',
+  },
+  blinkit: {
+    banner: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&auto=format&fit=crop&q=60',
+    accent: '#f8cb46',
+    iconText: '⚡',
+  },
+  amazon: {
+    banner: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&auto=format&fit=crop&q=60',
+    accent: '#ff9900',
+    iconText: '📦',
+  },
+};
+
 const INITIAL_BRANDS = [
   { id: '1', name: "Domino's Pizza", slug: 'dominos', discount: 13.0, category_name: 'Food & Dining' },
   { id: '2', name: "Swiggy", slug: 'swiggy', discount: 4.5, category_name: 'Food & Dining' },
@@ -61,6 +93,129 @@ const FAQS = [
   }
 ];
 
+// --- 3D INTERACTIVE TILT VOUCHER CARD COMPONENT ---
+function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any; nominalVal: number; onSelect: () => void }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
+
+  const visual = BRAND_VISUALS[brand.slug] || {
+    banner: 'https://images.unsplash.com/photo-1556742049-0a67e557224f?w=700&auto=format&fit=crop&q=60',
+    accent: '#10b981',
+    iconText: '🏷️',
+  };
+
+  const savingsAmt = Math.round((nominalVal * brand.discount) / 100);
+  const finalPay = nominalVal - savingsAmt;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
+
+    setTilt({ x: rotateX, y: rotateY });
+    setGlare({
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100,
+      opacity: 0.8,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setGlare(prev => ({ ...prev, opacity: 0 }));
+  };
+
+  return (
+    <div className="w-full" style={{ perspective: '1100px' }}>
+      <div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(${glare.opacity ? 1.02 : 1}, ${glare.opacity ? 1.02 : 1}, 1)`,
+          transition: glare.opacity ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out, box-shadow 0.5s ease-out',
+        }}
+        className="relative h-[390px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-white/[0.08] bg-[#0c0c12] shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 cursor-pointer select-none group"
+      >
+        {/* Cursor Glow / Glare Reflection */}
+        <div
+          className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300"
+          style={{
+            opacity: glare.opacity,
+            background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255, 255, 255, 0.18) 0%, transparent 60%)`,
+          }}
+        />
+
+        {/* Real Brand Background Cover Image with Vignette Gradient */}
+        <div 
+          className="absolute top-0 left-0 w-full h-44 bg-cover bg-center opacity-35 group-hover:opacity-45 transition-opacity duration-500 z-0"
+          style={{ 
+            backgroundImage: `url(${visual.banner})`,
+            maskImage: 'linear-gradient(to bottom, black 35%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 35%, transparent 100%)'
+          }}
+        />
+
+        {/* Card Header (Icon & Floating Discount Badge) */}
+        <div className="relative z-10 flex items-center justify-between" style={{ transform: 'translateZ(30px)' }}>
+          <div className="w-13 h-13 rounded-2xl bg-white/[0.07] border border-white/15 flex items-center justify-center text-2xl shadow-xl backdrop-blur-md">
+            {visual.iconText}
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs tracking-wider">
+            <Flame className="w-3.5 h-3.5 fill-emerald-400" />
+            <span>FLAT {brand.discount}% OFF</span>
+          </div>
+        </div>
+
+        {/* Card Body */}
+        <div className="relative z-10 mt-auto" style={{ transform: 'translateZ(35px)' }}>
+          <div className="flex items-center gap-1 text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
+            <span>{brand.category_name}</span>
+            <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" />
+          </div>
+
+          <h3 className="text-xl font-extrabold text-white tracking-tight mb-1">
+            {brand.name}
+          </h3>
+
+          <p className="text-xs text-emerald-400 font-semibold mb-4">
+            Instant ₹{savingsAmt} saving on ₹{nominalVal} Voucher
+          </p>
+
+          <div className="pt-3 border-t border-white/[0.08] space-y-3">
+            <div className="flex items-baseline justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-zinc-400 block">Offer Price</span>
+                <span className="text-2xl font-black text-white">₹{finalPay}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 block">Face Value</span>
+                <span className="text-sm font-semibold text-zinc-500 line-through">₹{nominalVal}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={onSelect}
+              className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-extrabold uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-1.5"
+            >
+              <span>Instant Calculate</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   // Database States
   const [brands, setBrands] = useState<any[]>(INITIAL_BRANDS);
@@ -90,14 +245,12 @@ export default function Home() {
       try {
         if (!supabase) return;
 
-        // Fetch Categories
         const { data: catData } = await supabase
           .from('categories')
           .select('id, name, slug, icon_name')
           .order('display_order');
         if (catData && catData.length > 0) setCategories(catData);
 
-        // Fetch Brands joined with brand_vouchers and categories
         const { data: brandsData } = await supabase
           .from('brands')
           .select(`
@@ -121,7 +274,6 @@ export default function Home() {
           setBrands(mappedBrands);
         }
 
-        // Fetch Verified Coupons
         const { data: couponsData } = await supabase
           .from('brand_coupons')
           .select(`
@@ -140,7 +292,6 @@ export default function Home() {
           setCoupons(mappedCoupons);
         }
 
-        // Fetch Payment Cards
         const { data: cardsData } = await supabase
           .from('payment_instruments')
           .select('id, name, issuer_bank, base_online_cashback_pct, joining_fee, apply_referral_url')
@@ -165,7 +316,6 @@ export default function Home() {
 
     loadDatabaseData();
 
-    // Urgency Timer loop
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
@@ -211,45 +361,47 @@ export default function Home() {
     : brands.filter(b => b.category_name?.toLowerCase().includes(activeCategory.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-[#070709] text-zinc-100 font-sans antialiased selection:bg-emerald-400 selection:text-black">
+    <div className="min-h-screen bg-[#070709] text-zinc-100 font-sans antialiased selection:bg-emerald-400 selection:text-black overflow-x-hidden">
       
-      {/* Soft Ambient Radial Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+      {/* 3D Animated Ambient Background Orbs */}
+      <div className="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse" />
+      <div className="fixed top-[450px] -right-[150px] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none -z-10" />
+      <div className="fixed top-[900px] -left-[150px] w-[450px] h-[450px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
-      {/* 1. TOP ANNOUNCEMENT BANNER */}
+      {/* TOP ANNOUNCEMENT BANNER */}
       <div className="bg-[#0D0D11] border-b border-white/[0.06] py-2.5 px-4 text-center text-xs text-zinc-300">
         <span className="inline-flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           <strong className="text-white font-semibold">Live Arbitrage Database Active:</strong> 
           Connected to {brands.length} active merchant partners & verified vouchers.
         </span>
       </div>
 
-      {/* 2. NAVIGATION BAR */}
+      {/* NAVIGATION BAR */}
       <header className="border-b border-white/[0.08] backdrop-blur-xl sticky top-0 z-40 bg-[#070709]/85">
         <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <div className="w-9 h-9 rounded-xl bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-lg font-bold tracking-tight text-white block leading-none">
+              <span className="text-lg font-black tracking-tight text-white block leading-none">
                 Bachat<span className="text-emerald-400">Engine</span>
               </span>
-              <span className="text-xs text-zinc-400">AI Savings Discovery Platform</span>
+              <span className="text-[11px] text-zinc-400 font-medium">AI Savings Discovery Platform</span>
             </div>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-300">
             <a href="#calculator" className="hover:text-emerald-400 transition">Savings Calculator</a>
-            <a href="#vouchers" className="hover:text-emerald-400 transition">Gift Vouchers</a>
+            <a href="#vouchers" className="hover:text-emerald-400 transition">3D Vouchers</a>
             <a href="#coupons" className="hover:text-emerald-400 transition">Coupons</a>
             <a href="#cards" className="hover:text-emerald-400 transition">Card Perks</a>
           </div>
 
           <button
             onClick={() => setIsAuthOpen(true)}
-            className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 py-2 rounded-xl text-xs font-semibold text-white transition active:scale-95"
+            className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] px-4 py-2 rounded-xl text-xs font-semibold text-white transition active:scale-95 shadow-md"
           >
             <User className="w-4 h-4 text-emerald-400" />
             <span>Member Login</span>
@@ -257,17 +409,40 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 3. HERO SECTION */}
-      <section className="max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-12">
+      {/* HERO SECTION WITH 3D FLOATING ELEMENTS */}
+      <section className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-12">
+        
+        {/* Floating 3D Badge Left */}
+        <div className="hidden xl:flex absolute -left-12 top-28 items-center gap-3 bg-[#0d0d14]/80 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl shadow-2xl animate-[bounce_4s_infinite]">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xl">
+            🍕
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-white leading-tight">Domino's Redeemed</p>
+            <p className="text-[10px] text-emerald-400 font-semibold">Saved ₹120 just now</p>
+          </div>
+        </div>
+
+        {/* Floating 3D Badge Right */}
+        <div className="hidden xl:flex absolute -right-8 top-44 items-center gap-3 bg-[#0d0d14]/80 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl shadow-2xl animate-[bounce_5s_infinite_reverse]">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-xl">
+            ⚡
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-white leading-tight">Instant PIN Issuance</p>
+            <p className="text-[10px] text-cyan-400 font-semibold">0.4s Delivery Speed</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
               <Zap className="w-3.5 h-3.5 fill-current" />
               Before you checkout anywhere online, calculate your real price
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08]">
               Stop paying full price <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
                 on things you buy every day.
@@ -281,7 +456,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-2">
               <a 
                 href="#calculator"
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-sm font-bold shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-sm font-extrabold shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 active:scale-95"
               >
                 Calculate My Savings Now
                 <ArrowRight className="w-4 h-4" />
@@ -296,10 +471,10 @@ export default function Home() {
 
           {/* Interactive Scratch Box */}
           <div className="lg:col-span-5">
-            <div className="rounded-3xl p-6 bg-[#0E0E14] border border-white/[0.08] shadow-2xl space-y-4">
+            <div className="rounded-3xl p-6 bg-[#0E0E14] border border-white/[0.08] shadow-2xl space-y-4 relative overflow-hidden group">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-semibold text-zinc-300">Live Database Example</span>
-                <span className="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md font-medium">17% Instant Off</span>
+                <span className="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md font-bold">17% Instant Off</span>
               </div>
 
               <div>
@@ -320,13 +495,13 @@ export default function Home() {
                     <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
                       <Gift className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-semibold text-white">Tap to scratch & reveal real cost</p>
+                    <p className="text-xs font-bold text-white">Tap to scratch & reveal real cost</p>
                   </div>
                 ) : (
                   <div className="space-y-1.5 animate-in zoom-in-95">
-                    <p className="text-xs text-emerald-400 font-semibold">Special Voucher Price</p>
+                    <p className="text-xs text-emerald-400 font-bold">Special Voucher Price</p>
                     <div className="flex items-baseline justify-center gap-2">
-                      <span className="text-3xl font-extrabold text-white">₹415</span>
+                      <span className="text-4xl font-black text-white">₹415</span>
                       <span className="text-sm text-zinc-500 line-through">₹500</span>
                     </div>
                     <p className="text-xs text-zinc-300">
@@ -345,7 +520,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. FLASH SALE TICKER */}
+      {/* FLASH SALE TICKER */}
       <div className="border-y border-white/[0.06] bg-[#0A0A0F] py-3.5 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
@@ -362,13 +537,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 5. SAVINGS CALCULATOR (LIVE FROM DATABASE) */}
+      {/* SAVINGS CALCULATOR (LIVE FROM DATABASE) */}
       <section id="calculator" className="max-w-4xl mx-auto px-6 py-20 space-y-8">
         <div className="text-center space-y-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
             Real-Time Engine
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
             Calculate Your Bottom Line
           </h2>
           <p className="text-sm text-zinc-400">
@@ -376,21 +551,21 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="bg-[#0E0E14] border border-white/[0.08] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="bg-[#0E0E14] border border-white/[0.08] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
           
           {/* Brand Picker with Category Tabs */}
           <div>
-            <div className="flex justify-between items-center mb-2.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
                 1. Select Store / Merchant
               </label>
-              <div className="flex gap-1 bg-white/[0.04] p-1 rounded-lg text-[11px]">
+              <div className="flex gap-1 bg-white/[0.04] p-1 rounded-xl text-[11px]">
                 {['ALL', 'Food', 'Fashion', 'Quick'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-2.5 py-1 rounded transition ${
-                      activeCategory === cat ? 'bg-emerald-400 text-black font-bold' : 'text-zinc-400 hover:text-white'
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      activeCategory === cat ? 'bg-emerald-400 text-black shadow' : 'text-zinc-400 hover:text-white'
                     }`}
                   >
                     {cat}
@@ -399,21 +574,27 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {filteredBrands.map((b) => {
                 const active = selectedBrand === b.slug;
+                const visual = BRAND_VISUALS[b.slug];
                 return (
                   <button
                     key={b.id}
                     onClick={() => setSelectedBrand(b.slug)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all ${
+                    className={`p-4 rounded-2xl border text-left transition-all duration-200 flex items-center gap-3 ${
                       active 
-                        ? 'bg-emerald-500/10 border-emerald-400 text-white shadow-md' 
+                        ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-lg shadow-emerald-500/10' 
                         : 'bg-white/[0.02] border-white/[0.06] text-zinc-300 hover:border-white/[0.15]'
                     }`}
                   >
-                    <span className="text-xs text-emerald-400 font-semibold block">{b.discount}% Off Voucher</span>
-                    <span className="font-bold text-sm text-white block mt-0.5 truncate">{b.name}</span>
+                    <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-xl shrink-0">
+                      {visual?.iconText || '🏷️'}
+                    </div>
+                    <div className="truncate">
+                      <span className="text-xs text-emerald-400 font-bold block">{b.discount}% Off</span>
+                      <span className="font-extrabold text-sm text-white block truncate">{b.name}</span>
+                    </div>
                   </button>
                 );
               })}
@@ -423,23 +604,23 @@ export default function Home() {
           {/* Amount and Payment Toggles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
                 2. Order Cart Amount (₹)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-lg">₹</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-black text-lg">₹</span>
                 <input
                   type="number"
                   value={cartAmount}
                   onChange={(e) => setCartAmount(e.target.value)}
                   placeholder="500"
-                  className="w-full bg-white/[0.03] border border-white/[0.1] focus:border-emerald-400 rounded-xl py-3 pl-9 pr-4 text-xl font-bold text-white outline-none transition"
+                  className="w-full bg-white/[0.03] border border-white/[0.1] focus:border-emerald-400 rounded-xl py-3 pl-9 pr-4 text-xl font-black text-white outline-none transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
                 3. Card Stacking Offer
               </label>
               <div 
@@ -470,7 +651,7 @@ export default function Home() {
           <button
             onClick={handleCalculate}
             disabled={calcLoading}
-            className="w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-sm tracking-wide transition shadow-lg shadow-emerald-500/20 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Zap className="w-4 h-4 fill-black" />
             {calcLoading ? 'Comparing Vouchers, Coupons & Cards...' : 'Calculate Lowest Effective Price'}
@@ -480,7 +661,7 @@ export default function Home() {
           {result && (
             <div className="mt-6 bg-[#08080C] border border-emerald-400/30 rounded-2xl p-6 space-y-4 shadow-xl animate-in fade-in">
               <div className="flex justify-between items-center border-b border-white/[0.06] pb-3 text-xs">
-                <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" /> Optimal Route: {result.bestRoute}
                 </span>
                 <span className="text-zinc-400">Regular Checkout: <del>₹{result.originalCart}</del></span>
@@ -488,12 +669,12 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-4 items-baseline">
                 <div>
-                  <p className="text-xs text-zinc-400">Net Payable Amount</p>
-                  <p className="text-3xl sm:text-4xl font-black text-white mt-0.5">₹{result.bestEffectiveCost}</p>
+                  <p className="text-xs text-zinc-400 font-bold uppercase">Net Payable Amount</p>
+                  <p className="text-4xl font-black text-white mt-0.5">₹{result.bestEffectiveCost}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-emerald-400 font-medium">Total Rupee Savings</p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-0.5">Save ₹{result.totalSavings}</p>
+                  <p className="text-xs text-emerald-400 font-bold uppercase">Total Rupee Savings</p>
+                  <p className="text-3xl font-black text-emerald-400 mt-0.5">Save ₹{result.totalSavings}</p>
                 </div>
               </div>
 
@@ -522,7 +703,7 @@ export default function Home() {
                 href={result.breakdown.buyUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="block w-full text-center py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                className="block w-full text-center py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-extrabold uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
               >
                 Claim Deal & Buy Voucher
                 <ArrowUpRight className="w-4 h-4" />
@@ -532,84 +713,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. GIFT CARDS CATALOG (CONNECTED TO BRANDS & BRAND_VOUCHERS) */}
+      {/* 3D INTERACTIVE GIFT CARDS CATALOG (WITH REAL BRAND IMAGERY) */}
       <section id="vouchers" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-2">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Wholesale Vouchers</span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">Live Brand Vouchers In Database</h2>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+              Wholesale E-Vouchers
+            </span>
+            <h2 className="text-3xl font-black text-white tracking-tight">
+              Featured 3D Brand Cards
+            </h2>
           </div>
-          <span className="text-xs text-zinc-400">Instant Code Issuance • Zero Payment Friction</span>
+          <span className="text-xs text-zinc-400 font-medium">Interactive Gyroscopic Perspective • Real-Time Stock</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {brands.slice(0, 4).map((b) => {
-            const nominalVal = 1000;
-            const savingsAmt = (nominalVal * b.discount) / 100;
-            const finalPay = nominalVal - savingsAmt;
-            return (
-              <div
-                key={b.id}
-                className="bg-[#0E0E14] border border-white/[0.08] hover:border-emerald-500/40 rounded-2xl p-5 space-y-4 transition flex flex-col justify-between"
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-zinc-400">{b.category_name}</span>
-                    <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">
-                      {b.discount}% Off
-                    </span>
-                  </div>
-                  <h3 className="text-base font-bold text-white">{b.name}</h3>
-                  <p className="text-xs font-semibold text-emerald-400">Save ₹{savingsAmt} on ₹{nominalVal}</p>
-                </div>
-
-                <div className="space-y-3 pt-3 border-t border-white/[0.06]">
-                  <div className="flex items-baseline justify-between">
-                    <div>
-                      <span className="text-[11px] text-zinc-400 block">Offer Price</span>
-                      <span className="text-2xl font-bold text-white">₹{finalPay}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[11px] text-zinc-500 block">Face Value</span>
-                      <span className="text-sm text-zinc-500 line-through">₹{nominalVal}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedBrand(b.slug);
-                      setCartAmount(nominalVal.toString());
-                      window.scrollTo({ top: 750, behavior: 'smooth' });
-                    }}
-                    className="w-full py-2.5 bg-white/[0.06] hover:bg-emerald-400 hover:text-black text-white text-xs font-bold rounded-xl transition"
-                  >
-                    Calculate for ₹{nominalVal}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        {/* 3D Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {brands.map((b) => (
+            <Interactive3DVoucherCard
+              key={b.id}
+              brand={b}
+              nominalVal={1000}
+              onSelect={() => {
+                setSelectedBrand(b.slug);
+                setCartAmount('1000');
+                const calcElement = document.getElementById('calculator');
+                calcElement?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+          ))}
         </div>
       </section>
 
-      {/* 7. VERIFIED PROMO CODES (FROM BRAND_COUPONS TABLE) */}
+      {/* VERIFIED PROMO CODES */}
       <section id="coupons" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-pink-400">Promotional Registry</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Verified Coupons In Database</h2>
+          <span className="text-xs font-bold uppercase tracking-wider text-pink-400">Promotional Registry</span>
+          <h2 className="text-3xl font-black text-white tracking-tight">Verified Coupons In Database</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {coupons.map((c, i) => (
             <div
               key={i}
-              className="bg-[#0E0E14] border border-white/[0.08] rounded-2xl p-5 flex items-center justify-between gap-4"
+              className="bg-[#0E0E14] border border-white/[0.08] hover:border-pink-500/30 rounded-2xl p-5 flex items-center justify-between gap-4 transition-all shadow-lg"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white">{c.brandName}</span>
+                  <span className="text-base font-extrabold text-white">{c.brandName}</span>
                   {c.stackable && (
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-medium">
+                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">
                       Stackable with Voucher
                     </span>
                   )}
@@ -619,7 +772,7 @@ export default function Home() {
 
               <button
                 onClick={() => copyCoupon(c.code)}
-                className="px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition active:scale-95 shrink-0"
+                className="px-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition active:scale-95 shrink-0"
               >
                 {copiedCode === c.code ? (
                   <>
@@ -638,23 +791,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 8. BANK CARDS (FROM PAYMENT_INSTRUMENTS TABLE) */}
+      {/* BANK CARDS */}
       <section id="cards" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">High-Yield Financial Rails</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Cashback Cards In Database</h2>
+          <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">High-Yield Financial Rails</span>
+          <h2 className="text-3xl font-black text-white tracking-tight">Cashback Cards In Database</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {cards.map((card) => (
             <div
               key={card.id}
-              className="bg-[#0E0E14] border border-white/[0.08] hover:border-cyan-500/30 rounded-2xl p-6 flex flex-col justify-between space-y-5 transition"
+              className="bg-[#0E0E14] border border-white/[0.08] hover:border-cyan-500/40 rounded-3xl p-6 flex flex-col justify-between space-y-5 transition-all shadow-xl"
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-cyan-400 font-semibold">{card.base_cashback}% Cashback</span>
-                  <span className="text-zinc-500">{card.issuer_bank}</span>
+                  <span className="text-cyan-400 font-extrabold bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-1 rounded-md">
+                    {card.base_cashback}% Unlimited Cashback
+                  </span>
+                  <span className="text-zinc-500 font-medium">{card.issuer_bank}</span>
                 </div>
                 <h3 className="text-lg font-bold text-white">{card.name}</h3>
                 <p className="text-xs text-zinc-300 leading-relaxed">
@@ -677,10 +832,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 9. FREQUENTLY ASKED QUESTIONS */}
+      {/* FREQUENTLY ASKED QUESTIONS */}
       <section className="max-w-3xl mx-auto px-6 py-16 space-y-6">
         <div className="text-center space-y-1">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-black text-white">Frequently Asked Questions</h2>
           <p className="text-xs text-zinc-400">Everything you need to know about vouchers, coupons and banking cashback</p>
         </div>
 
@@ -689,10 +844,10 @@ export default function Home() {
             <div
               key={i}
               onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              className="bg-[#0E0E14] border border-white/[0.08] rounded-xl p-5 cursor-pointer transition"
+              className="bg-[#0E0E14] border border-white/[0.08] rounded-2xl p-5 cursor-pointer transition-colors"
             >
               <div className="flex justify-between items-center gap-4">
-                <h4 className="text-sm font-semibold text-white">{faq.q}</h4>
+                <h4 className="text-sm font-bold text-white">{faq.q}</h4>
                 <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${openFaq === i ? 'rotate-180 text-emerald-400' : ''}`} />
               </div>
               {openFaq === i && (
@@ -705,9 +860,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 10. AUTH MODAL */}
+      {/* AUTH MODAL */}
       {isAuthOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#101018] border border-white/[0.1] rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl animate-in zoom-in-95">
             <button 
               onClick={() => setIsAuthOpen(false)}
@@ -749,7 +904,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 11. FOOTER */}
+      {/* FOOTER */}
       <footer className="border-t border-white/[0.06] bg-[#050507] py-12 text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
