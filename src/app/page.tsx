@@ -28,6 +28,8 @@ import {
   Search
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
+import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 
 // --- SCROLL REVEAL WRAPPER ---
 function Reveal({
@@ -107,6 +109,8 @@ const INITIAL_CARDS = [
   { id: '3', name: "Axis Bank Airtel Credit Card", issuer_bank: "Axis Bank", base_cashback: 10.0, joining_fee: 500, url: "https://gromo.in", bestFor: "Airtel Recharges & Bills" },
   { id: '4', name: "ICICI Amazon Pay Credit Card", issuer_bank: "ICICI Bank", base_cashback: 3.0, joining_fee: 0, url: "https://gromo.in", bestFor: "Amazon Shopping" },
 ];
+
+<WhatsAppAlerts/>
 
 const FAQS = [
   { 
@@ -1371,6 +1375,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+
+      <LiveArbitrageTicker/>
 
       {/* 11. FOOTER */}
       <footer className="border-t border-white/[0.08] bg-[#07080D] py-10 text-xs text-zinc-500">
