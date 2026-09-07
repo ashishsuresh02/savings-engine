@@ -409,6 +409,12 @@ export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [timeLeft, setTimeLeft] = useState({ minutes: 24, seconds: 35 });
 
+  // Auth States for Inline Modal
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+
   // 1. Fetch Dynamic Live Data From Supabase Database
   useEffect(() => {
     async function loadDatabaseData() {
@@ -527,9 +533,8 @@ export default function Home() {
       const data = await res.json();
       setResult(data);
     } catch (e) {
-      console.warn('API route failed or missing, executing direct math fallback:', e);
+      console.warn('API route fallback executed:', e);
       
-      // Zero-Downtime Math Fallback Engine
       const currentBrand = brands.find((b) => b.slug === selectedBrand) || {
         name: "Domino's Pizza",
         discount: 13.0,
@@ -1106,13 +1111,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 10. AUTH MODAL */}
+      {/* 10. AUTH MODAL (REAL SUPABASE AUTH CONNECTED) */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#101018] border border-white/[0.1] rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl animate-in zoom-in-95">
             <button 
-              onClick={() => setIsAuthOpen(false)}
-              className="absolute top-5 right-5 text-zinc-400 hover:text-white"
+              onClick={() => {
+                setIsAuthOpen(false);
+                setOtpSent(false);
+                setAuthError('');
+              }}
+              className="absolute top-5 right-5 text-zinc-400 hover:text-white transition"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1121,31 +1130,149 @@ export default function Home() {
               <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
                 <User className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-bold text-white">Member Identification</h3>
-              <p className="text-xs text-zinc-400">Enter your mobile number to view and track your personal savings ledger.</p>
+              <h3 className="text-xl font-bold text-white">
+                {otpSent ? 'Enter SMS Code' : 'Member Login'}
+              </h3>
+              <p className="text-xs text-zinc-400">
+                {otpSent 
+                  ? `OTP sent to +91 ${phoneNumber}` 
+                  : 'Enter your mobile number to view and track your personal savings ledger.'}
+              </p>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex">
-                <span className="bg-white/[0.04] border border-r-0 border-white/[0.1] px-3 py-2.5 rounded-l-xl text-zinc-400 text-sm flex items-center">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="98765 43210"
-                  className="w-full bg-white/[0.02] border border-white/[0.1] rounded-r-xl py-2.5 px-3.5 text-white text-sm outline-none focus:border-emerald-400"
-                />
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+                {authError}
               </div>
+            )}
 
-              <button
-                onClick={() => alert("OTP login feature connected to Supabase Auth.")}
-                className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold rounded-xl transition"
+            {!otpSent ? (
+              /* Step 1: Phone Number Input */
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setAuthError('');
+                  const cleanPhone = phoneNumber.replace(/\D/g, '');
+                  if (cleanPhone.length !== 10) {
+                    setAuthError('Kripya 10-digit valid mobile number enter karein.');
+                    return;
+                  }
+
+                  setAuthLoading(true);
+                  try {
+                    const { error } = await supabase.auth.signInWithOtp({
+                      phone: `+91${cleanPhone}`,
+                    });
+                    if (error) throw error;
+                    setOtpSent(true);
+                  } catch (err: any) {
+                    setAuthError(err.message || 'OTP send karne me dikkat aayi.');
+                  } finally {
+                    setAuthLoading(false);
+                  }
+                }}
+                className="space-y-3"
               >
-                Send Verification OTP
-              </button>
-            </div>
+                <div className="flex">
+                  <span className="bg-white/[0.04] border border-r-0 border-white/[0.1] px-3 py-2.5 rounded-l-xl text-zinc-400 text-sm flex items-center">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="98765 43210"
+                    className="w-full bg-white/[0.02] border border-white/[0.1] rounded-r-xl py-2.5 px-3.5 text-white text-sm outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black text-xs font-bold rounded-xl transition shadow-lg shadow-emerald-500/20"
+                >
+                  {authLoading ? 'Sending OTP...' : 'Send Verification OTP'}
+                </button>
+
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-white/10" />
+                  <span className="flex-shrink mx-2 text-[10px] uppercase font-bold text-zinc-500">Or</span>
+                  <div className="flex-grow border-t border-white/10" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: {
+                        redirectTo: `${window.location.origin}/dashboard`,
+                      },
+                    });
+                  }}
+                  className="w-full py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+                >
+                  <span>Continue with Google</span>
+                </button>
+              </form>
+            ) : (
+              /* Step 2: OTP Verification Input */
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setAuthError('');
+                  if (otp.length < 6) {
+                    setAuthError('6-digit OTP enter karein.');
+                    return;
+                  }
+
+                  setAuthLoading(true);
+                  try {
+                    const { error } = await supabase.auth.verifyOtp({
+                      phone: `+91${phoneNumber.replace(/\D/g, '')}`,
+                      token: otp,
+                      type: 'sms',
+                    });
+                    if (error) throw error;
+                    
+                    setIsAuthOpen(false);
+                    window.location.href = '/dashboard';
+                  } catch (err: any) {
+                    setAuthError(err.message || 'Galat OTP enter kiya hai.');
+                  } finally {
+                    setAuthLoading(false);
+                  }
+                }}
+                className="space-y-3"
+              >
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full bg-white/[0.02] border border-white/[0.1] rounded-xl py-3 text-center font-mono text-xl tracking-widest text-white outline-none focus:border-emerald-400"
+                />
+
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black text-xs font-bold rounded-xl transition shadow-lg shadow-emerald-500/20"
+                >
+                  {authLoading ? 'Verifying...' : 'Verify OTP & Open Vault'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOtpSent(false)}
+                  className="w-full text-center text-[11px] text-zinc-400 hover:text-white pt-1"
+                >
+                  Edit Mobile Number
+                </button>
+              </form>
+            )}
+
           </div>
         </div>
       )}
