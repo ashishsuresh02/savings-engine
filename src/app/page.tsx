@@ -1062,7 +1062,7 @@ export default function Home() {
             </div>
             <div>
               <span className="text-lg font-black tracking-tight text-white block leading-none">
-                AllInOne<span className="text-emerald-400">Voucher</span>
+                AllInOne<span className="text-emerald-400">Vouchers</span>
               </span>
               <span className="text-[11px] text-zinc-400 font-medium">AI Savings Discovery Platform</span>
             </div>
