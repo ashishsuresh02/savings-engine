@@ -27,10 +27,11 @@ import {
   Filter,
   Search
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';
+import SpotlightSearch from '@/components/SpotlightSearch';
 
 // --- SCROLL REVEAL WRAPPER ---
 function Reveal({
@@ -110,8 +111,6 @@ const INITIAL_CARDS = [
   { id: '3', name: "Axis Bank Airtel Credit Card", issuer_bank: "Axis Bank", base_cashback: 10.0, joining_fee: 500, url: "https://gromo.in", bestFor: "Airtel Recharges & Bills" },
   { id: '4', name: "ICICI Amazon Pay Credit Card", issuer_bank: "ICICI Bank", base_cashback: 3.0, joining_fee: 0, url: "https://gromo.in", bestFor: "Amazon Shopping" },
 ];
-
-<WhatsAppAlerts/>
 
 const FAQS = [
   { 
@@ -241,8 +240,6 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
     </div>
   );
 }
-
-
 
 // Realistic 3D Bank Card Component with 180° Flip Physics
 const BANK_CARD_PALETTES = [
@@ -597,7 +594,6 @@ function SubmitCouponModal({
 
       onClose();
     } catch (err: any) {
-      // Fallback: direct local registry update
       const brandObj = brands.find((b) => b.slug === selectedSlug);
       onSuccess({
         brandName: brandObj?.name || 'Store',
@@ -721,6 +717,7 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -748,6 +745,18 @@ export default function Home() {
     }, 3500);
     return () => clearInterval(timer);
   }, [liveFeeds.length]);
+
+  // Global Keyboard Shortcut Listener (Ctrl + K / Cmd + K)
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   // Dynamic Supabase Database Ingestion
   useEffect(() => {
@@ -831,8 +840,6 @@ export default function Home() {
         <div className="absolute top-[65%] -right-40 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px]" />
       </div>
 
-
-
       {/* 2. DYNAMIC ISLAND FLOATING NAVBAR */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pt-3 pointer-events-none transition-all duration-500">
         <motion.nav
@@ -876,18 +883,29 @@ export default function Home() {
             <a href="#cards" className="hover:text-emerald-400 transition">Card Perks</a>
           </div>
 
-          <button
-            onClick={() => setIsAuthOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-extrabold transition shadow-lg shadow-emerald-500/20 active:scale-95"
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>Open Vault</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] font-bold text-zinc-400 hover:text-white transition"
+            >
+              <Search className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Search</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-white/[0.08] text-[9px] font-mono text-zinc-400">⌘K</kbd>
+            </button>
+
+            <button
+              onClick={() => setIsAuthOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-extrabold transition shadow-lg shadow-emerald-500/20 active:scale-95"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Open Vault</span>
+            </button>
+          </div>
         </motion.nav>
       </div>
 
       {/* 3. HERO SECTION WITH WIDE SCREEN FLOATING CARDS */}
-      <section className="relative min-h-[90vh] flex items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center justify-center px-6 pt-28 pb-16 overflow-hidden">
         <div className="absolute inset-0 max-w-7xl mx-auto pointer-events-none z-0">
           {FULLSCREEN_HERO_VOUCHERS.map((card, idx) => (
             <motion.div
@@ -1112,7 +1130,7 @@ export default function Home() {
       </section>
 
       {/* SMART CREDIT CARD ELIGIBILITY QUIZ */}
-<CardEligibilityQuiz />
+      <CardEligibilityQuiz />
 
       {/* 6. 3D WHOLESALE VOUCHERS CATALOG */}
       <section id="vouchers" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
@@ -1232,6 +1250,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* WHATSAPP VIP DEAL BROADCAST */}
+      <WhatsAppAlerts />
 
       {/* 9. FAQ SECTION */}
       <section id="faq" className="max-w-4xl mx-auto px-6 py-16 space-y-6">
@@ -1376,8 +1397,27 @@ export default function Home() {
         </div>
       )}
 
+      {/* SPOTLIGHT SEARCH MODAL */}
+      <SpotlightSearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        brands={brands}
+        cards={cards}
+        coupons={coupons}
+        onSelectBrand={(slug) => {
+          if (slug === 'cards') {
+            document.getElementById('cards')?.scrollIntoView({ behavior: 'smooth' });
+          } else if (slug === 'coupons') {
+            document.getElementById('coupons')?.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            setSelectedBrand(slug);
+            document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
+      />
 
-      <LiveArbitrageTicker/>
+      {/* FLOATING SOCIAL PROOF ARBITRAGE TOAST */}
+      <LiveArbitrageTicker />
 
       {/* 11. FOOTER */}
       <footer className="border-t border-white/[0.08] bg-[#07080D] py-10 text-xs text-zinc-500">
