@@ -1160,8 +1160,9 @@ export default function Home() {
 
                   setAuthLoading(true);
                   try {
+                    // Supabase test format requires international format without '+'
                     const { error } = await supabase.auth.signInWithOtp({
-                      phone: `+91${cleanPhone}`,
+                      phone: `91${cleanPhone}`,
                     });
                     if (error) throw error;
                     setOtpSent(true);
@@ -1229,8 +1230,9 @@ export default function Home() {
 
                   setAuthLoading(true);
                   try {
+                    const cleanPhone = phoneNumber.replace(/\D/g, '');
                     const { error } = await supabase.auth.verifyOtp({
-                      phone: `+91${phoneNumber.replace(/\D/g, '')}`,
+                      phone: `91${cleanPhone}`,
                       token: otp,
                       type: 'sms',
                     });
