@@ -35,6 +35,7 @@ import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';
 import SpotlightSearch from '@/components/SpotlightSearch';
+import SponsoredReelsFeed from '@/components/SponsoredReelsFeed';
 
 // --- SCROLL REVEAL WRAPPER ---
 function Reveal({
@@ -1373,6 +1374,14 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* BRAND REELS & SHORT VIDEO DEALS */}
+      <SponsoredReelsFeed
+        onSelectBrand={(slug) => {
+          setSelectedBrand(slug);
+          document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
 
       {/* 5. SMART CREDIT CARD ELIGIBILITY QUIZ */}
       <CardEligibilityQuiz />
