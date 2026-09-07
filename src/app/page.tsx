@@ -1062,7 +1062,7 @@ export default function Home() {
             </div>
             <div>
               <span className="text-lg font-black tracking-tight text-white block leading-none">
-                Bachat<span className="text-emerald-400">Engine</span>
+                AllInOne<span className="text-emerald-400">Voucher</span>
               </span>
               <span className="text-[11px] text-zinc-400 font-medium">AI Savings Discovery Platform</span>
             </div>
