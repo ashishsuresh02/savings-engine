@@ -1,16 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 
+const rawUrl = 
   process.env.NEXT_PUBLIC_SUPABASE_URL || 
   process.env.SUPABASE_URL || 
-  'https://abypppsniztkenhypsoc.supabase.co'; // Build-time safe fallback
+  'https://abypppsniztkenhypsoc.supabase.co';
 
-const supabaseAnonKey = 
+// Aakhiri slash (/) aur extra spaces ko clean karna
+const cleanUrl = rawUrl.trim().replace(/\/+$/, '');
+
+const supabaseAnonKey = (
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
   process.env.SUPABASE_ANON_KEY || 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFieXBwcHNuaXp0a2VuaHlwc29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTgxOTEsImV4cCI6MjEwNDE3NDE5MX0.38SZ5HVAfwTMzYnxX4wDmuF7Wi5Bo11Pz0YJlJY9UU0';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFieXBwcHNuaXp0a2VuaHlwc29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTgxOTEsImV4cCI6MjEwNDE3NDE5MX0.38SZ5HVAfwTMzYnxX4wDmuF7Wi5Bo11Pz0YJlJY9UU0'
+).trim();
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(cleanUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
