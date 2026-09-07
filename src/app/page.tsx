@@ -30,6 +30,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
+import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';
 
 // --- SCROLL REVEAL WRAPPER ---
 function Reveal({
@@ -240,6 +241,9 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
     </div>
   );
 }
+
+{/* SMART CREDIT CARD ELIGIBILITY QUIZ */}
+<CardEligibilityQuiz />
 
 // Realistic 3D Bank Card Component with 180° Flip Physics
 const BANK_CARD_PALETTES = [
