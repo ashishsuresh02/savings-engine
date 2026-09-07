@@ -1111,7 +1111,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 10. AUTH MODAL (REAL SUPABASE AUTH CONNECTED) */}
+      {/* 10. AUTH MODAL (REAL SUPABASE AUTH CONNECTED WITH TEST BYPASS) */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#101018] border border-white/[0.1] rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl animate-in zoom-in-95">
@@ -1120,6 +1120,7 @@ export default function Home() {
                 setIsAuthOpen(false);
                 setOtpSent(false);
                 setAuthError('');
+                setOtp('');
               }}
               className="absolute top-5 right-5 text-zinc-400 hover:text-white transition"
             >
@@ -1160,7 +1161,16 @@ export default function Home() {
 
                   setAuthLoading(true);
                   try {
-                    // Supabase test format requires international format without '+'
+                    // Dev / Test simulation bypass to eliminate Twilio error
+                    if (cleanPhone === '9876543210') {
+                      setTimeout(() => {
+                        setOtpSent(true);
+                        setAuthLoading(false);
+                      }, 400);
+                      return;
+                    }
+
+                    // Live Supabase OTP dispatch
                     const { error } = await supabase.auth.signInWithOtp({
                       phone: `91${cleanPhone}`,
                     });
@@ -1231,6 +1241,15 @@ export default function Home() {
                   setAuthLoading(true);
                   try {
                     const cleanPhone = phoneNumber.replace(/\D/g, '');
+
+                    // Dev / Test verification bypass
+                    if (cleanPhone === '9876543210' && otp === '123456') {
+                      setIsAuthOpen(false);
+                      window.location.href = '/dashboard';
+                      return;
+                    }
+
+                    // Live Supabase verification
                     const { error } = await supabase.auth.verifyOtp({
                       phone: `91${cleanPhone}`,
                       token: otp,
@@ -1267,7 +1286,10 @@ export default function Home() {
 
                 <button
                   type="button"
-                  onClick={() => setOtpSent(false)}
+                  onClick={() => {
+                    setOtpSent(false);
+                    setOtp('');
+                  }}
                   className="w-full text-center text-[11px] text-zinc-400 hover:text-white pt-1"
                 >
                   Edit Mobile Number
