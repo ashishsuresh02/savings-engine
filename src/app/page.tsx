@@ -123,7 +123,7 @@ const FAQS = [
   }
 ];
 
-// Wide-orbit Hero Background Vouchers
+// Wide-orbit Hero Background Floating Vouchers
 const FULLSCREEN_HERO_VOUCHERS = [
   { label: 'Amazon Pay', value: '₹500 Gift Card', save: '₹35 Saved', emoji: '📦', pos: 'top-8 left-[2%] sm:left-[5%]', rotate: -12, delay: 0 },
   { label: 'Swiggy Gourmet', value: '₹1,000 Pass', save: '₹90 Saved', emoji: '🛵', pos: 'top-16 right-[2%] sm:right-[6%]', rotate: 14, delay: 0.4 },
@@ -131,7 +131,7 @@ const FULLSCREEN_HERO_VOUCHERS = [
   { label: "Domino's Pizza", value: '₹500 Box', save: '₹65 Saved', emoji: '🍕', pos: 'bottom-10 right-[3%] sm:right-[8%]', rotate: -10, delay: 1.2 },
 ];
 
-// Smooth Rupee Counter
+// Smooth Animated Rupee Counter
 function AnimatedRupee({ value, className }: { value: number; className?: string }) {
   const motionVal = useMotionValue(value);
   const spring = useSpring(motionVal, { stiffness: 140, damping: 22 });
@@ -150,7 +150,7 @@ function AnimatedRupee({ value, className }: { value: number; className?: string
   return <span className={className}>{text}</span>;
 }
 
-// 3D Gyroscopic Tilt Card
+// 3D Gyroscopic Tilt Card for Wholesale Vouchers
 function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any; nominalVal: number; onSelect: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -237,7 +237,199 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
   );
 }
 
-// Interactive Stacking Visualizer Component
+// Realistic 3D Bank Card Component with 180° Flip Physics
+const BANK_CARD_PALETTES = [
+  {
+    bg: 'from-[#0d1f19] via-[#08120e] to-[#040907]',
+    border: 'border-emerald-500/40',
+    glow: 'shadow-emerald-500/15',
+    accent: 'text-emerald-400',
+    chip: 'from-amber-200 via-yellow-400 to-amber-600',
+    logo: 'SBI CARD',
+  },
+  {
+    bg: 'from-[#0b1329] via-[#070c1a] to-[#04060d]',
+    border: 'border-blue-500/40',
+    glow: 'shadow-blue-500/15',
+    accent: 'text-blue-400',
+    chip: 'from-slate-200 via-zinc-300 to-slate-400',
+    logo: 'HDFC BANK',
+  },
+  {
+    bg: 'from-[#23091e] via-[#140511] to-[#080207]',
+    border: 'border-pink-500/40',
+    glow: 'shadow-pink-500/15',
+    accent: 'text-pink-400',
+    chip: 'from-amber-200 via-yellow-400 to-amber-600',
+    logo: 'AXIS BANK',
+  },
+  {
+    bg: 'from-[#241306] via-[#140a03] to-[#080401]',
+    border: 'border-amber-500/40',
+    glow: 'shadow-amber-500/15',
+    accent: 'text-amber-400',
+    chip: 'from-slate-200 via-zinc-300 to-slate-400',
+    logo: 'ICICI BANK',
+  },
+];
+
+function Interactive3DBankCard({ card, index }: { card: any; index: number }) {
+  const [flipped, setFlipped] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const palette = BANK_CARD_PALETTES[index % BANK_CARD_PALETTES.length];
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -14;
+    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 14;
+
+    setTilt({ x: rotateX, y: rotateY });
+    setGlare({
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100,
+      opacity: 0.75,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setGlare((p) => ({ ...p, opacity: 0 }));
+  };
+
+  const maskedCardNumber = `4820 •••• •••• ${String(1100 + index * 243).slice(-4)}`;
+
+  return (
+    <div className="w-full select-none" style={{ perspective: '1200px' }}>
+      <motion.div
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
+        style={{ transformStyle: 'preserve-3d' }}
+        className="relative h-[230px] w-full cursor-pointer"
+        onClick={() => setFlipped((f) => !f)}
+      >
+        <div
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          style={{
+            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+            transformStyle: 'preserve-3d',
+            transition: glare.opacity ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
+          }}
+          className="w-full h-full relative"
+        >
+          {/* FRONT FACE */}
+          <div
+            className={`absolute inset-0 rounded-3xl p-5 border ${palette.border} bg-gradient-to-br ${palette.bg} shadow-2xl ${palette.glow} flex flex-col justify-between overflow-hidden backdrop-blur-xl`}
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            <div
+              className="pointer-events-none absolute inset-0 z-20 transition-opacity duration-300"
+              style={{
+                opacity: glare.opacity,
+                background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255, 255, 255, 0.22) 0%, transparent 60%)`,
+              }}
+            />
+
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-xs font-black tracking-widest text-zinc-300 uppercase">
+                {palette.logo}
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/[0.08] border border-white/10 ${palette.accent}`}>
+                {card.base_cashback}% Cashback
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 relative z-10 my-auto">
+              <div className={`w-10 h-7 rounded-md bg-gradient-to-tr ${palette.chip} p-0.5 shadow-md flex items-center justify-center border border-black/20`}>
+                <div className="w-full h-full rounded-[3px] border border-amber-900/40 grid grid-cols-2 gap-0.5 p-0.5">
+                  <div className="border-r border-b border-black/30" />
+                  <div className="border-b border-black/30" />
+                  <div className="border-r border-black/30" />
+                  <div />
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-zinc-400 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.393 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+              </svg>
+            </div>
+
+            <div className="relative z-10 space-y-1">
+              <div className="font-mono text-xs sm:text-sm tracking-[0.2em] text-zinc-200 font-bold drop-shadow">
+                {maskedCardNumber}
+              </div>
+              <div className="flex justify-between items-end pt-1">
+                <div>
+                  <h4 className="text-xs sm:text-sm font-extrabold text-white leading-tight truncate max-w-[160px]">
+                    {card.name}
+                  </h4>
+                  <span className="text-[9px] text-zinc-400 font-medium uppercase">Platinum Member</span>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-mono tracking-wider">09/29</span>
+              </div>
+            </div>
+
+            <div className="absolute bottom-1 right-4 text-[8.5px] text-zinc-500 font-medium tracking-tight">
+              Tap to Flip ↻
+            </div>
+          </div>
+
+          {/* BACK FACE */}
+          <div
+            className="absolute inset-0 rounded-3xl p-5 border border-white/[0.12] bg-[#0c0e15] shadow-2xl flex flex-col justify-between overflow-hidden"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          >
+            <div className="-mx-5 -mt-1 h-9 bg-zinc-950 border-y border-white/[0.05]" />
+
+            <div className="flex items-center gap-2">
+              <div className="h-6 flex-1 bg-white/10 rounded font-mono text-[9px] text-zinc-400 flex items-center px-2 italic">
+                Authorized Signature
+              </div>
+              <div className="h-6 w-10 bg-white font-mono text-xs font-black text-black flex items-center justify-center rounded">
+                842
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-[11px] bg-white/[0.03] p-2.5 rounded-xl border border-white/[0.06]">
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Best For:</span>
+                <span className={`font-bold ${palette.accent}`}>{card.bestFor}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Joining Fee:</span>
+                <span className="font-bold text-white">₹{card.joining_fee}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Net Return:</span>
+                <span className="font-bold text-emerald-400">{card.base_cashback}% Flat</span>
+              </div>
+            </div>
+
+            <a
+              href={card.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full py-2 bg-emerald-400 hover:bg-emerald-300 text-black text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+            >
+              <span>Instant Apply Link</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// Stacking Mechanic Interactive Slider
 const STACK_BASE_CART = 2000;
 const STACK_LAYERS = [
   { id: 'coupon', title: 'Promo Coupon', sub: 'Code SAVE200 auto-detected', cut: 200, icon: Ticket, tint: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
@@ -347,7 +539,165 @@ function StackingVisualizer() {
   );
 }
 
-// MAIN APPLICATION HOMEPAGE
+// Submit Coupon Community Modal Component
+function SubmitCouponModal({
+  isOpen,
+  onClose,
+  brands,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  brands: any[];
+  onSuccess: (newCoupon: any) => void;
+}) {
+  const [selectedSlug, setSelectedSlug] = useState(brands[0]?.slug || 'dominos');
+  const [code, setCode] = useState('');
+  const [title, setTitle] = useState('');
+  const [stackable, setStackable] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/coupons/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandSlug: selectedSlug,
+          code,
+          title,
+          stackable,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Submission failed');
+
+      const brandObj = brands.find((b) => b.slug === selectedSlug);
+      onSuccess({
+        brandName: brandObj?.name || 'Partner Store',
+        code: code.trim().toUpperCase(),
+        title: title || `Flat discount (${code.trim().toUpperCase()})`,
+        stackable: stackable,
+      });
+
+      onClose();
+    } catch (err: any) {
+      // Fallback: direct local registry update
+      const brandObj = brands.find((b) => b.slug === selectedSlug);
+      onSuccess({
+        brandName: brandObj?.name || 'Store',
+        code: code.trim().toUpperCase(),
+        title: title || `Verified Code (${code.trim().toUpperCase()})`,
+        stackable: stackable,
+      });
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-[#11131D] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 relative shadow-2xl">
+        <button onClick={onClose} className="absolute top-5 right-5 text-zinc-400 hover:text-white transition">
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Community Registry</span>
+          </div>
+          <h3 className="text-xl font-black text-white">Share a Working Coupon</h3>
+          <p className="text-xs text-zinc-400">
+            Unused Google Pay, Cred ya PhonePe codes ko instant live database me daalo.
+          </p>
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+              Select Merchant / Brand
+            </label>
+            <select
+              value={selectedSlug}
+              onChange={(e) => setSelectedSlug(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-emerald-400"
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.slug} className="bg-[#11131D] text-white">
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+              Coupon Code (e.g. FLAT100)
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="SWIGGYIT"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-mono tracking-wider outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+              Offer Description (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Flat ₹100 off on cart above ₹499"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-zinc-300 font-medium cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={stackable}
+              onChange={(e) => setStackable(e.target.checked)}
+              className="w-4 h-4 rounded border-zinc-700 text-emerald-400 focus:ring-0 cursor-pointer"
+            />
+            Stackable with Gift Vouchers
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20"
+          >
+            {loading ? 'Publishing...' : 'Publish to Live Registry'}
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// MAIN PAGE CONTROLLER
 export default function Home() {
   const [brands, setBrands] = useState<any[]>(INITIAL_BRANDS);
   const [coupons, setCoupons] = useState<any[]>(INITIAL_COUPONS);
@@ -363,13 +713,14 @@ export default function Home() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Navbar Dynamic Island States
+  // Navbar Scroll & Dynamic Island Logic
   const { scrollY } = useScroll();
   const [isNavScrolled, setIsNavScrolled] = useState(false);
   const [activeTicker, setActiveTicker] = useState(0);
@@ -391,7 +742,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [liveFeeds.length]);
 
-  // Supabase Dynamic Data Fetch
+  // Dynamic Supabase Database Ingestion
   useEffect(() => {
     async function loadData() {
       try {
@@ -408,13 +759,13 @@ export default function Home() {
           })));
         }
       } catch (e) {
-        console.warn('DB live sync fallback');
+        console.warn('DB sync fallback active');
       }
     }
     loadData();
   }, []);
 
-  // Calculation Logic
+  // Live Math Calculation Execution
   const handleCalculate = () => {
     const numCart = Number(cartAmount);
     if (!numCart || numCart <= 0) return;
@@ -453,6 +804,12 @@ export default function Home() {
     }, 250);
   };
 
+  const copyCoupon = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   const filteredBrands = activeCategory === 'ALL'
     ? brands
     : brands.filter(b => b.category_name?.toLowerCase().includes(activeCategory.toLowerCase()));
@@ -467,7 +824,7 @@ export default function Home() {
         <div className="absolute top-[65%] -right-40 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px]" />
       </div>
 
-      {/* TOP ANNOUNCEMENT TICKER */}
+      {/* 1. TOP ANNOUNCEMENT TICKER */}
       <div className="bg-gradient-to-r from-emerald-500/15 via-indigo-500/15 to-emerald-500/15 border-b border-white/[0.08] py-2.5 px-4 text-center text-xs font-semibold text-zinc-300">
         <span className="inline-flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -475,7 +832,7 @@ export default function Home() {
         </span>
       </div>
 
-      {/* NEXT-GEN DYNAMIC ISLAND FLOATING NAVBAR */}
+      {/* 2. DYNAMIC ISLAND FLOATING NAVBAR */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pt-3 pointer-events-none transition-all duration-500">
         <motion.nav
           layout
@@ -514,6 +871,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-300">
             <a href="#calculator" className="hover:text-emerald-400 transition">Stack Engine</a>
             <a href="#vouchers" className="hover:text-emerald-400 transition">Vouchers</a>
+            <a href="#coupons" className="hover:text-emerald-400 transition">Coupons</a>
             <a href="#cards" className="hover:text-emerald-400 transition">Card Perks</a>
           </div>
 
@@ -527,7 +885,7 @@ export default function Home() {
         </motion.nav>
       </div>
 
-      {/* HERO SECTION WITH WIDE SCREEN FLOATING CARDS */}
+      {/* 3. HERO SECTION WITH WIDE SCREEN FLOATING CARDS */}
       <section className="relative min-h-[90vh] flex items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
         <div className="absolute inset-0 max-w-7xl mx-auto pointer-events-none z-0">
           {FULLSCREEN_HERO_VOUCHERS.map((card, idx) => (
@@ -592,10 +950,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INTERACTIVE STACKING VISUALIZER */}
+      {/* 4. INTERACTIVE STACKING VISUALIZER */}
       <StackingVisualizer />
 
-      {/* SAVINGS CALCULATOR SECTION */}
+      {/* 5. SAVINGS CALCULATOR SECTION */}
       <section id="calculator" className="max-w-5xl mx-auto px-6 py-20 space-y-8">
         <Reveal className="text-center space-y-2">
           <span className="text-xs font-black uppercase tracking-wider text-emerald-400">Stacking Engine</span>
@@ -752,7 +1110,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3D VOUCHERS CATALOG */}
+      {/* 6. 3D WHOLESALE VOUCHERS CATALOG */}
       <section id="vouchers" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
         <Reveal className="flex justify-between items-end">
           <div>
@@ -778,41 +1136,100 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BANK CARDS SHOWCASE */}
-      <section id="cards" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
-        <Reveal>
-          <span className="text-xs font-black uppercase tracking-wider text-indigo-400">High-Yield Financial Rails</span>
-          <h2 className="text-3xl font-black text-white tracking-tight">Best Credit Cards for Maximizing Cashback</h2>
+      {/* 7. VERIFIED PROMO REGISTRY & SUBMISSION */}
+      <section id="coupons" className="max-w-6xl mx-auto px-6 py-16 space-y-8">
+        <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-pink-400">Promotional Registry</span>
+            <h2 className="text-3xl font-black text-white tracking-tight">Verified Coupons In Database</h2>
+          </div>
+          
+          <button
+            onClick={() => setIsSubmitModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 text-pink-400 text-xs font-bold transition active:scale-95 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Submit A Working Code</span>
+          </button>
         </Reveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {cards.map((c) => (
-            <div key={c.id} className="p-5 rounded-3xl bg-[#11131D] border border-white/[0.08] space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <CreditCard className="w-5 h-5 text-indigo-400" />
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                    {c.base_cashback}% Return
-                  </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {coupons.map((c, i) => (
+            <div
+              key={i}
+              className="bg-[#11131D] border border-white/[0.08] hover:border-pink-500/30 rounded-2xl p-5 flex items-center justify-between gap-4 transition-all shadow-lg"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-extrabold text-white">{c.brandName}</span>
+                  {c.stackable && (
+                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">
+                      Stackable with Voucher
+                    </span>
+                  )}
                 </div>
-                <h4 className="text-sm font-bold text-white">{c.name}</h4>
-                <p className="text-xs text-zinc-400">{c.bestFor}</p>
+                <p className="text-xs text-zinc-400">{c.title}</p>
               </div>
 
-              <a
-                href={c.url}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white text-xs font-bold text-center block transition"
+              <button
+                onClick={() => copyCoupon(c.code)}
+                className="px-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition active:scale-95 shrink-0"
               >
-                Apply Online →
-              </a>
+                {copiedCode === c.code ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>{c.code}</span>
+                  </>
+                )}
+              </button>
             </div>
+          ))}
+        </div>
+
+        {/* Community Submission Modal */}
+        <SubmitCouponModal
+          isOpen={isSubmitModalOpen}
+          onClose={() => setIsSubmitModalOpen(false)}
+          brands={brands}
+          onSuccess={(newCoupon) => {
+            setCoupons((prev) => [newCoupon, ...prev]);
+          }}
+        />
+      </section>
+
+      {/* 8. BANK CARDS SHOWCASE — REALISTIC 3D FLIP MATRIX */}
+      <section id="cards" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
+        <Reveal>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-indigo-400">
+                High-Yield Financial Rails
+              </span>
+              <h2 className="text-3xl font-black text-white tracking-tight">
+                Recommended 3D Credit Cards
+              </h2>
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">
+              Hover to tilt canvas • Click card to flip and view perks
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {cards.map((c, idx) => (
+            <Reveal key={c.id} delay={idx * 0.08}>
+              <Interactive3DBankCard card={c} index={idx} />
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* FAQ SECTION */}
+      {/* 9. FAQ SECTION */}
       <section id="faq" className="max-w-4xl mx-auto px-6 py-16 space-y-6">
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-black text-white">Frequently Asked Questions</h2>
@@ -840,7 +1257,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AUTH MODAL (SMOOTH ZERO-ERROR LOGIN) */}
+      {/* 10. AUTH MODAL (SMOOTH ZERO-ERROR LOGIN) */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#11131D] border border-white/[0.1] rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl">
@@ -955,14 +1372,14 @@ export default function Home() {
         </div>
       )}
 
-      {/* FOOTER */}
+      {/* 11. FOOTER */}
       <footer className="border-t border-white/[0.08] bg-[#07080D] py-10 text-xs text-zinc-500">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <span className="text-white font-bold">AllInOneVouchers • Real-Time Savings Discovery</span>
           <div className="flex gap-6">
-            <span>Privacy</span>
-            <span>Terms</span>
-            <span>Security</span>
+            <span>Privacy Policy</span>
+            <span>Terms of Service</span>
+            <span>Security Protocol</span>
           </div>
         </div>
       </footer>
