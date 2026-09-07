@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
@@ -44,7 +46,6 @@ export async function POST(req: Request) {
           cardRewardPct = Number(perk.exclusive_cashback_pct);
         }
       } catch (perkErr) {
-        // Safe fallback if card_merchant_perks table is empty
         cardRewardPct = 5.0;
       }
     }
