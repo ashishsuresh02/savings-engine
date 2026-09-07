@@ -27,7 +27,7 @@ import {
   Filter,
   Search
 } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';
