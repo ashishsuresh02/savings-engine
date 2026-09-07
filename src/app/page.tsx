@@ -242,8 +242,7 @@ function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any;
   );
 }
 
-{/* SMART CREDIT CARD ELIGIBILITY QUIZ */}
-<CardEligibilityQuiz />
+
 
 // Realistic 3D Bank Card Component with 180° Flip Physics
 const BANK_CARD_PALETTES = [
@@ -832,13 +831,7 @@ export default function Home() {
         <div className="absolute top-[65%] -right-40 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px]" />
       </div>
 
-      {/* 1. TOP ANNOUNCEMENT TICKER */}
-      <div className="bg-gradient-to-r from-emerald-500/15 via-indigo-500/15 to-emerald-500/15 border-b border-white/[0.08] py-2.5 px-4 text-center text-xs font-semibold text-zinc-300">
-        <span className="inline-flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>Real-time Stacking Engine 2.4 Active: Scanning 1,200+ verified vouchers</span>
-        </span>
-      </div>
+
 
       {/* 2. DYNAMIC ISLAND FLOATING NAVBAR */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pt-3 pointer-events-none transition-all duration-500">
@@ -1117,6 +1110,9 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* SMART CREDIT CARD ELIGIBILITY QUIZ */}
+<CardEligibilityQuiz />
 
       {/* 6. 3D WHOLESALE VOUCHERS CATALOG */}
       <section id="vouchers" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
