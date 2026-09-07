@@ -1,383 +1,390 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  ArrowLeft, 
+  Wallet, 
+  TrendingUp, 
+  ArrowUpRight, 
+  Sparkles, 
+  Tag, 
+  CreditCard, 
   Copy, 
   Check, 
-  Eye, 
-  EyeOff, 
   ShieldCheck, 
   Clock, 
-  Sparkles, 
+  Zap, 
+  Gift, 
+  ChevronRight, 
+  Percent, 
   LogOut,
-  ExternalLink,
-  Plus
+  SlidersHorizontal,
+  Flame,
+  Search
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
-interface VaultCard {
+interface ClaimedVoucher {
   id: string;
-  brandName: string;
-  faceValue: number;
-  paidAmount: number;
+  brand: string;
   code: string;
-  pin: string;
-  expiryDate: string;
-  purchaseDate: string;
-  status: 'ACTIVE' | 'REDEEMED';
-  isMasked: boolean;
-  copiedField: 'code' | 'pin' | null;
+  value: number;
+  savedAmount: number;
+  discountPct: number;
+  expiresOn: string;
+  status: 'ACTIVE' | 'USED' | 'EXPIRING_SOON';
+  gradient: string;
 }
 
-const INITIAL_VAULT: VaultCard[] = [
+const mockVouchers: ClaimedVoucher[] = [
   {
-    id: 'vault-1',
-    brandName: "Domino's Pizza",
-    faceValue: 500,
-    paidAmount: 415,
-    code: 'DOM-9923-4412-8871',
-    pin: '8392',
-    expiryDate: '2027-01-01',
-    purchaseDate: '2026-08-20',
+    id: 'v-1',
+    brand: 'Amazon Pay Gift Card',
+    code: 'AMZN-9824-SAVE',
+    value: 2000,
+    savedAmount: 140,
+    discountPct: 7.0,
+    expiresOn: '30 Sep 2026',
     status: 'ACTIVE',
-    isMasked: true,
-    copiedField: null,
+    gradient: 'from-amber-500/20 via-orange-500/10 to-transparent'
   },
   {
-    id: 'vault-2',
-    brandName: 'Zomato',
-    faceValue: 250,
-    paidAmount: 210,
-    code: 'ZOM-4491-1102-3394',
-    pin: '1044',
-    expiryDate: '2026-09-30',
-    purchaseDate: '2026-09-01',
-    status: 'ACTIVE',
-    isMasked: true,
-    copiedField: null,
+    id: 'v-2',
+    brand: 'Swiggy Money Voucher',
+    code: 'SWIG-5501-EAT',
+    value: 1000,
+    savedAmount: 90,
+    discountPct: 9.0,
+    expiresOn: '18 Sep 2026',
+    status: 'EXPIRING_SOON',
+    gradient: 'from-orange-500/20 via-rose-500/10 to-transparent'
   },
+  {
+    id: 'v-3',
+    brand: 'Myntra Shopping Pass',
+    code: 'MYNT-4412-LUXE',
+    value: 3500,
+    savedAmount: 420,
+    discountPct: 12.0,
+    expiresOn: '14 Oct 2026',
+    status: 'ACTIVE',
+    gradient: 'from-fuchsia-500/20 via-pink-500/10 to-transparent'
+  }
 ];
 
-function DashboardContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [cards, setCards] = useState<VaultCard[]>(INITIAL_VAULT);
-  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'REDEEMED'>('ACTIVE');
-  const [userSession, setUserSession] = useState<any>(null);
+const mockTransactions = [
+  { id: 't-1', brand: 'Flipkart Electronics', date: 'Today, 02:40 PM', original: 14999, saved: 1850, route: 'STACKED' },
+  { id: 't-2', brand: 'Zomato Daily', date: 'Yesterday', original: 650, saved: 140, route: 'COUPON' },
+  { id: 't-3', brand: 'Uber Ride Pass', date: '04 Sep 2026', original: 800, saved: 88, route: 'VOUCHER' },
+  { id: 't-4', brand: 'Ajio Fashion Stack', date: '01 Sep 2026', original: 4200, saved: 920, route: 'STACKED' }
+];
 
-  // 1. Session Check from Supabase
+export default function DashboardVaultPage() {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'used'>('all');
+  const [userPhone, setUserPhone] = useState<string>('98765 43210');
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
-    async function checkAuth() {
-      if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setUserSession(session.user);
+    try {
+      const storedPhone = localStorage.getItem('bachat_user_phone');
+      if (storedPhone) {
+        setUserPhone(storedPhone.replace(/(\d{5})(\d{5})/, '$1 $2'));
       }
+    } catch (e) {
+      console.warn(e);
     }
-    checkAuth();
   }, []);
 
-  // 2. Checkout redirect handling (Auto-append new purchase)
-  useEffect(() => {
-    const brand = searchParams.get('brand');
-    const value = searchParams.get('value');
-    const code = searchParams.get('code');
-    const pin = searchParams.get('pin');
-
-    if (brand && code && pin) {
-      const newCard: VaultCard = {
-        id: `vault-${Date.now()}`,
-        brandName: brand,
-        faceValue: Number(value) || 500,
-        paidAmount: Math.round(Number(value) * 0.85) || 425,
-        code: code,
-        pin: pin,
-        expiryDate: '2027-09-06',
-        purchaseDate: new Date().toISOString().split('T')[0],
-        status: 'ACTIVE',
-        isMasked: false, // Show code immediately on fresh checkout
-        copiedField: null,
-      };
-
-      setCards((prev) => [newCard, ...prev]);
-    }
-  }, [searchParams]);
-
-  const toggleMask = (id: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isMasked: !c.isMasked } : c))
-    );
+  const handleCopyCode = (id: string, code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleCopy = (id: string, text: string, type: 'code' | 'pin') => {
-    navigator.clipboard.writeText(text);
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, copiedField: type } : c))
-    );
-
-    setTimeout(() => {
-      setCards((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, copiedField: null } : c))
-      );
-    }, 2000);
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('bachat_user_phone');
+      localStorage.removeItem('bachat_auth_token');
+    } catch (e) {}
+    window.location.href = '/';
   };
-
-  const markAsRedeemed = (id: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: 'REDEEMED' } : c))
-    );
-  };
-
-  const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    router.push('/');
-  };
-
-  // Metrics
-  const totalValue = cards.reduce((acc, c) => acc + c.faceValue, 0);
-  const totalPaid = cards.reduce((acc, c) => acc + c.paidAmount, 0);
-  const totalSavings = totalValue - totalPaid;
-
-  const filteredCards = cards.filter((c) => c.status === activeTab);
 
   return (
-    <div className="min-h-screen bg-[#070709] text-zinc-100 font-sans p-6 md:p-12 selection:bg-emerald-400 selection:text-black">
-      <div className="max-w-6xl mx-auto space-y-10">
-        
-        {/* Navigation Bar */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] pb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-emerald-400 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Arbitrage Engine</span>
-          </Link>
+    <div className="min-h-screen bg-[#07070B] text-zinc-100 selection:bg-emerald-500 selection:text-black font-sans pb-24">
+      {/* Dynamic Background Mesh Gradients */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px]" />
+        <div className="absolute top-[25%] right-[5%] w-[500px] h-[450px] bg-indigo-500/10 rounded-full blur-[160px]" />
+        <div className="absolute bottom-[10%] left-[20%] w-[550px] h-[400px] bg-sky-500/8 rounded-full blur-[150px]" />
+      </div>
+
+      {/* Top Floating Glass Navigation */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0A0A10]/80 border-b border-white/[0.06]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-300 p-[1.5px] shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300">
+                <div className="w-full h-full bg-[#09090E] rounded-2xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-emerald-400" />
+                </div>
+              </div>
+              <div>
+                <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
+                  Bachat<span className="text-emerald-400">Vault</span>
+                </span>
+                <span className="text-[10px] text-zinc-500 font-medium block uppercase tracking-widest -mt-1">
+                  Engine v2.4 Live
+                </span>
+              </div>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/sell"
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-zinc-200 transition"
-            >
-              + Sell Unused Card
-            </Link>
+            <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>+91 {userPhone}</span>
+            </div>
+
             <button
-              onClick={handleSignOut}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold transition"
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/20 transition-all text-xs font-semibold"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Dashboard Banner & Lifetime Ledger */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-[#0E0E14] border border-white/[0.08] flex flex-col justify-between">
-            <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
-                <Sparkles className="w-3.5 h-3.5" />
-                Verified Digital Card Vault
+      {/* Main Container */}
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+        
+        {/* Welcome & Analytics Hero Cards Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 1: Total Savings Stored */}
+          <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] shadow-2xl backdrop-blur-md group hover:border-emerald-500/30 transition-all">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5" /> Lifetime Savings
               </span>
-              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-                {userSession?.phone || userSession?.email || 'Active Member Vault'}
-              </h1>
-              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-xl">
-                All 16-digit codes and CVV security PINs are protected with single-session reveal encryption.
-              </p>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                +24.8% this month
+              </span>
             </div>
-
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mt-6 pt-4 border-t border-white/[0.06]">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>100% Instant Balance Redemption Guaranteed</span>
+            <div className="space-y-1">
+              <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                ₹3,418<span className="text-emerald-400 text-2xl font-bold">.00</span>
+              </div>
+              <p className="text-xs text-zinc-400">Total cash unlocked across 14 transactions</p>
             </div>
           </div>
 
-          {/* Savings Ledger Card */}
-          <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-[#0E0E14] border border-emerald-500/20 flex flex-col justify-between shadow-xl shadow-emerald-500/5">
+          {/* Card 2: Active Stack Advantage */}
+          <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] shadow-2xl backdrop-blur-md group hover:border-indigo-500/30 transition-all">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5" /> Card Multiplier
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                SBI 5% Active
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                ₹890<span className="text-indigo-400 text-2xl font-bold"> Cashback</span>
+              </div>
+              <p className="text-xs text-zinc-400">Direct credit card returns from stacked checkouts</p>
+            </div>
+          </div>
+
+          {/* Card 3: Live Voucher Inventory */}
+          <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] shadow-2xl backdrop-blur-md group hover:border-amber-500/30 transition-all">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <Gift className="w-3.5 h-3.5" /> Ready Vouchers
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                3 Usable Now
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                ₹6,500<span className="text-amber-400 text-2xl font-bold"> Value</span>
+              </div>
+              <p className="text-xs text-zinc-400">Instant codes ready to paste on merchant checkout</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Quick Action Engine Banner */}
+        <section className="rounded-3xl p-6 bg-gradient-to-r from-emerald-950/40 via-teal-950/20 to-transparent border border-emerald-500/20 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-400 text-black flex items-center justify-center font-bold shadow-lg shadow-emerald-500/30 shrink-0">
+              <Flame className="w-6 h-6" />
+            </div>
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-1">
-                Net Arbitrage Savings
-              </span>
-              <p className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tight">
-                ₹{totalSavings}
+              <h3 className="text-base font-bold text-white">Find a New 3-Layer Discount Route</h3>
+              <p className="text-xs text-zinc-400">Run the live calculator before paying on Amazon, Swiggy, or Myntra to save 12-25% extra.</p>
+            </div>
+          </div>
+          <Link
+            href="/"
+            className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-wide uppercase transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 shrink-0"
+          >
+            <span>Open Stacking Calculator</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+        </section>
+
+        {/* Vouchers & Ledgers Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Left 7 Columns: Active Vault Codes */}
+          <div className="lg:col-span-7 space-y-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-emerald-400" />
+                  Your Claimed Gift Cards & Passes
+                </h2>
+                <p className="text-xs text-zinc-400">Tap copy to apply immediately on brand apps</p>
+              </div>
+
+              {/* Filters */}
+              <div className="flex items-center gap-1.5 p-1 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs">
+                <button 
+                  onClick={() => setActiveTab('all')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition ${activeTab === 'all' ? 'bg-emerald-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+                >
+                  All (3)
+                </button>
+                <button 
+                  onClick={() => setActiveTab('active')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition ${activeTab === 'active' ? 'bg-emerald-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+                >
+                  Active
+                </button>
+              </div>
+            </div>
+
+            {/* Voucher Cards Loop */}
+            <div className="space-y-3.5">
+              {mockVouchers.map((voucher) => (
+                <div 
+                  key={voucher.id}
+                  className="relative overflow-hidden rounded-2xl p-5 bg-[#0D0D14] border border-white/[0.08] hover:border-emerald-500/30 transition-all shadow-lg group"
+                >
+                  <div className={`absolute top-0 right-0 w-64 h-32 bg-gradient-to-l ${voucher.gradient} pointer-events-none`} />
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
+                          {voucher.brand}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                          voucher.status === 'EXPIRING_SOON' 
+                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' 
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        }`}>
+                          {voucher.status === 'EXPIRING_SOON' ? 'Expires Soon' : `${voucher.discountPct}% OFF`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-zinc-400">
+                        <span>Balance: <strong className="text-white">₹{voucher.value}</strong></span>
+                        <span>•</span>
+                        <span>Saved: <strong className="text-emerald-400">₹{voucher.savedAmount}</strong></span>
+                        <span>•</span>
+                        <span>Exp: {voucher.expiresOn}</span>
+                      </div>
+                    </div>
+
+                    {/* Code Copy Box */}
+                    <div className="flex items-center gap-2">
+                      <div className="px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.1] font-mono text-xs font-bold text-zinc-200 tracking-wider select-all">
+                        {voucher.code}
+                      </div>
+                      <button
+                        onClick={() => handleCopyCode(voucher.id, voucher.code)}
+                        className="px-3 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                      >
+                        {copiedId === voucher.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right 5 Columns: Live Savings Ledger */}
+          <div className="lg:col-span-5 space-y-5">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                Live Savings Ledger
+              </h2>
+              <p className="text-xs text-zinc-400">Recent checkouts analyzed by the engine</p>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-[#0D0D14] border border-white/[0.08] space-y-3 shadow-xl">
+              {mockTransactions.map((tx) => (
+                <div 
+                  key={tx.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white">{tx.brand}</span>
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/[0.05] text-zinc-400">
+                        {tx.route}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 block">{tx.date}</span>
+                  </div>
+
+                  <div className="text-right space-y-0.5">
+                    <div className="text-xs font-bold text-emerald-400">+₹{tx.saved} Saved</div>
+                    <div className="text-[10px] text-zinc-500 line-through">₹{tx.original}</div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-2">
+                <button className="w-full py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white text-xs font-semibold border border-white/[0.06] transition flex items-center justify-center gap-1">
+                  <span>Download Complete Statement</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Smart Stacking Tip Card */}
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-transparent border border-indigo-500/20 space-y-2">
+              <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                <Zap className="w-3.5 h-3.5" /> Pro Stacking Tip
+              </div>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Paying for Swiggy with an SBI Cashback card gives 5% direct rebate on top of already discounted gift vouchers.
               </p>
             </div>
-
-            <div className="text-xs text-zinc-400 space-y-2 pt-6 border-t border-white/[0.06] mt-4">
-              <div className="flex justify-between">
-                <span>Total Face Value:</span>
-                <span className="text-white font-bold">₹{totalValue}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Amount Paid:</span>
-                <span className="text-white font-bold">₹{totalPaid}</span>
-              </div>
-            </div>
           </div>
 
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex gap-6 border-b border-white/[0.08]">
-          <button
-            onClick={() => setActiveTab('ACTIVE')}
-            className={`pb-3 text-xs font-extrabold uppercase tracking-wider transition-all relative ${
-              activeTab === 'ACTIVE'
-                ? 'text-emerald-400'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Active Vouchers ({cards.filter((c) => c.status === 'ACTIVE').length})
-            {activeTab === 'ACTIVE' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-400" />
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('REDEEMED')}
-            className={`pb-3 text-xs font-extrabold uppercase tracking-wider transition-all relative ${
-              activeTab === 'REDEEMED'
-                ? 'text-emerald-400'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Redeemed History ({cards.filter((c) => c.status === 'REDEEMED').length})
-            {activeTab === 'REDEEMED' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-400" />
-            )}
-          </button>
-        </div>
-
-        {/* Cards Vault Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredCards.map((card) => (
-            <div
-              key={card.id}
-              className={`p-6 rounded-3xl border flex flex-col justify-between transition-all ${
-                card.status === 'ACTIVE'
-                  ? 'bg-[#0E0E14] border-white/[0.08] hover:border-emerald-500/30 shadow-xl'
-                  : 'bg-[#0A0A0F] border-white/[0.04] opacity-60'
-              }`}
-            >
-              <div>
-                {/* Brand Header */}
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-xl font-black text-white">{card.brandName}</h2>
-                    <span className="text-[11px] text-zinc-500">Purchased on {card.purchaseDate}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-black text-white">₹{card.faceValue}</span>
-                    <span className="text-[10px] block uppercase font-bold text-emerald-400">Paid ₹{card.paidAmount}</span>
-                  </div>
-                </div>
-
-                {/* Secure Voucher Credentials Box */}
-                <div className="p-4 rounded-2xl bg-black/60 border border-white/[0.08] space-y-3 mb-6">
-                  
-                  {/* Voucher Code */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 block mb-0.5">
-                        Card Number / Voucher Code
-                      </span>
-                      <span className="text-sm font-mono font-bold tracking-wider text-white">
-                        {card.isMasked ? '•••• •••• •••• ••••' : card.code}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleMask(card.id)}
-                        className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition"
-                        title={card.isMasked ? 'Reveal credentials' : 'Mask credentials'}
-                      >
-                        {card.isMasked ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                      </button>
-
-                      <button
-                        onClick={() => handleCopy(card.id, card.code, 'code')}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold transition flex items-center gap-1 shadow-md shadow-emerald-500/20"
-                      >
-                        {card.copiedField === 'code' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{card.copiedField === 'code' ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Security PIN */}
-                  <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 block mb-0.5">
-                        Security PIN
-                      </span>
-                      <span className="text-xs font-mono font-bold tracking-widest text-zinc-300">
-                        {card.isMasked ? '••••' : card.pin}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => handleCopy(card.id, card.pin, 'pin')}
-                      className="px-3 py-1 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 text-xs font-bold transition"
-                    >
-                      {card.copiedField === 'pin' ? 'Copied!' : 'Copy PIN'}
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Status & Expiry Bar */}
-              <div className="flex items-center justify-between pt-4 border-t border-white/[0.06] text-xs">
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Clock className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>Expires: <strong className="text-zinc-200">{card.expiryDate}</strong></span>
-                </div>
-
-                {card.status === 'ACTIVE' ? (
-                  <button
-                    onClick={() => markAsRedeemed(card.id)}
-                    className="text-[11px] font-bold text-zinc-400 hover:text-emerald-400 transition"
-                  >
-                    Mark as Used ✓
-                  </button>
-                ) : (
-                  <span className="text-[11px] font-bold text-zinc-500">Redeemed</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredCards.length === 0 && (
-          <div className="text-center py-20 bg-[#0E0E14] rounded-3xl border border-white/[0.08] space-y-4">
-            <p className="text-zinc-500 text-sm">No {activeTab.toLowerCase()} vouchers found in your vault.</p>
-            <Link
-              href="/"
-              className="inline-block px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black rounded-xl text-xs font-black uppercase tracking-wider transition"
-            >
-              Explore Wholesale Deals
-            </Link>
-          </div>
-        )}
-
-      </div>
+      </main>
     </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#070709] text-white p-10 font-mono text-xs">Loading Secure Vault...</div>}>
-      <DashboardContent />
-    </Suspense>
   );
 }
