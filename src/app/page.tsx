@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { 
   ArrowUpRight, 
   CreditCard, 
@@ -19,7 +20,9 @@ import {
   Flame,
   BadgeCheck,
   Send,
-  Plus
+  Plus,
+  Ticket,
+  Layers
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -384,6 +387,238 @@ function SubmitCouponModal({
   );
 }
 
+// --- HERO FLOATING VOUCHER MOCK DATA ---
+const HERO_FLOATING_VOUCHERS = [
+  { label: 'Amazon Pay', value: '₹500', tint: 'from-orange-400/25 to-amber-500/5', ring: 'border-orange-400/25', glow: 'shadow-orange-500/10', emoji: '📦' },
+  { label: 'Swiggy', value: '₹250', tint: 'from-orange-500/25 to-rose-500/5', ring: 'border-orange-500/25', glow: 'shadow-orange-500/10', emoji: '🛵' },
+  { label: 'Myntra', value: '₹1,000', tint: 'from-pink-400/25 to-fuchsia-500/5', ring: 'border-pink-400/25', glow: 'shadow-pink-500/10', emoji: '👗' },
+];
+
+// --- FLOATING ISOMETRIC VOUCHER (decorative, continuous levitation) ---
+function FloatingIsometricVoucher({
+  data,
+  className,
+  duration = 6,
+  delay = 0,
+  rotate = -10,
+}: {
+  data: typeof HERO_FLOATING_VOUCHERS[number];
+  className?: string;
+  duration?: number;
+  delay?: number;
+  rotate?: number;
+}) {
+  return (
+    <motion.div
+      className={`absolute select-none ${className || ''}`}
+      style={{ perspective: '900px' }}
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: [0, -14, 0] }}
+      transition={{
+        opacity: { duration: 0.8, delay },
+        y: { duration, repeat: Infinity, ease: 'easeInOut', delay },
+      }}
+    >
+      <div
+        className={`w-36 sm:w-40 rounded-2xl border ${data.ring} bg-gradient-to-br ${data.tint} bg-[#0c0c12] backdrop-blur-xl p-3.5 shadow-2xl ${data.glow}`}
+        style={{ transform: `rotateX(14deg) rotateY(${rotate}deg) rotateZ(${rotate / 3}deg)`, transformStyle: 'preserve-3d' }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-lg">{data.emoji}</span>
+          <Ticket className="w-3.5 h-3.5 text-white/40" />
+        </div>
+        <p className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">{data.label}</p>
+        <p className="text-lg font-black text-white leading-tight">{data.value}</p>
+        <div className="mt-2.5 h-1 w-full rounded-full bg-white/[0.08] overflow-hidden">
+          <div className="h-full w-2/3 rounded-full bg-emerald-400/70" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// --- SMOOTHLY ANIMATED RUPEE COUNTER ---
+function AnimatedRupee({ value, className }: { value: number; className?: string }) {
+  const motionVal = useMotionValue(value);
+  const spring = useSpring(motionVal, { stiffness: 140, damping: 22 });
+  const display = useTransform(spring, (v) => `₹${Math.round(v).toLocaleString('en-IN')}`);
+  const [text, setText] = useState(`₹${value.toLocaleString('en-IN')}`);
+
+  useEffect(() => {
+    motionVal.set(value);
+  }, [value, motionVal]);
+
+  useEffect(() => {
+    const unsub = display.on('change', (v) => setText(v));
+    return () => unsub();
+  }, [display]);
+
+  return <span className={className}>{text}</span>;
+}
+
+// --- INTERACTIVE 3-LAYER STACKING VISUALIZER ---
+const STACK_BASE_CART = 2000;
+const STACK_LAYERS = [
+  {
+    id: 'coupon',
+    title: 'Promo Coupon',
+    sub: 'Code SAVE200 applied at checkout',
+    cut: 200,
+    icon: Ticket,
+    tint: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    bar: 'bg-emerald-400',
+  },
+  {
+    id: 'voucher',
+    title: 'Discounted Brand Voucher',
+    sub: 'Wholesale e-voucher swapped in for cash',
+    cut: 150,
+    icon: Gift,
+    tint: 'text-indigo-400',
+    bg: 'bg-indigo-500/10',
+    border: 'border-indigo-500/30',
+    bar: 'bg-indigo-400',
+  },
+  {
+    id: 'card',
+    title: '5% SBI Cashback Card',
+    sub: 'Paid on the eligible cashback card',
+    cut: 82,
+    icon: CreditCard,
+    tint: 'text-purple-400',
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    bar: 'bg-purple-400',
+  },
+];
+
+function StackingVisualizer() {
+  const [step, setStep] = useState(0); // 0 = raw cart, 1..3 = layers applied
+
+  const runningPrice = STACK_BASE_CART - STACK_LAYERS.slice(0, step).reduce((sum, l) => sum + l.cut, 0);
+  const totalSaved = STACK_BASE_CART - runningPrice;
+
+  return (
+    <section id="stacking-visualizer" className="max-w-5xl mx-auto px-6 py-16">
+      <div className="text-center space-y-2 mb-10">
+        <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">The Stacking Mechanic</span>
+        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+          Watch one order get cut down, layer by layer.
+        </h2>
+        <p className="text-sm text-zinc-400 max-w-xl mx-auto">
+          Move the slider to apply a coupon, then a voucher, then a card rebate to the same ₹2,000 order — in that order, every time.
+        </p>
+      </div>
+
+      <div className="bg-[#0E0E14] border border-white/[0.08] rounded-3xl p-6 sm:p-10 shadow-2xl grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-center">
+        {/* Left: Slider + Layer List */}
+        <div className="space-y-5 order-2 lg:order-1">
+          <div className="flex items-center gap-1.5">
+            {[0, 1, 2, 3].map((s) => (
+              <button
+                key={s}
+                onClick={() => setStep(s)}
+                aria-label={`Show stage ${s}`}
+                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                  step >= s ? 'bg-emerald-400' : 'bg-white/[0.08]'
+                }`}
+              />
+            ))}
+          </div>
+
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={1}
+            value={step}
+            onChange={(e) => setStep(Number(e.target.value))}
+            className="w-full accent-emerald-400 cursor-pointer"
+          />
+
+          <div className="space-y-2.5">
+            {STACK_LAYERS.map((layer, i) => {
+              const active = step > i;
+              const Icon = layer.icon;
+              return (
+                <button
+                  key={layer.id}
+                  onClick={() => setStep(active ? i : i + 1)}
+                  className={`w-full flex items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-300 ${
+                    active ? `${layer.bg} ${layer.border}` : 'bg-white/[0.02] border-white/[0.06]'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${active ? layer.border : 'border-white/10'} ${active ? layer.bg : 'bg-white/[0.03]'}`}>
+                    <Icon className={`w-4 h-4 ${active ? layer.tint : 'text-zinc-500'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-bold truncate ${active ? 'text-white' : 'text-zinc-400'}`}>
+                      Layer {i + 1}: {layer.title}
+                    </p>
+                    <p className="text-[10.5px] text-zinc-500 truncate">{layer.sub}</p>
+                  </div>
+                  <span className={`text-xs font-black shrink-0 ${active ? layer.tint : 'text-zinc-600'}`}>
+                    -₹{layer.cut}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden lg:block w-px h-72 bg-white/[0.08] order-2" />
+
+        {/* Right: Live receipt-style result */}
+        <div className="order-1 lg:order-3 rounded-2xl border border-white/[0.08] bg-[#08080C] p-6 space-y-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-zinc-400 font-semibold">Order Value</span>
+            <span className="text-zinc-500 line-through">₹{STACK_BASE_CART.toLocaleString('en-IN')}</span>
+          </div>
+
+          <AnimatePresence initial={false}>
+            {STACK_LAYERS.slice(0, step).map((layer) => (
+              <motion.div
+                key={layer.id}
+                initial={{ opacity: 0, x: 16, height: 0 }}
+                animate={{ opacity: 1, x: 0, height: 'auto' }}
+                exit={{ opacity: 0, x: 16, height: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="flex items-center justify-between text-xs overflow-hidden"
+              >
+                <span className={layer.tint}>{layer.title}</span>
+                <span className={`font-bold ${layer.tint}`}>-₹{layer.cut}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <div className="pt-4 border-t border-white/[0.08]">
+            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">Effective Price</p>
+            <AnimatedRupee value={runningPrice} className="text-4xl font-black text-white tracking-tight" />
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-2.5">
+            <Layers className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-xs font-bold text-emerald-400">
+              Stacked savings so far: <AnimatedRupee value={totalSaved} />
+            </span>
+          </div>
+
+          <button
+            onClick={() => setStep((s) => (s >= 3 ? 0 : s + 1))}
+            className="w-full py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-bold text-white transition active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            {step >= 3 ? 'Restart Stack' : `Apply Layer ${step + 1}`}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // --- MAIN HOMEPAGE EXPORT ---
 export default function Home() {
   // Database States
@@ -632,46 +867,47 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 3. HERO SECTION WITH 3D FLOATING BADGES */}
-      <section className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-12">
-        {/* Floating Badge Left */}
-        <div className="hidden xl:flex absolute -left-12 top-28 items-center gap-3 bg-[#0d0d14]/80 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl shadow-2xl animate-[bounce_4s_infinite]">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xl">
-            🍕
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-white leading-tight">Domino's Redeemed</p>
-            <p className="text-[10px] text-emerald-400 font-semibold">Saved ₹120 just now</p>
-          </div>
+      {/* 3. HERO SECTION WITH 3D FLOATING VOUCHERS */}
+      <section className="relative max-w-6xl mx-auto px-6 pt-16 sm:pt-20 pb-24 space-y-12 overflow-hidden">
+        {/* Mesh Glows */}
+        <div className="absolute top-10 left-1/4 w-[420px] h-[420px] bg-emerald-500/10 rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute top-20 right-0 w-[380px] h-[380px] bg-indigo-500/10 rounded-full blur-[130px] pointer-events-none" />
+
+        {/* Floating 3D Voucher Cluster (decorative, desktop only) */}
+        <div className="hidden xl:block absolute inset-0 pointer-events-none">
+          <FloatingIsometricVoucher data={HERO_FLOATING_VOUCHERS[0]} className="left-[-2%] top-[8%]" duration={6.5} rotate={-14} />
+          <FloatingIsometricVoucher data={HERO_FLOATING_VOUCHERS[1]} className="right-[2%] top-[2%]" duration={7.5} delay={0.6} rotate={12} />
+          <FloatingIsometricVoucher data={HERO_FLOATING_VOUCHERS[2]} className="right-[-4%] top-[54%]" duration={8} delay={1.1} rotate={-9} />
         </div>
 
-        {/* Floating Badge Right */}
-        <div className="hidden xl:flex absolute -right-8 top-44 items-center gap-3 bg-[#0d0d14]/80 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl shadow-2xl animate-[bounce_5s_infinite_reverse]">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-xl">
-            ⚡
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-white leading-tight">Instant PIN Issuance</p>
-            <p className="text-[10px] text-cyan-400 font-semibold">0.4s Delivery Speed</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-              <Zap className="w-3.5 h-3.5 fill-current" />
-              Before you checkout anywhere online, calculate your real price
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="lg:col-span-7 space-y-6 text-center lg:text-left"
+          >
+            {/* Live Ticker Pill */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.1] text-xs font-semibold text-zinc-200 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              <span>
+                <AnimatedRupee value={482900} className="text-emerald-400 font-bold" />+ saved by smart shoppers this month
+              </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08]">
-              Stop paying full price <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                on things you buy every day.
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-black text-white tracking-tight leading-[1.08]">
+              Stop leaving money <br className="hidden sm:block" />
+              on the table.{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-400">
+                Discover the stacking secret.
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-zinc-300 max-w-xl font-normal leading-relaxed">
-              We discover hidden discounted e-vouchers, stack active store coupons, and calculate bank cashback so you always pay the net lowest amount.
+            <p className="text-base sm:text-lg text-zinc-300 max-w-xl font-normal leading-relaxed mx-auto lg:mx-0">
+              We discover hidden discounted e-vouchers, stack active store coupons, and calculate bank cashback so you always pay the net lowest amount — before you ever click checkout.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-2">
@@ -688,10 +924,15 @@ export default function Home() {
                 <span>Zero guesswork. 100% mathematical savings.</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Interactive Scratch Card */}
-          <div className="lg:col-span-5">
+          {/* Interactive Scratch Card, layered in front of the floating vouchers */}
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+            className="lg:col-span-5 relative"
+          >
             <div className="rounded-3xl p-6 bg-[#0E0E14] border border-white/[0.08] shadow-2xl space-y-4 relative overflow-hidden group">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-semibold text-zinc-300">Live Database Example</span>
@@ -736,9 +977,20 @@ export default function Home() {
                 Instant delivery. Use code directly in Domino's App payment screen.
               </p>
             </div>
-          </div>
+
+            {/* Small floating badges, tucked under the card for tablet/desktop */}
+            <div className="hidden lg:flex absolute -bottom-6 -left-6 items-center gap-2.5 bg-[#0d0d14]/90 backdrop-blur-xl border border-white/10 px-3.5 py-2.5 rounded-2xl shadow-2xl">
+              <Zap className="w-3.5 h-3.5 text-cyan-400" />
+              <div>
+                <p className="text-[10px] font-bold text-white leading-tight">Instant PIN Issuance</p>
+                <p className="text-[9.5px] text-cyan-400 font-semibold">0.4s delivery speed</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
+
+      <StackingVisualizer />
 
       {/* 4. FLASH SALE URGENCY TICKER */}
       <div className="border-y border-white/[0.06] bg-[#0A0A0F] py-3.5 px-6">
