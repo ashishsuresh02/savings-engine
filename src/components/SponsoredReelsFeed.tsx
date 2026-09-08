@@ -167,15 +167,15 @@ export default function SponsoredReelsFeed({ onSelectBrand }: { onSelectBrand: (
             {/* Native Video Element with Safe Autoplay */}
             <video
               ref={videoRef}
+              key={currentReel.video_url}
               src={currentReel.video_url}
-              playsInline
-              muted={isMuted}
-              loop
               autoPlay
-              preload="auto"
-              onCanPlay={() => setVideoLoaded(true)}
-              onClick={togglePlay}
+              loop
+              muted
+              playsInline
+              preload="metadata"
               className="w-full h-full object-cover cursor-pointer bg-zinc-950"
+              onClick={togglePlay}
             />
 
             {/* Top Bar: Sponsored / Verified Status & Volume Control */}
