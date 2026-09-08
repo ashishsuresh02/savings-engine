@@ -1,346 +1,701 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Copy, Check, ArrowRight, Sparkles, Zap, ExternalLink, Smartphone, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  BarChart3, 
+  Wallet, 
+  DollarSign, 
+  Tag, 
+  Users, 
+  Building2, 
+  Link as LinkIcon, 
+  Plus, 
+  TrendingUp, 
+  ArrowUpRight,
+  Lock,
+  LogOut,
+  RefreshCw,
+  Sliders
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-interface CheckoutModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  brandName: string;
-  brandSlug: string;
-  faceValue: number;
-  dealPrice: number;
-  savings: number;
-}
+const ADMIN_MASTER_PIN = '2026';
 
-export default function CheckoutModal({
-  isOpen,
-  onClose,
-  brandName,
-  brandSlug,
-  faceValue,
-  dealPrice,
-  savings,
-}: CheckoutModalProps) {
-  const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'SUCCESS'>('DETAILS');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'EMAIL' | 'PHONE'>('EMAIL'); // Toggle between Email & Phone
-  const [loading, setLoading] = useState(false);
-  const [unlockedCode, setUnlockedCode] = useState<string | null>(null);
-  const [unlockedPin, setUnlockedPin] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+export default function AdminEnterpriseDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [enteredPin, setEnteredPin] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
 
-  if (!isOpen) return null;
+  const [activeView, setActiveView] = useState<'overview' | 'brands-manager' | 'vouchers' | 'orders' | 'sponsors' | 'affiliates'>('overview');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  // Real Dynamic UPI VPA Details
-  const MERCHANT_UPI = "ashishsuresh502-1@okhdfcbank"; // Apna UPI ID yahan configure hai
-  const MERCHANT_NAME = "AllInOneVouchers";
-  const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandSlug}`)}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
+  // Live Metrics
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [netProfit, setNetProfit] = useState<number>(0);
+  const [sponsorIncome, setSponsorIncome] = useState<number>(45000);
 
-  const handleProceedToPay = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (deliveryMode === 'EMAIL') {
-      if (!email || !email.includes('@')) {
-        alert('Please enter a valid email address.');
-        return;
-      }
-    } else {
-      if (phone.replace(/\D/g, '').length !== 10) {
-        alert('Please enter a valid 10-digit mobile number.');
-        return;
-      }
+  // Forms State
+  const [vBrandId, setVBrandId] = useState('');
+  const [vCode, setVCode] = useState('');
+  const [vPin, setVPin] = useState('');
+  const [vFace, setVFace] = useState('');
+  const [vBuy, setVBuy] = useState('');
+  const [vSell, setVSell] = useState('');
+
+  // Sponsor Form State
+  const [sName, setSName] = useState('');
+  const [sAmount, setSAmount] = useState('');
+  const [sPlan, setSPlan] = useState('FEATURED_CALCULATOR');
+
+  // Real DB collections
+  const [brandsList, setBrandsList] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [sponsors, setSponsors] = useState<any[]>([
+    { id: 'sp-1', company_name: 'AU Small Finance Bank', deal_type: 'Featured Credit Card Banner', deal_amount: 25000, payment_status: 'RECEIVED' },
+  ]);
+
+  useEffect(() => {
+    const session = sessionStorage.getItem('bachat_admin_session');
+    if (session === 'authenticated') {
+      setIsAuthenticated(true);
     }
-    setStep('PAYMENT');
-  };
+  }, []);
 
-  // REAL CODE ALLOCATION & FREE EMAIL DISPATCH
-  const handleVerifyAndAllocate = async () => {
+  const fetchLiveMetrics = async () => {
     setLoading(true);
-    setErrorMessage('');
-
     try {
-      if (!supabase) throw new Error('Database connection unavailable');
+      if (!supabase) return;
 
-      // 1. Inventory check for AVAILABLE code
-      const { data: voucher, error: fetchErr } = await supabase
+      // 1. Fetch Brands & Resale Discounts
+      const { data: bData } = await supabase
+        .from('brands')
+        .select(`
+          id, name, slug, logo_url, banner_url, is_active,
+          brand_vouchers(id, resale_discount_pct, wholesale_discount_pct)
+        `)
+        .eq('is_active', true);
+
+      if (bData) {
+        const formatted = bData.map((b: any) => ({
+          ...b,
+          discount: b.brand_vouchers?.[0]?.resale_discount_pct || 10,
+          voucher_table_id: b.brand_vouchers?.[0]?.id,
+        }));
+        setBrandsList(formatted);
+        if (formatted.length > 0 && !vBrandId) {
+          setVBrandId(formatted[0].name);
+        }
+      }
+
+      // 2. Fetch live inventory
+      const { data: invData } = await supabase
         .from('voucher_inventory')
         .select('*')
-        .ilike('brand_name', `%${brandName}%`)
-        .eq('status', 'AVAILABLE')
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: false });
 
-      if (fetchErr || !voucher) {
-        throw new Error(`Currently ${brandName} vouchers are fully allocated. Please check back soon.`);
+      if (invData) {
+        setInventory(invData);
       }
 
-      // 2. Mark code as SOLD
-      const { error: updateErr } = await supabase
-        .from('voucher_inventory')
-        .update({ status: 'SOLD' })
-        .eq('id', voucher.id);
+      // 3. Fetch live customer orders
+      const { data: ordData } = await supabase
+        .from('customer_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (updateErr) throw updateErr;
-
-      // 3. Record customer order
-      await supabase.from('customer_orders').insert([
-        {
-          user_phone: phone.replace(/\D/g, '') || '9999999999',
-          brand_name: brandName,
-          amount_paid: dealPrice,
-          profit_earned: Math.max(0, savings),
-          payment_method: 'UPI_DIRECT',
-          payment_status: 'COMPLETED',
-          voucher_code_delivered: voucher.voucher_code,
-        }
-      ]);
-
-      // 4. Trigger Free Email / Notification Dispatch
-      try {
-        await fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            deliveryMode: deliveryMode,
-            email: email,
-            phone: phone,
-            brandName: brandName,
-            voucherCode: voucher.voucher_code,
-            pinCode: voucher.voucher_pin || '4821',
-            amountPaid: dealPrice,
-          }),
-        });
-      } catch (err) {
-        console.warn('Notification microservice skipped, code displayed on screen.');
+      if (ordData) {
+        setOrders(ordData);
+        const gmv = ordData.reduce((acc: number, item: any) => acc + (Number(item.amount_paid) || 0), 0);
+        const profit = ordData.reduce((acc: number, item: any) => acc + (Number(item.profit_earned) || 0), 0);
+        setTotalRevenue(gmv);
+        setNetProfit(profit);
       }
-
-      localStorage.setItem('bachat_user_email', email);
-      localStorage.setItem('bachat_auth_token', 'active_session');
-
-      setUnlockedCode(voucher.voucher_code);
-      setUnlockedPin(voucher.voucher_pin || '4821');
-      setStep('SUCCESS');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Verification could not be completed. Please try again.');
+    } catch (err) {
+      console.warn('Real metrics fetch warning:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchLiveMetrics();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (enteredPin === ADMIN_MASTER_PIN) {
+      sessionStorage.setItem('bachat_admin_session', 'authenticated');
+      setIsAuthenticated(true);
+      setAuthError('');
+    } else {
+      setAuthError('Invalid Security Passcode.');
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('bachat_admin_session');
+    setIsAuthenticated(false);
+  };
+
+  // Upload New Voucher to Supabase
+  const handleAddVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(true);
+
+    const newVoucher = {
+      brand_name: vBrandId,
+      voucher_code: vCode,
+      voucher_pin: vPin || '0000',
+      face_value: Number(vFace),
+      buying_price: Number(vBuy),
+      selling_price: Number(vSell),
+      status: 'AVAILABLE'
+    };
+
+    try {
+      if (supabase) {
+        const { data, error } = await supabase.from('voucher_inventory').insert([newVoucher]).select();
+        if (error) throw error;
+        if (data) {
+          setInventory([data[0], ...inventory]);
+        }
+      }
+      setVCode('');
+      setVPin('');
+      setVFace('');
+      setVBuy('');
+      setVSell('');
+      alert('Voucher successfully synced to Supabase database!');
+    } catch (err) {
+      console.warn('DB upload failed:', err);
+      setInventory([newVoucher, ...inventory]);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAddSponsor = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSp = {
+      id: Math.random().toString(),
+      company_name: sName,
+      deal_type: sPlan,
+      deal_amount: Number(sAmount),
+      payment_status: 'RECEIVED'
+    };
+    setSponsors([newSp, ...sponsors]);
+    setSponsorIncome(prev => prev + Number(sAmount));
+    setSName('');
+    setSAmount('');
+    alert('Sponsorship deal logged!');
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#09090B] text-white flex items-center justify-center p-4 antialiased">
+        <div className="bg-[#12131A] border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-white text-black flex items-center justify-center mx-auto shadow-md">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-black tracking-tight">Admin Vault Lock</h2>
+            <p className="text-xs text-zinc-400 font-medium">Enter master passcode (Default: 2026)</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                maxLength={6}
+                value={enteredPin}
+                onChange={(e) => setEnteredPin(e.target.value)}
+                placeholder="Enter Passkey"
+                className="w-full bg-black/40 border border-white/15 focus:border-emerald-400 rounded-xl py-3 px-4 text-center font-mono text-xl tracking-widest text-white outline-none"
+              />
+              {authError && <span className="text-[11px] text-rose-400 font-bold block mt-1.5">{authError}</span>}
+            </div>
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider transition shadow-sm active:scale-95"
+            >
+              Verify & Unlock
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#0C0D14] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-white"
-      >
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex antialiased">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-zinc-800 bg-[#09090B] p-6 flex flex-col justify-between hidden md:flex shrink-0 text-white">
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">
+              HQ
+            </div>
+            <div>
+              <span className="font-black text-white text-base tracking-tight leading-none block">Engine Admin</span>
+              <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest block mt-1">Live Database</span>
+            </div>
+          </div>
+
+          <nav className="space-y-1.5">
+            {[
+              { key: 'overview', label: 'Financial Overview', icon: BarChart3 },
+              { key: 'brands-manager', label: 'Brand & Discount Manager', icon: Sliders },
+              { key: 'vouchers', label: 'Voucher Inventory', icon: Tag },
+              { key: 'orders', label: 'Live Orders Ledger', icon: Users },
+              { key: 'sponsors', label: 'Brand Partnerships', icon: Building2 },
+              { key: 'affiliates', label: 'Tracking Rails', icon: LinkIcon },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeView === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveView(tab.key as any)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                    isActive 
+                      ? 'bg-white text-black shadow-sm' 
+                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
         <button
           type="button"
-          onClick={() => { setStep('DETAILS'); setErrorMessage(''); onClose(); }}
-          className="absolute top-5 right-5 text-zinc-400 hover:text-white transition"
+          onClick={handleLogout}
+          className="flex items-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 border border-white/10 transition text-xs font-bold"
         >
-          <X className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
+          <span>Lock Dashboard</span>
         </button>
+      </aside>
 
-        {/* STEP 1: DELIVERY METHOD & DETAILS */}
-        {step === 'DETAILS' && (
-          <div className="space-y-5">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                Instant Digital Delivery
-              </span>
-              <h3 className="text-xl font-black">{brandName} Voucher</h3>
-              <p className="text-xs text-zinc-400 font-medium">Select destination for your 16-digit secure code</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 text-xs font-semibold">
-              <div className="flex justify-between text-zinc-400">
-                <span>Card MRP Value:</span>
-                <span className="line-through">₹{faceValue}</span>
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span>Arbitrage Savings:</span>
-                <span className="text-emerald-400 font-black">-₹{savings}</span>
-              </div>
-              <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-black text-white">
-                <span>Total Due:</span>
-                <span className="text-emerald-400 text-lg">₹{dealPrice}</span>
-              </div>
-            </div>
-
-            {/* Free Email vs SMS Toggle */}
-            <div className="flex p-1 bg-white/5 rounded-xl border border-white/10">
-              <button
-                type="button"
-                onClick={() => setDeliveryMode('EMAIL')}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                  deliveryMode === 'EMAIL' ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Send via Email (Free)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDeliveryMode('PHONE')}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                  deliveryMode === 'PHONE' ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>SMS / WhatsApp</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleProceedToPay} className="space-y-4">
-              {deliveryMode === 'EMAIL' ? (
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                    Email Address (For Code & Invoice)
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="yourname@gmail.com"
-                    className="w-full bg-white/[0.02] border border-white/10 rounded-xl py-3 px-3.5 text-white font-bold text-xs outline-none focus:border-white"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                    Mobile Number (SMS / WhatsApp)
-                  </label>
-                  <div className="flex">
-                    <span className="bg-white/5 border border-r-0 border-white/10 px-3.5 py-3 rounded-l-xl text-zinc-400 text-xs font-bold flex items-center">
-                      +91
-                    </span>
-                    <input
-                      type="tel"
-                      required
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="98765 43210"
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-r-xl py-3 px-3.5 text-white font-bold text-xs outline-none focus:border-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
-              >
-                <span>Continue to UPI Payment</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
+      {/* Main Workstation */}
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto space-y-8 max-w-7xl mx-auto">
+        
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 capitalize tracking-tight">
+              {activeView.replace('-', ' ')} Control Center
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Direct Supabase database ingestion and dynamic management</p>
           </div>
-        )}
 
-        {/* STEP 2: UPI PAYMENT */}
-        {step === 'PAYMENT' && (
-          <div className="space-y-5 text-center">
-            <div className="space-y-1">
-              <h3 className="text-lg font-black">Scan UPI QR to Pay</h3>
-              <p className="text-xs text-zinc-400 font-medium">Pay ₹{dealPrice} to dispatch code instantly to <strong className="text-white">{deliveryMode === 'EMAIL' ? email : phone}</strong></p>
-            </div>
-
-            {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
-                {errorMessage}
-              </div>
-            )}
-
-            <div className="w-52 h-52 mx-auto p-2 rounded-2xl bg-white flex flex-col items-center justify-center shadow-2xl">
-              <img src={qrCodeUrl} alt="UPI QR" className="w-44 h-44 object-contain" />
-              <span className="text-[9px] font-mono text-zinc-800 font-bold mt-0.5">{MERCHANT_UPI}</span>
-            </div>
-
-            <a
-              href={upiIntentUrl}
-              className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition sm:hidden"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-400" />
-              <span>Open in PhonePe / GPay App</span>
-            </a>
-
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleVerifyAndAllocate}
-              disabled={loading}
-              className="w-full py-3.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
+              onClick={fetchLiveMetrics}
+              className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition shadow-sm text-slate-700"
             >
-              {loading ? (
-                <span>Confirming Order...</span>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 fill-black" />
-                  <span>I Have Paid • Unlock Verified Code</span>
-                </>
-              )}
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Sync DB</span>
             </button>
+            <span className="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live Connected
+            </span>
           </div>
-        )}
+        </header>
 
-        {/* STEP 3: CODE DELIVERED SUCCESSFULLY */}
-        {step === 'SUCCESS' && (
-          <div className="space-y-5 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
-              <Sparkles className="w-6 h-6" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-xl font-black">Voucher Dispatched!</h3>
-              <p className="text-xs text-zinc-400 font-medium">Code sent successfully to <strong className="text-white">{deliveryMode === 'EMAIL' ? email : phone}</strong></p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/15 space-y-2">
-              <span className="text-[10px] text-zinc-400 uppercase font-bold block">16-Digit Voucher Code</span>
-              <div className="font-mono text-base font-black text-emerald-400 tracking-wider select-all">
-                {unlockedCode}
+        {/* 1. OVERVIEW TAB */}
+        {activeView === 'overview' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Gross GMV</span>
+                  <DollarSign className="w-4 h-4 text-slate-900" />
+                </span>
+                <div className="text-3xl font-black text-slate-900">₹{totalRevenue.toLocaleString()}</div>
+                <span className="text-[11px] text-emerald-600 font-bold block">100% Real Order Settlements</span>
               </div>
-              {unlockedPin && (
-                <div className="text-xs text-zinc-400">
-                  PIN: <span className="font-mono text-white font-bold">{unlockedPin}</span>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (unlockedCode) {
-                    navigator.clipboard.writeText(unlockedCode);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }
-                }}
-                className="mx-auto px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-bold border border-white/15 flex items-center gap-1.5 transition"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy Code'}</span>
-              </button>
+
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Net Arbitrage Profit</span>
+                  <Wallet className="w-4 h-4 text-emerald-600" />
+                </span>
+                <div className="text-3xl font-black text-emerald-600">₹{netProfit.toLocaleString()}</div>
+                <span className="text-[11px] text-slate-500 font-medium block">Spread retained on checkouts</span>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Sponsorship Value</span>
+                  <Building2 className="w-4 h-4 text-slate-900" />
+                </span>
+                <div className="text-3xl font-black text-slate-900">₹{sponsorIncome.toLocaleString()}</div>
+                <span className="text-[11px] text-slate-500 font-medium block">Active brand integrations</span>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Available Inventory</span>
+                  <Tag className="w-4 h-4 text-slate-900" />
+                </span>
+                <div className="text-3xl font-black text-slate-900">{inventory.filter(i => i.status === 'AVAILABLE').length} Cards</div>
+                <span className="text-[11px] text-emerald-600 font-bold block">Ready in database</span>
+              </div>
             </div>
 
-            <div className="pt-2 flex flex-col gap-2">
-              <a
-                href="/dashboard"
-                className="w-full py-3 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 active:scale-[0.99]"
-              >
-                <span>View in Member Vault</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-slate-900" /> Recent Live Orders
+                </h3>
+                <button type="button" onClick={() => setActiveView('orders')} className="text-xs font-bold text-slate-900 hover:underline flex items-center gap-1">
+                  Full Ledger <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="divide-y divide-slate-100">
+                {orders.slice(0, 4).map((ord) => (
+                  <div key={ord.id} className="py-3.5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-extrabold text-slate-900">{ord.brand_name}</span>
+                      <span className="text-slate-400 block text-[11px] font-medium">+91 {ord.user_phone} • {ord.payment_method}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-black text-slate-900 text-sm">₹{ord.amount_paid}</span>
+                      <span className="text-emerald-600 font-bold block text-[10px]">Profit: +₹{ord.profit_earned}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
-      </motion.div>
+
+        {/* 2. BRAND & DISCOUNT MANAGER TAB */}
+        {activeView === 'brands-manager' && (
+          <div className="space-y-6">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Dynamic Brand Discount & Visual Manager</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Update resale discount percentages live. Changes reflect immediately across the calculation engine.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {brandsList.map((b: any) => (
+                  <div key={b.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center font-bold text-sm text-slate-900 shadow-sm">
+                        {b.name[0]}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">{b.name}</h4>
+                        <span className="text-[10px] text-slate-400 font-mono">slug: {b.slug}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Resale Discount %</span>
+                        <input 
+                          type="number" 
+                          defaultValue={b.discount} 
+                          onBlur={async (e) => {
+                            const newPct = Number(e.target.value);
+                            if (!supabase) return;
+                            if (b.voucher_table_id) {
+                              await supabase.from('brand_vouchers').update({ resale_discount_pct: newPct }).eq('id', b.voucher_table_id);
+                            } else {
+                              await supabase.from('brand_vouchers').insert([{ brand_id: b.id, wholesale_discount_pct: newPct + 3, resale_discount_pct: newPct, min_denomination: 100, max_denomination: 5000 }]);
+                            }
+                            alert(`${b.name} resale discount updated to ${newPct}%!`);
+                          }}
+                          className="w-24 bg-white border border-slate-300 rounded-xl p-2 text-xs text-center font-black text-slate-900 shadow-sm focus:outline-none focus:border-black"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. VOUCHER INVENTORY MANAGER */}
+        {activeView === 'vouchers' && (
+          <div className="space-y-8">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-slate-900" /> Upload Live Voucher to DB
+              </h2>
+
+              <form onSubmit={handleAddVoucher} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Brand Name</label>
+                  <input
+                    type="text"
+                    placeholder="Domino's Pizza"
+                    value={vBrandId}
+                    onChange={e => setVBrandId(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Face Value (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="1000"
+                    value={vFace}
+                    onChange={e => setVFace(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Buying Cost (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="900"
+                    value={vBuy}
+                    onChange={e => setVBuy(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Selling Deal Price (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="940"
+                    value={vSell}
+                    onChange={e => setVSell(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Secret 16-Digit Code</label>
+                  <input
+                    type="text"
+                    placeholder="DOM-XXXX-YYYY"
+                    value={vCode}
+                    onChange={e => setVCode(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-900 outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Voucher Secret PIN</label>
+                  <input
+                    type="text"
+                    placeholder="4821"
+                    value={vPin}
+                    onChange={e => setVPin(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-900 outline-none focus:border-black"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="px-6 py-3 rounded-xl bg-black hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider transition shadow-sm active:scale-95"
+                  >
+                    {actionLoading ? 'Syncing...' : 'Save Directly to Supabase'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 overflow-x-auto shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-900 mb-4">Stock Ledger ({inventory.length} Records)</h3>
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-400">
+                    <th className="pb-3">Merchant</th>
+                    <th className="pb-3">Face Value</th>
+                    <th className="pb-3">Cost</th>
+                    <th className="pb-3">Deal Price</th>
+                    <th className="pb-3">Gross Spread</th>
+                    <th className="pb-3">Encrypted Code</th>
+                    <th className="pb-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {inventory.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/50">
+                      <td className="py-3.5 font-bold text-slate-900">{item.brand_name}</td>
+                      <td className="py-3.5">₹{item.face_value}</td>
+                      <td className="py-3.5 text-slate-500">₹{item.buying_price}</td>
+                      <td className="py-3.5 font-black text-slate-900">₹{item.selling_price}</td>
+                      <td className="py-3.5 font-black text-emerald-600">+₹{(item.selling_price - item.buying_price)}</td>
+                      <td className="py-3.5 font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{item.voucher_code}</td>
+                      <td className="py-3.5">
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
+                          item.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 4. CUSTOMER ORDERS LEDGER */}
+        {activeView === 'orders' && (
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 overflow-x-auto shadow-sm">
+            <h3 className="text-sm font-extrabold text-slate-900 mb-4">Customer Orders & Code Deliveries</h3>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-400">
+                  <th className="pb-3">Customer Phone</th>
+                  <th className="pb-3">Merchant</th>
+                  <th className="pb-3">Settled Amount</th>
+                  <th className="pb-3">Net Arbitrage</th>
+                  <th className="pb-3">Delivered Code</th>
+                  <th className="pb-3">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {orders.map((ord) => (
+                  <tr key={ord.id} className="hover:bg-slate-50/50">
+                    <td className="py-3.5 font-bold text-slate-900">+91 {ord.user_phone}</td>
+                    <td className="py-3.5 font-semibold text-slate-700">{ord.brand_name}</td>
+                    <td className="py-3.5 font-black text-slate-900">₹{ord.amount_paid}</td>
+                    <td className="py-3.5 font-bold text-emerald-600">+₹{ord.profit_earned}</td>
+                    <td className="py-3.5 font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{ord.voucher_code_delivered || 'N/A'}</td>
+                    <td className="py-3.5 text-slate-400">{ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN') : 'Recent'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 5. SPONSORSHIPS TAB */}
+        {activeView === 'sponsors' && (
+          <div className="space-y-8">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-slate-900" /> Book Brand Sponsorship
+              </h2>
+              <form onSubmit={handleAddSponsor} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Company / Bank</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. AU Small Finance Bank"
+                    value={sName}
+                    onChange={e => setSName(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Deal Value (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="25000"
+                    value={sAmount}
+                    onChange={e => setSAmount(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Placement Slot</label>
+                  <select 
+                    value={sPlan} 
+                    onChange={e => setSPlan(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
+                  >
+                    <option value="Featured Credit Card Banner">Featured Banner</option>
+                    <option value="Calculator Default Pick">Calculator Recommendation</option>
+                    <option value="WhatsApp Community Broadcast">WhatsApp Blast</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-3">
+                  <button type="submit" className="px-5 py-2.5 rounded-xl bg-black text-white text-xs font-bold hover:bg-zinc-800 transition shadow-sm">
+                    Confirm Deal
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-900 mb-4">Active Brand Partners</h3>
+              <div className="space-y-3">
+                {sponsors.map(sp => (
+                  <div key={sp.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+                    <div>
+                      <span className="font-extrabold text-slate-900 text-sm">{sp.company_name}</span>
+                      <span className="text-xs text-slate-500 block">{sp.deal_type}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-black text-slate-900 text-sm">₹{sp.deal_amount.toLocaleString()}</span>
+                      <span className="text-[10px] text-emerald-600 font-bold block uppercase">{sp.payment_status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. AFFILIATES TAB */}
+        {activeView === 'affiliates' && (
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <LinkIcon className="w-4 h-4 text-slate-900" /> Active Tracking Integrations
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">Dynamic redirection links configured for arbitrage margins.</p>
+
+            <div className="space-y-3 pt-2">
+              {[
+                { brand: 'Flipkart Electronics', network: 'Cuelinks', rate: 'Up to 7.2%', url: 'https://cuelinks.com/track/flipkart' },
+                { brand: 'SBI Cashback Credit Card', network: 'EarnKaro Finance', rate: '₹2,100 per card', url: 'https://earnkaro.com/sbi-apply' },
+                { brand: 'Swiggy Gourmet Pass', network: 'Direct Merchant', rate: '8.5% Commission', url: 'https://swiggy.com/corporate' },
+              ].map((link, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 text-sm">{link.brand}</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-[10px] font-bold">{link.network}</span>
+                    </div>
+                    <span className="font-mono text-slate-400 text-[11px] block mt-1">{link.url}</span>
+                  </div>
+                  <div className="sm:text-right">
+                    <span className="font-black text-emerald-600 block">{link.rate}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Auto-Routing Active</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }
