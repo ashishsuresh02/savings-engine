@@ -5,7 +5,6 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { 
   ArrowUpRight, 
   CreditCard, 
-  Sparkles, 
   Zap, 
   Check, 
   Copy, 
@@ -14,14 +13,9 @@ import {
   Gift, 
   ArrowRight, 
   ChevronDown, 
-  CheckCircle2, 
-  Plus, 
   Ticket, 
   Layers, 
-  Search, 
-  QrCode, 
-  ExternalLink,
-  Smartphone
+  Search
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import DynamicFintechNavbar from '@/components/Navbar';
@@ -30,6 +24,7 @@ import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';
 import SpotlightSearch from '@/components/SpotlightSearch';
 import SponsoredReelsFeed from '@/components/SponsoredReelsFeed';
+import CheckoutModal from '@/components/CheckoutModal';
 
 // REAL BRAND VISUALS & LOGO ASSETS
 const BRAND_VISUALS: Record<string, { banner: string; logoUrl: string; fallbackText: string }> = {
@@ -212,260 +207,6 @@ function StackingVisualizer() {
   );
 }
 
-// REAL UPI CHECKOUT MODAL
-function CheckoutModal({
-  isOpen,
-  onClose,
-  brandName,
-  faceValue,
-  dealPrice,
-  savings,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  brandName: string;
-  faceValue: number;
-  dealPrice: number;
-  savings: number;
-}) {
-  const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'SUCCESS'>('DETAILS');
-  const [phone, setPhone] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [unlockedCode, setUnlockedCode] = useState<string | null>(null);
-  const [unlockedPin, setUnlockedPin] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
-
-  const MERCHANT_UPI = "ashishkumar@upi";
-  const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=AllInOneVouchers&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandName}`)}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
-
-  const handleProceedToPay = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phone.replace(/\D/g, '').length !== 10) {
-      alert('Enter a valid 10-digit mobile number.');
-      return;
-    }
-    setStep('PAYMENT');
-  };
-
-  const handleVerifyPayment = async () => {
-    setLoading(true);
-
-    try {
-      let finalCode = `${brandName.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}-LIVE`;
-      let finalPin = `${Math.floor(1000 + Math.random() * 9000)}`;
-
-      if (supabase) {
-        const { data: voucher } = await supabase
-          .from('voucher_inventory')
-          .select('*')
-          .ilike('brand_name', `%${brandName}%`)
-          .eq('status', 'AVAILABLE')
-          .limit(1)
-          .single();
-
-        if (voucher) {
-          finalCode = voucher.voucher_code;
-          finalPin = voucher.voucher_pin || '4821';
-          await supabase.from('voucher_inventory').update({ status: 'SOLD' }).eq('id', voucher.id);
-        }
-
-        await supabase.from('customer_orders').insert([
-          {
-            user_phone: phone.replace(/\D/g, ''),
-            brand_name: brandName,
-            amount_paid: dealPrice,
-            profit_earned: Math.max(0, savings),
-            payment_method: 'UPI_DIRECT',
-            payment_status: 'COMPLETED',
-            voucher_code_delivered: finalCode,
-          }
-        ]);
-      }
-
-      try {
-        await fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: phone,
-            brandName: brandName,
-            voucherCode: finalCode,
-            pinCode: finalPin,
-            amountPaid: dealPrice,
-          }),
-        });
-      } catch (err) {}
-
-      localStorage.setItem('bachat_user_phone', phone.replace(/\D/g, ''));
-      localStorage.setItem('bachat_auth_token', 'active_session');
-
-      setUnlockedCode(finalCode);
-      setUnlockedPin(finalPin);
-      setStep('SUCCESS');
-    } catch (err) {
-      setUnlockedCode(`${brandName.slice(0, 3).toUpperCase()}-9824-SAVE`);
-      setUnlockedPin('4821');
-      setStep('SUCCESS');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#12131A] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-white"
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 text-zinc-400 hover:text-white transition"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {step === 'DETAILS' && (
-          <div className="space-y-5">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                Instant Digital Delivery
-              </span>
-              <h3 className="text-xl font-black">{brandName} Voucher</h3>
-              <p className="text-xs text-zinc-400">Order verification and vault allocation</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-xs font-bold">
-              <div className="flex justify-between text-zinc-400">
-                <span>Voucher Value (MRP):</span>
-                <span className="line-through">₹{faceValue}</span>
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span>Calculated Arbitrage Savings:</span>
-                <span className="text-emerald-400 font-black">-₹{savings}</span>
-              </div>
-              <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-black text-white">
-                <span>Total Due Now:</span>
-                <span className="text-emerald-400 text-lg">₹{dealPrice}</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleProceedToPay} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Mobile Number (For Vault Storage)
-                </label>
-                <div className="flex">
-                  <span className="bg-white/5 border border-r-0 border-white/10 px-3.5 py-2.5 rounded-l-xl text-zinc-400 text-xs font-bold flex items-center">
-                    +91
-                  </span>
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="98765 43210"
-                    className="w-full bg-white/[0.02] border border-white/10 rounded-r-xl py-2.5 px-3.5 text-white font-bold text-xs outline-none focus:border-emerald-400"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
-              >
-                <span>Proceed to UPI QR</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        )}
-
-        {step === 'PAYMENT' && (
-          <div className="space-y-5 text-center">
-            <div className="space-y-1">
-              <h3 className="text-lg font-black">Scan UPI QR to Pay</h3>
-              <p className="text-xs text-zinc-400">Pay exactly ₹{dealPrice} via any UPI app</p>
-            </div>
-
-            <div className="w-48 h-48 mx-auto p-2 rounded-2xl bg-white flex flex-col items-center justify-center shadow-lg">
-              <img src={qrCodeUrl} alt="UPI QR" className="w-36 h-36 object-contain" />
-              <span className="text-[9px] font-mono text-zinc-800 font-bold mt-1">{MERCHANT_UPI}</span>
-            </div>
-
-            <a
-              href={upiIntentUrl}
-              className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition sm:hidden"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-400" />
-              <span>Open PhonePe / GPay App</span>
-            </a>
-
-            <button
-              onClick={handleVerifyPayment}
-              disabled={loading}
-              className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-            >
-              {loading ? <span>Confirming Transaction...</span> : <span>I Have Paid • Unlock Code</span>}
-            </button>
-          </div>
-        )}
-
-        {step === 'SUCCESS' && (
-          <div className="space-y-5 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
-              <Sparkles className="w-6 h-6" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-xl font-black text-white">Voucher Unlocked!</h3>
-              <p className="text-xs text-zinc-400">Redeem directly on official {brandName} checkout</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
-              <span className="text-[10px] text-zinc-400 uppercase font-bold block">16-Digit Voucher Code</span>
-              <div className="font-mono text-base font-black text-emerald-400 tracking-wider select-all">
-                {unlockedCode}
-              </div>
-              {unlockedPin && (
-                <div className="text-xs text-zinc-400">
-                  PIN: <span className="font-mono text-white font-bold">{unlockedPin}</span>
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  if (unlockedCode) {
-                    navigator.clipboard.writeText(unlockedCode);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }
-                }}
-                className="mx-auto px-4 py-1.5 rounded-lg bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5 transition"
-              >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy Code'}</span>
-              </button>
-            </div>
-
-            <a
-              href="/dashboard"
-              className="w-full py-3 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5"
-            >
-              <span>View in Vault</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-}
-
 // MAIN PAGE
 export default function Home() {
   const [brands, setBrands] = useState<any[]>([]);
@@ -577,13 +318,16 @@ export default function Home() {
   }, []);
 
   // Live Stacker Calculation
-  const handleCalculate = () => {
-    const numCart = Number(cartAmount);
+  const handleCalculate = (overrideAmount?: string, overrideBrand?: string) => {
+    const activeAmount = overrideAmount || cartAmount;
+    const activeBrandSlug = overrideBrand || selectedBrand;
+
+    const numCart = Number(activeAmount);
     if (!numCart || numCart <= 0) return;
     
     setCalcLoading(true);
     setTimeout(() => {
-      const currentBrand = brands.find((b) => b.slug === selectedBrand) || brands[0];
+      const currentBrand = brands.find((b) => b.slug === activeBrandSlug) || brands[0];
       const discountPct = Number(currentBrand?.discount) || 5.0;
       const voucherCut = Math.round((numCart * discountPct) / 100);
       const postVoucher = numCart - voucherCut;
@@ -638,24 +382,90 @@ export default function Home() {
         brandCount={brands.length || 6}
       />
 
-      {/* 2. BLACK HERO SECTION */}
-      <header className="bg-[#09090B] text-white px-6 pt-24 pb-20 rounded-b-[40px] shadow-2xl relative">
-        <div className="max-w-4xl mx-auto pt-6 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-[11px] font-bold text-emerald-400">
+      {/* 2. BLACK HERO SECTION WITH QUICK ENGINE WORKSTATION */}
+      <header className="bg-[#09090B] text-white px-6 pt-28 pb-24 rounded-b-[44px] shadow-2xl relative">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-[11px] font-bold text-emerald-400"
+          >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Over 12,000+ verified vouchers & live promo codes</span>
-          </div>
+          </motion.div>
 
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.1] text-white">
+          <motion.h1 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.1] text-white"
+          >
             Big Brands.<br />
             <span className="text-zinc-400">Bigger Savings.</span>
-          </h1>
+          </motion.h1>
 
-          <p className="text-sm text-zinc-400 max-w-md mx-auto font-medium">
+          <motion.p 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+            className="text-sm text-zinc-400 max-w-md mx-auto font-medium"
+          >
             Stack wholesale e-vouchers, verified merchant promo codes, and credit card cashbacks to unlock the lowest checkout price.
-          </p>
+          </motion.p>
 
-          <div className="max-w-xl mx-auto relative pt-2">
+          {/* Quick Engine Command Bar: User ko scroll na karna pade */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96 }} 
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25 }}
+            className="max-w-2xl mx-auto p-2 bg-white/[0.05] border border-white/10 rounded-2xl sm:rounded-full backdrop-blur-xl flex flex-col sm:flex-row items-center gap-2 shadow-2xl"
+          >
+            <div className="flex items-center gap-2 px-3 w-full sm:w-auto">
+              <span className="text-zinc-500 font-bold text-sm">₹</span>
+              <input
+                type="number"
+                value={cartAmount}
+                onChange={(e) => setCartAmount(e.target.value)}
+                placeholder="Cart amount..."
+                className="bg-transparent text-white font-black text-sm outline-none w-full sm:w-28"
+              />
+            </div>
+
+            <div className="h-4 w-px bg-white/10 hidden sm:block" />
+
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto px-2 py-1 scrollbar-none">
+              {brands.slice(0, 4).map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => {
+                    setSelectedBrand(b.slug);
+                    handleCalculate(cartAmount, b.slug);
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 ${
+                    selectedBrand === b.slug 
+                      ? 'bg-white text-black' 
+                      : 'bg-white/5 hover:bg-white/10 text-zinc-300'
+                  }`}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                handleCalculate();
+                document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full sm:w-auto sm:ml-auto px-5 py-2.5 rounded-xl sm:rounded-full bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 active:scale-95"
+            >
+              <Zap className="w-3.5 h-3.5 fill-black" />
+              <span>Calculate</span>
+            </button>
+          </motion.div>
+
+          {/* Search Input Bar */}
+          <div className="max-w-xl mx-auto relative pt-1">
             <input
               type="text"
               value={searchQuery}
@@ -692,6 +502,7 @@ export default function Home() {
                   key={b.id}
                   onClick={() => {
                     setSelectedBrand(b.slug);
+                    handleCalculate(cartAmount, b.slug);
                     document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`p-3.5 rounded-2xl border transition-all flex flex-col items-center gap-2 group ${
@@ -771,7 +582,7 @@ export default function Home() {
               </div>
 
               <button
-                onClick={handleCalculate}
+                onClick={() => handleCalculate()}
                 disabled={calcLoading}
                 className="w-full py-4 rounded-xl bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2"
               >
@@ -967,6 +778,7 @@ export default function Home() {
                       onClick={() => {
                         setSelectedBrand(b.slug);
                         setCartAmount('1000');
+                        handleCalculate('1000', b.slug);
                         document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]"
@@ -1034,6 +846,7 @@ export default function Home() {
       <SponsoredReelsFeed
         onSelectBrand={(slug) => {
           setSelectedBrand(slug);
+          handleCalculate(cartAmount, slug);
           document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
@@ -1082,16 +895,18 @@ export default function Home() {
             document.getElementById('coupons')?.scrollIntoView({ behavior: 'smooth' });
           } else {
             setSelectedBrand(slug);
+            handleCalculate(cartAmount, slug);
             document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
           }
         }}
       />
 
-      {/* CHECKOUT MODAL */}
+      {/* CHECKOUT MODAL - MODULAR & TYPE-SAFE */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
-        brandName={brands.find(b => b.slug === selectedBrand)?.name || 'Store Voucher'}
+        brandName={brands.find((b) => b.slug === selectedBrand)?.name || selectedBrand}
+        brandSlug={selectedBrand}
         faceValue={Number(cartAmount) || 1000}
         dealPrice={result?.bestEffectiveCost || 950}
         savings={result?.totalSavings || 50}
