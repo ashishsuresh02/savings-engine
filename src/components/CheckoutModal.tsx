@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Copy, Check, ArrowRight, Sparkles, Zap, ExternalLink, Smartphone, Mail } from 'lucide-react';
+import { X, Copy, Check, ArrowRight, Sparkles, Zap, ExternalLink, Smartphone, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface CheckoutModalProps {
@@ -27,7 +27,8 @@ export default function CheckoutModal({
   const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'SUCCESS'>('DETAILS');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'EMAIL' | 'PHONE'>('EMAIL'); // Toggle between Email & Phone
+  const [deliveryMode, setDeliveryMode] = useState<'EMAIL' | 'PHONE'>('EMAIL');
+  const [utrNumber, setUtrNumber] = useState(''); // UTR State added
   const [loading, setLoading] = useState(false);
   const [unlockedCode, setUnlockedCode] = useState<string | null>(null);
   const [unlockedPin, setUnlockedPin] = useState<string | null>(null);
@@ -36,8 +37,7 @@ export default function CheckoutModal({
 
   if (!isOpen) return null;
 
-  // Real Dynamic UPI VPA Details
-  const MERCHANT_UPI = "ashishsuresh502-1@okhdfcbank"; // Apna UPI ID yahan configure hai
+  const MERCHANT_UPI = "ashishkumar@upi"; 
   const MERCHANT_NAME = "AllInOneVouchers";
   const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandSlug}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
@@ -58,15 +58,31 @@ export default function CheckoutModal({
     setStep('PAYMENT');
   };
 
-  // REAL CODE ALLOCATION & FREE EMAIL DISPATCH
+  // VERIFY WITH UTR & ALLOCATE CODE
   const handleVerifyAndAllocate = async () => {
+    if (!utrNumber || utrNumber.trim().length < 8) {
+      setErrorMessage('Please enter a valid 12-digit UPI / UTR Reference Number.');
+      return;
+    }
+
     setLoading(true);
     setErrorMessage('');
 
     try {
       if (!supabase) throw new Error('Database connection unavailable');
 
-      // 1. Inventory check for AVAILABLE code
+      // 1. Check if UTR was already used to prevent duplicate fraud
+      const { data: existingOrder } = await supabase
+        .from('customer_orders')
+        .select('id')
+        .eq('payment_method', utrNumber.trim())
+        .single();
+
+      if (existingOrder) {
+        throw new Error('This UTR transaction number has already been used.');
+      }
+
+      // 2. Inventory check for AVAILABLE code
       const { data: voucher, error: fetchErr } = await supabase
         .from('voucher_inventory')
         .select('*')
@@ -79,7 +95,7 @@ export default function CheckoutModal({
         throw new Error(`Currently ${brandName} vouchers are fully allocated. Please check back soon.`);
       }
 
-      // 2. Mark code as SOLD
+      // 3. Mark code as SOLD
       const { error: updateErr } = await supabase
         .from('voucher_inventory')
         .update({ status: 'SOLD' })
@@ -87,20 +103,20 @@ export default function CheckoutModal({
 
       if (updateErr) throw updateErr;
 
-      // 3. Record customer order
+      // 4. Record customer order with UTR reference stored in payment_method column
       await supabase.from('customer_orders').insert([
         {
           user_phone: phone.replace(/\D/g, '') || '9999999999',
           brand_name: brandName,
           amount_paid: dealPrice,
           profit_earned: Math.max(0, savings),
-          payment_method: 'UPI_DIRECT',
+          payment_method: `UTR_${utrNumber.trim()}`, // Storing UTR for cross-verification
           payment_status: 'COMPLETED',
           voucher_code_delivered: voucher.voucher_code,
         }
       ]);
 
-      // 4. Trigger Free Email / Notification Dispatch
+      // 5. Trigger Email Dispatch
       try {
         await fetch('/api/notify', {
           method: 'POST',
@@ -116,17 +132,14 @@ export default function CheckoutModal({
           }),
         });
       } catch (err) {
-        console.warn('Notification microservice skipped, code displayed on screen.');
+        console.warn('Notification microservice skipped.');
       }
-
-      localStorage.setItem('bachat_user_email', email);
-      localStorage.setItem('bachat_auth_token', 'active_session');
 
       setUnlockedCode(voucher.voucher_code);
       setUnlockedPin(voucher.voucher_pin || '4821');
       setStep('SUCCESS');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Verification could not be completed. Please try again.');
+      setErrorMessage(err.message || 'Verification could not be completed.');
     } finally {
       setLoading(false);
     }
@@ -148,7 +161,6 @@ export default function CheckoutModal({
           <X className="w-5 h-5" />
         </button>
 
-        {/* STEP 1: DELIVERY METHOD & DETAILS */}
         {step === 'DETAILS' && (
           <div className="space-y-5">
             <div className="space-y-1">
@@ -174,7 +186,6 @@ export default function CheckoutModal({
               </div>
             </div>
 
-            {/* Free Email vs SMS Toggle */}
             <div className="flex p-1 bg-white/5 rounded-xl border border-white/10">
               <button
                 type="button"
@@ -202,7 +213,7 @@ export default function CheckoutModal({
               {deliveryMode === 'EMAIL' ? (
                 <div>
                   <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                    Email Address (For Code & Invoice)
+                    Email Address
                   </label>
                   <input
                     type="email"
@@ -216,7 +227,7 @@ export default function CheckoutModal({
               ) : (
                 <div>
                   <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                    Mobile Number (SMS / WhatsApp)
+                    Mobile Number
                   </label>
                   <div className="flex">
                     <span className="bg-white/5 border border-r-0 border-white/10 px-3.5 py-3 rounded-l-xl text-zinc-400 text-xs font-bold flex items-center">
@@ -246,12 +257,11 @@ export default function CheckoutModal({
           </div>
         )}
 
-        {/* STEP 2: UPI PAYMENT */}
         {step === 'PAYMENT' && (
-          <div className="space-y-5 text-center">
+          <div className="space-y-4 text-center">
             <div className="space-y-1">
-              <h3 className="text-lg font-black">Scan UPI QR to Pay</h3>
-              <p className="text-xs text-zinc-400 font-medium">Pay ₹{dealPrice} to dispatch code instantly to <strong className="text-white">{deliveryMode === 'EMAIL' ? email : phone}</strong></p>
+              <h3 className="text-lg font-black">Scan & Pay ₹{dealPrice}</h3>
+              <p className="text-xs text-zinc-400 font-medium">Enter your 12-digit UPI UTR Reference Number after paying</p>
             </div>
 
             {errorMessage && (
@@ -260,18 +270,25 @@ export default function CheckoutModal({
               </div>
             )}
 
-            <div className="w-52 h-52 mx-auto p-2 rounded-2xl bg-white flex flex-col items-center justify-center shadow-2xl">
-              <img src={qrCodeUrl} alt="UPI QR" className="w-44 h-44 object-contain" />
-              <span className="text-[9px] font-mono text-zinc-800 font-bold mt-0.5">{MERCHANT_UPI}</span>
+            <div className="w-44 h-44 mx-auto p-2 rounded-2xl bg-white flex flex-col items-center justify-center shadow-xl">
+              <img src={qrCodeUrl} alt="UPI QR" className="w-36 h-36 object-contain" />
+              <span className="text-[8px] font-mono text-zinc-800 font-bold mt-0.5">{MERCHANT_UPI}</span>
             </div>
 
-            <a
-              href={upiIntentUrl}
-              className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition sm:hidden"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-400" />
-              <span>Open in PhonePe / GPay App</span>
-            </a>
+            {/* UTR Input Box */}
+            <div className="text-left space-y-1.5">
+              <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
+                Enter 12-Digit UPI Reference (UTR) Number *
+              </label>
+              <input
+                type="text"
+                maxLength={16}
+                value={utrNumber}
+                onChange={(e) => setUtrNumber(e.target.value)}
+                placeholder="e.g. 432198765432"
+                className="w-full bg-white/[0.03] border border-white/15 rounded-xl py-3 px-3.5 text-white font-mono font-bold text-sm tracking-wider outline-none focus:border-emerald-400"
+              />
+            </div>
 
             <button
               type="button"
@@ -280,18 +297,17 @@ export default function CheckoutModal({
               className="w-full py-3.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               {loading ? (
-                <span>Confirming Order...</span>
+                <span>Verifying UTR...</span>
               ) : (
                 <>
-                  <Zap className="w-4 h-4 fill-black" />
-                  <span>I Have Paid • Unlock Verified Code</span>
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Verify UTR & Unlock Code</span>
                 </>
               )}
             </button>
           </div>
         )}
 
-        {/* STEP 3: CODE DELIVERED SUCCESSFULLY */}
         {step === 'SUCCESS' && (
           <div className="space-y-5 text-center">
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
@@ -300,7 +316,7 @@ export default function CheckoutModal({
 
             <div className="space-y-1">
               <h3 className="text-xl font-black">Voucher Dispatched!</h3>
-              <p className="text-xs text-zinc-400 font-medium">Code sent successfully to <strong className="text-white">{deliveryMode === 'EMAIL' ? email : phone}</strong></p>
+              <p className="text-xs text-zinc-400 font-medium">Code sent successfully to your destination</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/15 space-y-2">
