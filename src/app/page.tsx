@@ -605,34 +605,28 @@ export default function Home() {
                 )}
               </div>
 
-              {result && (
-                <div className="pt-4 border-t border-white/10 space-y-1.5 text-xs text-zinc-300 my-4">
-                  <div className="flex justify-between">
-                    <span>Wholesale Voucher Cut:</span>
-                    <span className="font-bold text-emerald-400">-₹{result.breakdown.voucherCut}</span>
-                  </div>
-                  {result.breakdown.couponCut > 0 && (
-                    <div className="flex justify-between">
-                      <span>Promo ({result.breakdown.couponCode}):</span>
-                      <span className="font-bold text-emerald-400">-₹{result.breakdown.couponCut}</span>
-                    </div>
-                  )}
-                  {result.breakdown.cardCashback > 0 && (
-                    <div className="flex justify-between">
-                      <span>5% Card Return:</span>
-                      <span className="font-bold text-emerald-400">-₹{result.breakdown.cardCashback}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Actions: Dono monetization channels ek sath */}
+              <div className="space-y-2 mt-6">
+                {/* Channel 1: Arbitrage Voucher Sale (Aapka Direct Profit) */}
+                <button
+                  onClick={() => setIsCheckoutOpen(true)}
+                  className="w-full py-3.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                >
+                  <span>Buy Prepaid Voucher</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
 
-              <button
-                onClick={() => setIsCheckoutOpen(true)}
-                className="mt-4 w-full py-3.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
-              >
-                <span>Get Voucher Now</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                {/* Channel 2: Affiliate Link (Redirect with Tracking) */}
+                <a
+                  href={brands.find(b => b.slug === selectedBrand)?.buy_url || 'https://google.com'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5"
+                >
+                  <span>Visit Store with Promo</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
