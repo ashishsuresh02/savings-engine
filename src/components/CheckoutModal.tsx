@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Copy, Check, QrCode, ArrowRight, Sparkles, Zap, Lock, ExternalLink, Smartphone } from 'lucide-react';
+import { X, Copy, Check, ArrowRight, Sparkles, Zap, Lock, ExternalLink, Smartphone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface CheckoutModalProps {
@@ -34,8 +34,8 @@ export default function CheckoutModal({
 
   if (!isOpen) return null;
 
-  // Real UPI VPA details (Replace with your UPI ID)
-  const MERCHANT_UPI = "ashishkumar@upi"; // Apna real UPI ID yahan daalein
+  // Real Dynamic UPI VPA Details
+  const MERCHANT_UPI = "ashishkumar@upi"; // Apna UPI ID
   const MERCHANT_NAME = "AllInOneVouchers";
   const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandSlug}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
@@ -43,13 +43,13 @@ export default function CheckoutModal({
   const handleProceedToPay = (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.replace(/\D/g, '').length !== 10) {
-      alert('10-digit valid mobile number enter karein.');
+      alert('Please enter a valid 10-digit mobile number.');
       return;
     }
     setStep('PAYMENT');
   };
 
-  // REAL CODE ALLOCATION: Pick 1 Real Voucher from Supabase inventory
+  // REAL CODE ALLOCATION: Pull available code from Supabase inventory
   const handleVerifyAndAllocate = async () => {
     setLoading(true);
     setErrorMessage('');
@@ -67,10 +67,10 @@ export default function CheckoutModal({
         .single();
 
       if (fetchErr || !voucher) {
-        throw new Error(`Currently ${brandName} vouchers are sold out. Inventory refresh in progress.`);
+        throw new Error(`Currently ${brandName} vouchers are fully allocated. Refreshing inventory.`);
       }
 
-      // 2. Mark code as SOLD so no one else gets it
+      // 2. Mark code as SOLD
       const { error: updateErr } = await supabase
         .from('voucher_inventory')
         .update({ status: 'SOLD' })
@@ -78,7 +78,7 @@ export default function CheckoutModal({
 
       if (updateErr) throw updateErr;
 
-      // 3. Record verified customer order
+      // 3. Record customer order
       await supabase.from('customer_orders').insert([
         {
           user_phone: phone.replace(/\D/g, ''),
@@ -91,7 +91,21 @@ export default function CheckoutModal({
         }
       ]);
 
-      // 4. Save phone locally for /dashboard retrieval
+      // 4. Trigger WhatsApp / SMS Dispatch Microservice
+      try {
+        await fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: phone,
+            brandName: brandName,
+            voucherCode: voucher.voucher_code,
+            pinCode: voucher.voucher_pin || '4821',
+            amountPaid: dealPrice,
+          }),
+        });
+      } catch (err) {}
+
       localStorage.setItem('bachat_user_phone', phone.replace(/\D/g, ''));
       localStorage.setItem('bachat_auth_token', 'active_session');
 
@@ -99,19 +113,19 @@ export default function CheckoutModal({
       setUnlockedPin(voucher.voucher_pin || '4821');
       setStep('SUCCESS');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Could not verify voucher. Please try again.');
+      setErrorMessage(err.message || 'Verification could not be completed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#11131D] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative"
+        className="bg-[#0C0D14] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-white"
       >
         <button
           onClick={() => { setStep('DETAILS'); setErrorMessage(''); onClose(); }}
@@ -120,39 +134,39 @@ export default function CheckoutModal({
           <X className="w-5 h-5" />
         </button>
 
-        {/* STEP 1: CUSTOMER PHONE */}
+        {/* STEP 1: CUSTOMER PHONE & ORDER BREAKDOWN */}
         {step === 'DETAILS' && (
           <div className="space-y-5">
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                 Direct Inventory Delivery
               </span>
-              <h3 className="text-xl font-black text-white">{brandName} Gift Voucher</h3>
-              <p className="text-xs text-zinc-400">Order verification & voucher dispatch</p>
+              <h3 className="text-xl font-black">{brandName} Voucher</h3>
+              <p className="text-xs text-zinc-400 font-medium">Order verification & delivery destination</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2 text-xs">
+            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 text-xs font-semibold">
               <div className="flex justify-between text-zinc-400">
                 <span>Card MRP Value:</span>
                 <span className="line-through">₹{faceValue}</span>
               </div>
-              <div className="flex justify-between text-zinc-400">
-                <span>Net Savings Calculated:</span>
-                <span className="text-emerald-400 font-bold">-₹{savings}</span>
+              <div className="flex justify-between text-zinc-300">
+                <span>Calculated Arbitrage Savings:</span>
+                <span className="text-emerald-400 font-black">-₹{savings}</span>
               </div>
-              <div className="pt-2 border-t border-white/[0.06] flex justify-between text-sm font-black text-white">
+              <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-black text-white">
                 <span>Total Due:</span>
-                <span className="text-emerald-400 text-base">₹{dealPrice}</span>
+                <span className="text-emerald-400 text-lg">₹{dealPrice}</span>
               </div>
             </div>
 
             <form onSubmit={handleProceedToPay} className="space-y-4">
               <div>
                 <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Mobile Number (For Voucher Access & Vault)
+                  Mobile Number (For Vault Access & Receipt)
                 </label>
                 <div className="flex">
-                  <span className="bg-white/[0.04] border border-r-0 border-white/[0.1] px-3 py-2.5 rounded-l-xl text-zinc-400 text-xs flex items-center">
+                  <span className="bg-white/5 border border-r-0 border-white/10 px-3.5 py-2.5 rounded-l-xl text-zinc-400 text-xs font-bold flex items-center">
                     +91
                   </span>
                   <input
@@ -162,16 +176,16 @@ export default function CheckoutModal({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="98765 43210"
-                    className="w-full bg-white/[0.02] border border-white/[0.1] rounded-r-xl py-2.5 px-3.5 text-white text-xs outline-none focus:border-emerald-400"
+                    className="w-full bg-white/[0.02] border border-white/10 rounded-r-xl py-2.5 px-3.5 text-white font-bold text-xs outline-none focus:border-white"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
               >
-                <span>Proceed to UPI Payment</span>
+                <span>Continue to UPI Payment</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -182,8 +196,8 @@ export default function CheckoutModal({
         {step === 'PAYMENT' && (
           <div className="space-y-5 text-center">
             <div className="space-y-1">
-              <h3 className="text-lg font-black text-white">Scan Real UPI QR</h3>
-              <p className="text-xs text-zinc-400">Pay exactly ₹{dealPrice} to lock code</p>
+              <h3 className="text-lg font-black">Scan Real UPI QR</h3>
+              <p className="text-xs text-zinc-400 font-medium">Pay exactly ₹{dealPrice} to release your voucher code</p>
             </div>
 
             {errorMessage && (
@@ -192,28 +206,26 @@ export default function CheckoutModal({
               </div>
             )}
 
-            {/* Live QR Generated for exact amount */}
             <div className="w-52 h-52 mx-auto p-2 rounded-2xl bg-white flex flex-col items-center justify-center shadow-2xl">
               <img src={qrCodeUrl} alt="UPI Payment QR" className="w-44 h-44 object-contain" />
-              <span className="text-[9px] font-mono text-zinc-700 font-bold">{MERCHANT_UPI}</span>
+              <span className="text-[9px] font-mono text-zinc-800 font-bold mt-0.5">{MERCHANT_UPI}</span>
             </div>
 
-            {/* Mobile Instant App Trigger Button */}
             <a
               href={upiIntentUrl}
-              className="w-full py-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition sm:hidden"
+              className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition sm:hidden"
             >
               <Smartphone className="w-4 h-4 text-emerald-400" />
-              <span>Open GPay / PhonePe App</span>
+              <span>Open in PhonePe / GPay App</span>
             </a>
 
             <button
               onClick={handleVerifyAndAllocate}
               disabled={loading}
-              className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               {loading ? (
-                <span>Checking Database Inventory...</span>
+                <span>Confirming Order...</span>
               ) : (
                 <>
                   <Zap className="w-4 h-4 fill-black" />
@@ -224,19 +236,19 @@ export default function CheckoutModal({
           </div>
         )}
 
-        {/* STEP 3: CODE DELIVERED FROM REAL INVENTORY */}
+        {/* STEP 3: INSTANT CODE DELIVERED */}
         {step === 'SUCCESS' && (
           <div className="space-y-5 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
               <Sparkles className="w-6 h-6" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-white">Voucher Unlocked!</h3>
-              <p className="text-xs text-zinc-400">Valid on official {brandName} Checkout</p>
+              <h3 className="text-xl font-black">Voucher Code Ready!</h3>
+              <p className="text-xs text-zinc-400 font-medium">Valid for instant checkout redemption on official {brandName} app</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.04] border border-emerald-500/40 space-y-2">
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/15 space-y-2">
               <span className="text-[10px] text-zinc-400 uppercase font-bold block">16-Digit Voucher Code</span>
               <div className="font-mono text-base font-black text-emerald-400 tracking-wider select-all">
                 {unlockedCode}
@@ -254,9 +266,9 @@ export default function CheckoutModal({
                     setTimeout(() => setCopied(false), 2000);
                   }
                 }}
-                className="mx-auto px-4 py-1.5 rounded-lg bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5 transition"
+                className="mx-auto px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-bold border border-white/15 flex items-center gap-1.5 transition"
               >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy Code'}</span>
               </button>
             </div>
@@ -264,9 +276,9 @@ export default function CheckoutModal({
             <div className="pt-2 flex flex-col gap-2">
               <a
                 href="/dashboard"
-                className="w-full py-3 bg-white/[0.05] hover:bg-white/[0.1] text-white font-bold text-xs rounded-xl border border-white/[0.1] transition flex items-center justify-center gap-1.5"
+                className="w-full py-3 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 active:scale-[0.99]"
               >
-                <span>Check in My BachatVault</span>
+                <span>View in Member Vault</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
