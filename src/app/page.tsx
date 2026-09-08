@@ -23,7 +23,7 @@ import {
   ExternalLink,
   Smartphone
 } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import DynamicFintechNavbar from '@/components/Navbar';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
