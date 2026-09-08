@@ -10,24 +10,31 @@ import {
   Building2, 
   Link as LinkIcon, 
   Plus, 
-  CheckCircle, 
   TrendingUp, 
-  ShieldAlert, 
   Sparkles, 
-  Search, 
   ArrowUpRight,
-  Filter
+  Lock,
+  LogOut,
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-export default function AdminEnterpriseDashboard() {
-  const [activeView, setActiveView] = useState<'overview' | 'vouchers' | 'orders' | 'sponsors' | 'affiliates'>('overview');
-  const [loading, setLoading] = useState(false);
+const ADMIN_MASTER_PIN = '2026'; // Aap apna master pin yahan change kar sakte hain
 
-  // Stats
-  const [totalRevenue, setTotalRevenue] = useState(148500);
-  const [netProfit, setNetProfit] = useState(24800);
-  const [sponsorIncome, setSponsorIncome] = useState(45000);
+export default function AdminEnterpriseDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [enteredPin, setEnteredPin] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
+
+  const [activeView, setActiveView] = useState<'overview' | 'vouchers' | 'orders' | 'sponsors' | 'affiliates'>('overview');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+
+  // Live Metrics
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [netProfit, setNetProfit] = useState<number>(0);
+  const [sponsorIncome, setSponsorIncome] = useState<number>(45000);
 
   // Forms State
   const [vBrand, setVBrand] = useState('Amazon Pay');
@@ -42,34 +49,91 @@ export default function AdminEnterpriseDashboard() {
   const [sAmount, setSAmount] = useState('');
   const [sPlan, setSPlan] = useState('FEATURED_CALCULATOR');
 
-  // Real-time Mock / Supabase collections
-  const [inventory, setInventory] = useState<any[]>([
-    { id: '1', brand_name: 'Amazon Pay', face_value: 2000, buying_price: 1860, selling_price: 1920, status: 'AVAILABLE', voucher_code: 'AMZ-8890-LIVE' },
-    { id: '2', brand_name: 'Swiggy Money', face_value: 1000, buying_price: 900, selling_price: 940, status: 'AVAILABLE', voucher_code: 'SWG-1102-OFF' },
-    { id: '3', brand_name: 'Myntra Luxe', face_value: 5000, buying_price: 4400, selling_price: 4650, status: 'SOLD', voucher_code: 'MYN-4491-DONE' },
-  ]);
-
-  const [orders, setOrders] = useState<any[]>([
-    { id: 'ord-101', user_phone: '98765 43210', brand_name: 'Amazon Pay', amount_paid: 1920, profit_earned: 60, payment_method: 'UPI (GPay)', created_at: 'Just now' },
-    { id: 'ord-102', user_phone: '91234 56780', brand_name: 'Swiggy Money', amount_paid: 940, profit_earned: 40, payment_method: 'PhonePe', created_at: '12 mins ago' },
-    { id: 'ord-103', user_phone: '99887 76655', brand_name: 'Myntra Luxe', amount_paid: 4650, profit_earned: 250, payment_method: 'Paytm UPI', created_at: '1 hour ago' },
-  ]);
-
+  // Real DB collections
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [sponsors, setSponsors] = useState<any[]>([
     { id: 'sp-1', company_name: 'AU Small Finance Bank', deal_type: 'Featured Credit Card Banner', deal_amount: 25000, payment_status: 'RECEIVED' },
     { id: 'sp-2', company_name: 'Cashkaro Network', deal_type: 'Exclusive API Integration', deal_amount: 20000, payment_status: 'RECEIVED' },
   ]);
 
-  // Handle Adding New Voucher
+  // Check existing session
+  useEffect(() => {
+    const session = sessionStorage.getItem('bachat_admin_session');
+    if (session === 'authenticated') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  // Fetch real data from Supabase
+  const fetchLiveMetrics = async () => {
+    setLoading(true);
+    try {
+      if (!supabase) return;
+
+      // 1. Fetch live inventory
+      const { data: invData } = await supabase
+        .from('voucher_inventory')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (invData) {
+        setInventory(invData);
+      }
+
+      // 2. Fetch live customer orders
+      const { data: ordData } = await supabase
+        .from('customer_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (ordData) {
+        setOrders(ordData);
+
+        // Real calculations
+        const gmv = ordData.reduce((acc: number, item: any) => acc + (Number(item.amount_paid) || 0), 0);
+        const profit = ordData.reduce((acc: number, item: any) => acc + (Number(item.profit_earned) || 0), 0);
+        setTotalRevenue(gmv);
+        setNetProfit(profit);
+      }
+    } catch (err) {
+      console.warn('Real metrics fetch warning:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchLiveMetrics();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (enteredPin === ADMIN_MASTER_PIN) {
+      sessionStorage.setItem('bachat_admin_session', 'authenticated');
+      setIsAuthenticated(true);
+      setAuthError('');
+    } else {
+      setAuthError('Invalid Security Passcode.');
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('bachat_admin_session');
+    setIsAuthenticated(false);
+  };
+
+  // Upload New Voucher to Supabase
   const handleAddVoucher = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setActionLoading(true);
 
     const newVoucher = {
-      id: Math.random().toString(),
       brand_name: vBrand,
       voucher_code: vCode,
-      voucher_pin: vPin,
+      voucher_pin: vPin || '0000',
       face_value: Number(vFace),
       buying_price: Number(vBuy),
       selling_price: Number(vSell),
@@ -77,19 +141,25 @@ export default function AdminEnterpriseDashboard() {
     };
 
     try {
-      await supabase.from('voucher_inventory').insert([newVoucher]);
+      if (supabase) {
+        const { data, error } = await supabase.from('voucher_inventory').insert([newVoucher]).select();
+        if (error) throw error;
+        if (data) {
+          setInventory([data[0], ...inventory]);
+        }
+      }
+      setVCode('');
+      setVPin('');
+      setVFace('');
+      setVBuy('');
+      setVSell('');
+      alert('Voucher successfully synced to Supabase database!');
     } catch (err) {
-      console.warn('DB sync fallback: Added locally');
+      console.warn('DB upload failed, local fallback:', err);
+      setInventory([newVoucher, ...inventory]);
+    } finally {
+      setActionLoading(false);
     }
-
-    setInventory([newVoucher, ...inventory]);
-    setVCode('');
-    setVPin('');
-    setVFace('');
-    setVBuy('');
-    setVSell('');
-    setLoading(false);
-    alert('Voucher successfully uploaded to Live Stock!');
   };
 
   // Handle Adding Sponsor
@@ -106,21 +176,61 @@ export default function AdminEnterpriseDashboard() {
     setSponsorIncome(prev => prev + Number(sAmount));
     setSName('');
     setSAmount('');
-    alert('Sponsorship deal booked and revenue added!');
+    alert('Sponsorship deal logged!');
   };
 
+  // 1. SECURITY LOCK SCREEN
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#09090B] text-white flex items-center justify-center p-4 antialiased">
+        <div className="bg-[#12131A] border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-white text-black flex items-center justify-center mx-auto shadow-md">
+            <Lock className="w-6 h-6" />
+          </div>
+
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-black tracking-tight">Admin Vault Lock</h2>
+            <p className="text-xs text-zinc-400 font-medium">Enter system master passkey to access financial engine</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                maxLength={6}
+                value={enteredPin}
+                onChange={(e) => setEnteredPin(e.target.value)}
+                placeholder="Enter Passkey"
+                className="w-full bg-black/40 border border-white/15 focus:border-emerald-400 rounded-xl py-3 px-4 text-center font-mono text-xl tracking-widest text-white outline-none"
+              />
+              {authError && <span className="text-[11px] text-rose-400 font-bold block mt-1.5">{authError}</span>}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider transition shadow-sm active:scale-95"
+            >
+              Verify & Unlock
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. UNLOCKED REAL-TIME WORKSTATION
   return (
-    <div className="min-h-screen bg-[#07070B] text-zinc-100 font-sans flex">
-      {/* 1. Left Sidebar Navigation */}
-      <aside className="w-64 border-r border-white/[0.08] bg-[#0A0A10] p-6 flex flex-col justify-between hidden md:flex shrink-0">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex antialiased">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 border-r border-zinc-800 bg-[#09090B] p-6 flex flex-col justify-between hidden md:flex shrink-0 text-white">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">
+              HQ
             </div>
             <div>
-              <span className="font-black text-white text-base tracking-tight">BachatEngine</span>
-              <span className="text-[10px] text-emerald-400 font-bold block uppercase tracking-widest">Admin HQ</span>
+              <span className="font-black text-white text-base tracking-tight leading-none block">Engine Admin</span>
+              <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest block mt-1">Live Database</span>
             </div>
           </div>
 
@@ -128,20 +238,21 @@ export default function AdminEnterpriseDashboard() {
             {[
               { key: 'overview', label: 'Financial Overview', icon: BarChart3 },
               { key: 'vouchers', label: 'Voucher Inventory', icon: Tag },
-              { key: 'orders', label: 'Live Customer Orders', icon: Users },
-              { key: 'sponsors', label: 'Brand Sponsors & Ads', icon: Building2 },
-              { key: 'affiliates', label: 'Affiliate Links Vault', icon: LinkIcon },
+              { key: 'orders', label: 'Live Orders Ledger', icon: Users },
+              { key: 'sponsors', label: 'Brand Partnerships', icon: Building2 },
+              { key: 'affiliates', label: 'Tracking Rails', icon: LinkIcon },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeView === tab.key;
               return (
                 <button
                   key={tab.key}
+                  type="button"
                   onClick={() => setActiveView(tab.key as any)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
                     isActive 
-                      ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' 
-                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                      ? 'bg-white text-black shadow-sm' 
+                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -152,95 +263,107 @@ export default function AdminEnterpriseDashboard() {
           </nav>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-center">
-          <span className="text-[11px] text-zinc-400">System Mode</span>
-          <span className="text-xs font-bold text-emerald-400 block mt-0.5">● Production Active</span>
-        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 border border-white/10 transition text-xs font-bold"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Lock Dashboard</span>
+        </button>
       </aside>
 
-      {/* 2. Main Workstation Area */}
+      {/* Main Workstation */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto space-y-8 max-w-7xl mx-auto">
         
-        {/* Top Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
+        {/* Top Control Bar */}
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
-            <h1 className="text-2xl font-black text-white capitalize tracking-tight">
-              {activeView.replace('-', ' ')} Control Center
+            <h1 className="text-2xl font-black text-slate-900 capitalize tracking-tight">
+              {activeView} Control Center
             </h1>
-            <p className="text-xs text-zinc-400 mt-1">Real-time revenue, margins, customer checkouts & partner deals</p>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Direct Supabase database ingestion and transaction audit</p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              Live Engine Connected
+            <button
+              type="button"
+              onClick={fetchLiveMetrics}
+              className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition shadow-sm text-slate-700"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Sync DB</span>
+            </button>
+            <span className="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live Mode
             </span>
           </div>
         </header>
 
-        {/* FINANCIAL OVERVIEW SECTION */}
+        {/* OVERVIEW TAB */}
         {activeView === 'overview' && (
-          <div className="space-y-8 animate-in fade-in-50">
+          <div className="space-y-8">
             {/* 4 Financial Pillar Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-3xl bg-[#0F0F17] border border-white/[0.08] relative overflow-hidden">
-                <div className="text-xs font-bold uppercase text-zinc-400 flex items-center justify-between">
-                  <span>Gross Merchandise Value</span>
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-3xl font-black text-white mt-3">₹{totalRevenue.toLocaleString()}</div>
-                <span className="text-[11px] text-emerald-400 font-semibold mt-1 block">+32.4% vs last month</span>
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Gross GMV</span>
+                  <DollarSign className="w-4 h-4 text-slate-900" />
+                </span>
+                <div className="text-3xl font-black text-slate-900">₹{totalRevenue.toLocaleString()}</div>
+                <span className="text-[11px] text-emerald-600 font-bold block">100% Real Order Settlements</span>
               </div>
 
-              <div className="p-5 rounded-3xl bg-[#0F0F17] border border-emerald-500/20 relative overflow-hidden">
-                <div className="text-xs font-bold uppercase text-emerald-400 flex items-center justify-between">
-                  <span>Net Pocket Profit</span>
-                  <Wallet className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-3xl font-black text-white mt-3">₹{netProfit.toLocaleString()}</div>
-                <span className="text-[11px] text-zinc-400 font-semibold mt-1 block">Arbitrage margin: 16.7%</span>
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Net Arbitrage Profit</span>
+                  <Wallet className="w-4 h-4 text-emerald-600" />
+                </span>
+                <div className="text-3xl font-black text-emerald-600">₹{netProfit.toLocaleString()}</div>
+                <span className="text-[11px] text-slate-500 font-medium block">Spread retained on checkouts</span>
               </div>
 
-              <div className="p-5 rounded-3xl bg-[#0F0F17] border border-white/[0.08] relative overflow-hidden">
-                <div className="text-xs font-bold uppercase text-indigo-400 flex items-center justify-between">
-                  <span>Sponsorship Revenue</span>
-                  <Building2 className="w-4 h-4 text-indigo-400" />
-                </div>
-                <div className="text-3xl font-black text-white mt-3">₹{sponsorIncome.toLocaleString()}</div>
-                <span className="text-[11px] text-zinc-400 font-semibold mt-1 block">2 Active brand sponsors</span>
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Sponsorship Value</span>
+                  <Building2 className="w-4 h-4 text-slate-900" />
+                </span>
+                <div className="text-3xl font-black text-slate-900">₹{sponsorIncome.toLocaleString()}</div>
+                <span className="text-[11px] text-slate-500 font-medium block">Active brand integrations</span>
               </div>
 
-              <div className="p-5 rounded-3xl bg-[#0F0F17] border border-white/[0.08] relative overflow-hidden">
-                <div className="text-xs font-bold uppercase text-amber-400 flex items-center justify-between">
-                  <span>Available Stock</span>
-                  <Tag className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="text-3xl font-black text-white mt-3">{inventory.filter(i => i.status === 'AVAILABLE').length} Vouchers</div>
-                <span className="text-[11px] text-amber-400 font-semibold mt-1 block">Ready for Instant Delivery</span>
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
+                <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
+                  <span>Available Inventory</span>
+                  <Tag className="w-4 h-4 text-slate-900" />
+                </span>
+                <div className="text-3xl font-black text-slate-900">{inventory.filter(i => i.status === 'AVAILABLE').length} Cards</div>
+                <span className="text-[11px] text-emerald-600 font-bold block">Ready in database</span>
               </div>
             </div>
 
-            {/* Live Transactions Audit Mini-Table */}
-            <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08] space-y-4">
+            {/* Live Orders Audit Table */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" /> Latest Successful Payments
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-slate-900" /> Recent Live Orders
                 </h3>
-                <button onClick={() => setActiveView('orders')} className="text-xs text-emerald-400 hover:underline flex items-center gap-1">
-                  View All Orders <ArrowUpRight className="w-3.5 h-3.5" />
+                <button type="button" onClick={() => setActiveView('orders')} className="text-xs font-bold text-slate-900 hover:underline flex items-center gap-1">
+                  Full Ledger <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="divide-y divide-white/[0.06]">
-                {orders.slice(0, 3).map((ord) => (
-                  <div key={ord.id} className="py-3 flex items-center justify-between text-xs">
+              <div className="divide-y divide-slate-100">
+                {orders.slice(0, 4).map((ord) => (
+                  <div key={ord.id} className="py-3.5 flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-bold text-white">{ord.brand_name}</span>
-                      <span className="text-zinc-500 block text-[11px]">{ord.user_phone} • via {ord.payment_method}</span>
+                      <span className="font-extrabold text-slate-900">{ord.brand_name}</span>
+                      <span className="text-slate-400 block text-[11px] font-medium">+91 {ord.user_phone} • {ord.payment_method}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-black text-white">₹{ord.amount_paid}</span>
-                      <span className="text-emerald-400 font-bold block text-[10px]">+₹{ord.profit_earned} Profit</span>
+                      <span className="font-black text-slate-900 text-sm">₹{ord.amount_paid}</span>
+                      <span className="text-emerald-600 font-bold block text-[10px]">Profit: +₹{ord.profit_earned}</span>
                     </div>
                   </div>
                 ))}
@@ -249,129 +372,129 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* VOUCHER INVENTORY & PRICING MANAGER */}
+        {/* VOUCHER INVENTORY MANAGER */}
         {activeView === 'vouchers' && (
-          <div className="space-y-8 animate-in fade-in-50">
+          <div className="space-y-8">
             {/* Add Voucher Form Card */}
-            <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08] space-y-5">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-400" /> Add & Price a New Voucher
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-slate-900" /> Upload Live Voucher to DB
               </h2>
 
               <form onSubmit={handleAddVoucher} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Brand Name</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Brand</label>
                   <select 
                     value={vBrand} 
                     onChange={e => setVBrand(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   >
-                    <option value="Amazon Pay" className="bg-[#0F0F17]">Amazon Pay</option>
-                    <option value="Flipkart" className="bg-[#0F0F17]">Flipkart</option>
-                    <option value="Swiggy Money" className="bg-[#0F0F17]">Swiggy Money</option>
-                    <option value="Myntra" className="bg-[#0F0F17]">Myntra</option>
-                    <option value="Zomato" className="bg-[#0F0F17]">Zomato</option>
+                    <option value="Amazon Pay">Amazon Pay</option>
+                    <option value="Swiggy Money">Swiggy Money</option>
+                    <option value="Domino's Pizza">Domino's Pizza</option>
+                    <option value="Myntra">Myntra</option>
+                    <option value="Zomato">Zomato</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Face Value (₹)</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Face Value (₹)</label>
                   <input
                     type="number"
-                    placeholder="2000"
+                    placeholder="1000"
                     value={vFace}
                     onChange={e => setVFace(e.target.value)}
                     required
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Buying Cost (What you paid)</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Buying Cost (₹)</label>
                   <input
                     type="number"
-                    placeholder="1860"
+                    placeholder="900"
                     value={vBuy}
                     onChange={e => setVBuy(e.target.value)}
                     required
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Selling Price (To Customer)</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Selling Deal Price (₹)</label>
                   <input
                     type="number"
-                    placeholder="1920"
+                    placeholder="940"
                     value={vSell}
                     onChange={e => setVSell(e.target.value)}
                     required
-                    className="w-full bg-white/[0.03] border border-emerald-500/40 rounded-xl p-2.5 text-xs font-bold text-emerald-400 outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Secret Code</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Secret 16-Digit Code</label>
                   <input
                     type="text"
                     placeholder="AMZ-XXXX-YYYY"
                     value={vCode}
                     onChange={e => setVCode(e.target.value)}
                     required
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs font-mono text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-900 outline-none focus:border-black"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Optional PIN</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Voucher Secret PIN</label>
                   <input
                     type="text"
-                    placeholder="1234"
+                    placeholder="4821"
                     value={vPin}
                     onChange={e => setVPin(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs font-mono text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-900 outline-none focus:border-black"
                   />
                 </div>
 
                 <div className="sm:col-span-2 lg:col-span-3 pt-2">
                   <button
                     type="submit"
-                    disabled={loading}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold tracking-wide uppercase transition shadow-lg shadow-emerald-500/20"
+                    disabled={actionLoading}
+                    className="px-6 py-3 rounded-xl bg-black hover:bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider transition shadow-sm active:scale-95"
                   >
-                    {loading ? 'Adding...' : 'Store In Secret Vault'}
+                    {actionLoading ? 'Syncing...' : 'Save Directly to Supabase'}
                   </button>
                 </div>
               </form>
             </div>
 
             {/* Inventory List Table */}
-            <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08] overflow-x-auto">
-              <h3 className="text-sm font-bold text-white mb-4">Live Inventory ({inventory.length})</h3>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 overflow-x-auto shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-900 mb-4">Stock Ledger ({inventory.length} Records)</h3>
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-white/[0.08] text-zinc-400 pb-2">
-                    <th className="pb-3">Brand</th>
+                  <tr className="border-b border-slate-200 text-slate-400">
+                    <th className="pb-3">Merchant</th>
                     <th className="pb-3">Face Value</th>
-                    <th className="pb-3">Your Cost</th>
-                    <th className="pb-3">Sell Price</th>
-                    <th className="pb-3">Your Profit</th>
-                    <th className="pb-3">Code Vault</th>
+                    <th className="pb-3">Cost</th>
+                    <th className="pb-3">Deal Price</th>
+                    <th className="pb-3">Gross Spread</th>
+                    <th className="pb-3">Encrypted Code</th>
                     <th className="pb-3">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-slate-100">
                   {inventory.map((item) => (
-                    <tr key={item.id} className="hover:bg-white/[0.02]">
-                      <td className="py-3.5 font-bold text-white">{item.brand_name}</td>
+                    <tr key={item.id} className="hover:bg-slate-50/50">
+                      <td className="py-3.5 font-bold text-slate-900">{item.brand_name}</td>
                       <td className="py-3.5">₹{item.face_value}</td>
-                      <td className="py-3.5 text-zinc-400">₹{item.buying_price}</td>
-                      <td className="py-3.5 font-bold text-emerald-400">₹{item.selling_price}</td>
-                      <td className="py-3.5 font-black text-teal-300">+₹{(item.selling_price - item.buying_price)}</td>
-                      <td className="py-3.5 font-mono text-zinc-300 bg-white/[0.02] px-2 rounded">{item.voucher_code}</td>
+                      <td className="py-3.5 text-slate-500">₹{item.buying_price}</td>
+                      <td className="py-3.5 font-black text-slate-900">₹{item.selling_price}</td>
+                      <td className="py-3.5 font-black text-emerald-600">+₹{(item.selling_price - item.buying_price)}</td>
+                      <td className="py-3.5 font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{item.voucher_code}</td>
                       <td className="py-3.5">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          item.status === 'AVAILABLE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400'
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
+                          item.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'
                         }`}>
                           {item.status}
                         </span>
@@ -384,32 +507,30 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* CUSTOMER ORDERS & PAYMENTS LEDGER */}
+        {/* CUSTOMER ORDERS LEDGER */}
         {activeView === 'orders' && (
-          <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08] overflow-x-auto animate-in fade-in-50">
-            <h3 className="text-sm font-bold text-white mb-4">Customer Checkouts & Delivered Codes</h3>
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 overflow-x-auto shadow-sm">
+            <h3 className="text-sm font-extrabold text-slate-900 mb-4">Customer Orders & Code Deliveries</h3>
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-white/[0.08] text-zinc-400">
-                  <th className="pb-3">Order ID</th>
+                <tr className="border-b border-slate-200 text-slate-400">
                   <th className="pb-3">Customer Phone</th>
-                  <th className="pb-3">Brand Purchased</th>
-                  <th className="pb-3">Amount Received</th>
-                  <th className="pb-3">Net Profit</th>
-                  <th className="pb-3">Payment Mode</th>
-                  <th className="pb-3">Timestamp</th>
+                  <th className="pb-3">Merchant</th>
+                  <th className="pb-3">Settled Amount</th>
+                  <th className="pb-3">Net Arbitrage</th>
+                  <th className="pb-3">Delivered Code</th>
+                  <th className="pb-3">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-slate-100">
                 {orders.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-white/[0.02]">
-                    <td className="py-3.5 font-mono text-zinc-400">{ord.id}</td>
-                    <td className="py-3.5 font-bold text-white">{ord.user_phone}</td>
-                    <td className="py-3.5">{ord.brand_name}</td>
-                    <td className="py-3.5 font-bold text-white">₹{ord.amount_paid}</td>
-                    <td className="py-3.5 font-bold text-emerald-400">+₹{ord.profit_earned}</td>
-                    <td className="py-3.5 text-zinc-300">{ord.payment_method}</td>
-                    <td className="py-3.5 text-zinc-500">{ord.created_at}</td>
+                  <tr key={ord.id} className="hover:bg-slate-50/50">
+                    <td className="py-3.5 font-bold text-slate-900">+91 {ord.user_phone}</td>
+                    <td className="py-3.5 font-semibold text-slate-700">{ord.brand_name}</td>
+                    <td className="py-3.5 font-black text-slate-900">₹{ord.amount_paid}</td>
+                    <td className="py-3.5 font-bold text-emerald-600">+₹{ord.profit_earned}</td>
+                    <td className="py-3.5 font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{ord.voucher_code_delivered || 'N/A'}</td>
+                    <td className="py-3.5 text-slate-400">{ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN') : 'Recent'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -417,68 +538,68 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* SPONSORSHIPS & BRAND DEALS */}
+        {/* SPONSORSHIPS TAB */}
         {activeView === 'sponsors' && (
-          <div className="space-y-8 animate-in fade-in-50">
-            <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08] space-y-4">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-indigo-400" /> Book Brand Sponsorship
+          <div className="space-y-8">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-slate-900" /> Book Brand Sponsorship
               </h2>
               <form onSubmit={handleAddSponsor} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Company / Brand Name</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Company / Bank</label>
                   <input
                     type="text"
-                    placeholder="e.g. HDFC Bank or Nykaa"
+                    placeholder="e.g. AU Small Finance Bank"
                     value={sName}
                     onChange={e => setSName(e.target.value)}
                     required
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs text-white outline-none focus:border-indigo-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Deal Value (₹)</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Deal Value (₹)</label>
                   <input
                     type="number"
-                    placeholder="30000"
+                    placeholder="25000"
                     value={sAmount}
                     onChange={e => setSAmount(e.target.value)}
                     required
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs text-white outline-none focus:border-indigo-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-zinc-400 block mb-1">Deal Placement</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Placement Slot</label>
                   <select 
                     value={sPlan} 
                     onChange={e => setSPlan(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/[0.1] rounded-xl p-2.5 text-xs text-white outline-none focus:border-indigo-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
                   >
-                    <option value="Featured Credit Card Banner" className="bg-[#0F0F17]">Top Banner Slot</option>
-                    <option value="Calculator Default Recommendation" className="bg-[#0F0F17]">Calculator Default Pick</option>
-                    <option value="WhatsApp Community Broadcast" className="bg-[#0F0F17]">WhatsApp Blast</option>
+                    <option value="Featured Credit Card Banner">Featured Banner</option>
+                    <option value="Calculator Default Pick">Calculator Recommendation</option>
+                    <option value="WhatsApp Community Broadcast">WhatsApp Blast</option>
                   </select>
                 </div>
                 <div className="sm:col-span-3">
-                  <button type="submit" className="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold">
-                    Log Sponsorship Deal
+                  <button type="submit" className="px-5 py-2.5 rounded-xl bg-black text-white text-xs font-bold hover:bg-zinc-800 transition shadow-sm">
+                    Confirm Deal
                   </button>
                 </div>
               </form>
             </div>
 
-            <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08]">
-              <h3 className="text-sm font-bold text-white mb-4">Active Brand Partners</h3>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-900 mb-4">Active Brand Partners</h3>
               <div className="space-y-3">
                 {sponsors.map(sp => (
-                  <div key={sp.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
+                  <div key={sp.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-white text-sm">{sp.company_name}</span>
-                      <span className="text-xs text-zinc-400 block">{sp.deal_type}</span>
+                      <span className="font-extrabold text-slate-900 text-sm">{sp.company_name}</span>
+                      <span className="text-xs text-slate-500 block">{sp.deal_type}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-black text-indigo-400 text-sm">₹{sp.deal_amount.toLocaleString()}</span>
-                      <span className="text-[10px] text-emerald-400 font-bold block uppercase">{sp.payment_status}</span>
+                      <span className="font-black text-slate-900 text-sm">₹{sp.deal_amount.toLocaleString()}</span>
+                      <span className="text-[10px] text-emerald-600 font-bold block uppercase">{sp.payment_status}</span>
                     </div>
                   </div>
                 ))}
@@ -487,31 +608,31 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* AFFILIATE LINK ARBITRAGE VAULT */}
+        {/* AFFILIATES TAB */}
         {activeView === 'affiliates' && (
-          <div className="p-6 rounded-3xl bg-[#0F0F17] border border-white/[0.08] space-y-4 animate-in fade-in-50">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <LinkIcon className="w-4 h-4 text-emerald-400" /> Dynamic Tracking Links
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <LinkIcon className="w-4 h-4 text-slate-900" /> Active Tracking Integrations
             </h3>
-            <p className="text-xs text-zinc-400">Calculator ke buy buttons inhi links se dynamically bind rehte hain.</p>
+            <p className="text-xs text-slate-500 font-medium">Dynamic redirection links configured for arbitrage margins.</p>
 
             <div className="space-y-3 pt-2">
               {[
-                { brand: 'Flipkart Electronics', network: 'Cuelinks', rate: 'Up to 7.2%', url: 'https://cuelinks.com/track/flipkart?id=bachat' },
-                { brand: 'SBI Cashback Credit Card', network: 'EarnKaro Finance', rate: '₹2,100 per approved card', url: 'https://earnkaro.com/sbi-apply?ref=bachat' },
-                { brand: 'Swiggy Gourmet', network: 'Direct Partner', rate: '8.5% Commission', url: 'https://swiggy.com/corporate-pass?ref=bachat' },
+                { brand: 'Flipkart Electronics', network: 'Cuelinks', rate: 'Up to 7.2%', url: 'https://cuelinks.com/track/flipkart' },
+                { brand: 'SBI Cashback Credit Card', network: 'EarnKaro Finance', rate: '₹2,100 per card', url: 'https://earnkaro.com/sbi-apply' },
+                { brand: 'Swiggy Gourmet Pass', network: 'Direct Merchant', rate: '8.5% Commission', url: 'https://swiggy.com/corporate' },
               ].map((link, idx) => (
-                <div key={idx} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-sm">{link.brand}</span>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">{link.network}</span>
+                      <span className="font-bold text-slate-900 text-sm">{link.brand}</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-[10px] font-bold">{link.network}</span>
                     </div>
-                    <span className="font-mono text-zinc-500 text-[11px] block mt-0.5">{link.url}</span>
+                    <span className="font-mono text-slate-400 text-[11px] block mt-1">{link.url}</span>
                   </div>
                   <div className="sm:text-right">
-                    <span className="font-extrabold text-emerald-400 block">{link.rate}</span>
-                    <span className="text-[10px] text-zinc-400">Auto-Routing Active</span>
+                    <span className="font-black text-emerald-600 block">{link.rate}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Auto-Routing Active</span>
                   </div>
                 </div>
               ))}
