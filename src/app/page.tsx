@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useMotionValueEvent, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { 
   ArrowUpRight, 
   CreditCard, 
@@ -20,89 +20,63 @@ import {
   Layers, 
   Search, 
   QrCode, 
-  Lock, 
   ExternalLink,
-  Flame,
-  Smartphone,
-  Send,
-  HelpCircle
+  Smartphone
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
+import DynamicFintechNavbar from '@/components/Navbar';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';
 import SpotlightSearch from '@/components/SpotlightSearch';
 import SponsoredReelsFeed from '@/components/SponsoredReelsFeed';
 
-// SCROLL REVEAL WRAPPER
-function Reveal({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.5, delay, ease: 'easeOut' }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-// Brand visuals
-const BRAND_VISUALS: Record<string, { banner: string; accent: string; iconText: string }> = {
+// REAL BRAND VISUALS & LOGO ASSETS
+const BRAND_VISUALS: Record<string, { banner: string; logoUrl: string; fallbackText: string }> = {
   dominos: {
-    banner: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=700&auto=format&fit=crop&q=60',
-    accent: '#006491',
-    iconText: '🍕',
+    banner: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&auto=format&fit=crop&q=70',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/74/Dominos_pizza_logo.svg',
+    fallbackText: "Domino's",
   },
   swiggy: {
-    banner: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&auto=format&fit=crop&q=60',
-    accent: '#fc8019',
-    iconText: '🛵',
+    banner: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop&q=70',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/1/12/Swiggy_logo.svg',
+    fallbackText: 'Swiggy',
   },
   zomato: {
-    banner: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&auto=format&fit=crop&q=60',
-    accent: '#e23744',
-    iconText: '🍽️',
+    banner: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=70',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/75/Zomato_logo.png',
+    fallbackText: 'Zomato',
   },
   myntra: {
-    banner: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=700&auto=format&fit=crop&q=60',
-    accent: '#ff3f6c',
-    iconText: '👗',
+    banner: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&auto=format&fit=crop&q=70',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/bc/Myntra_Logo.png',
+    fallbackText: 'Myntra',
   },
   blinkit: {
-    banner: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&auto=format&fit=crop&q=60',
-    accent: '#f59e0b',
-    iconText: '⚡',
+    banner: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=70',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Blinkit-yellow-app-icon.svg',
+    fallbackText: 'Blinkit',
   },
   amazon: {
-    banner: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&auto=format&fit=crop&q=60',
-    accent: '#d97706',
-    iconText: '📦',
+    banner: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=70',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
+    fallbackText: 'Amazon',
   },
 };
 
 const FAQS = [
   { 
-    q: "Ye normal coupon websites se alag kaise kaam karta hai?", 
-    a: "Normal sites par 90% coupons expire hote hain. Humara database verified Wholesale E-Vouchers, active coupons aur payment card rewards ko ek sath stack karke aapke liye lowest effective price nikalta hai." 
+    q: "How does the savings stacking engine work?", 
+    a: "Unlike typical coupon directories where most promo codes fail at checkout, our engine stacks wholesale discounted brand vouchers, verified merchant promo codes, and credit card cashbacks to uncover the true lowest net price." 
   },
   { 
-    q: "Discounted E-Voucher ko kaise redeem karein?", 
-    a: "Voucher khareedte hi instantly 16-digit voucher code aur PIN screen par milta hai. Domino's ya Swiggy ke checkout payment option me 'Gift Card' choose karke code enter karne par bill pay ho jata hai." 
+    q: "How do I redeem an unlocked voucher code?", 
+    a: "Upon checkout confirmation, your 16-digit voucher number and secret PIN are displayed immediately on-screen and synced to your vault. In the merchant application (such as Domino's or Swiggy), select 'Gift Card' during payment to deduct 100% of the balance." 
   },
   { 
-    q: "Kya credit card cashback sach me add hota hai?", 
-    a: "Haan! Agar aap voucher purchase karte waqt eligible payment card (jaise SBI Cashback) use karte hain, to 5% extra cashback aapke card statement me credit ho jata hai." 
+    q: "When is the credit card cashback credited?", 
+    a: "If you pay via eligible cashback instruments (like SBI Cashback), your 5% rebate reflects automatically in your credit card billing cycle statement as an official statement credit." 
   }
 ];
 
@@ -124,248 +98,12 @@ function AnimatedRupee({ value, className }: { value: number; className?: string
   return <span className={className}>{text}</span>;
 }
 
-// 3D VOUCHER CARD (Clean White + Deep Slate Shadow)
-function Interactive3DVoucherCard({ brand, nominalVal, onSelect }: { brand: any; nominalVal: number; onSelect: () => void }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
-
-  const visual = BRAND_VISUALS[brand.slug] || {
-    banner: 'https://images.unsplash.com/photo-1556742049-0a67e557224f?w=700&auto=format&fit=crop&q=60',
-    accent: '#059669',
-    iconText: '🏷️',
-  };
-
-  const savingsAmt = Math.round((nominalVal * (brand.discount || 5)) / 100);
-  const finalPay = nominalVal - savingsAmt;
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setTilt({
-      x: ((y - rect.height / 2) / (rect.height / 2)) * -8,
-      y: ((x - rect.width / 2) / (rect.width / 2)) * 8,
-    });
-    setGlare({ x: (x / rect.width) * 100, y: (y / rect.height) * 100, opacity: 0.35 });
-  };
-
-  return (
-    <div className="w-full" style={{ perspective: '1100px' }}>
-      <div
-        ref={cardRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => { setTilt({ x: 0, y: 0 }); setGlare(p => ({ ...p, opacity: 0 })); }}
-        style={{
-          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          transition: glare.opacity ? 'transform 0.08s ease-out' : 'transform 0.4s ease-out',
-        }}
-        className="relative h-[390px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-slate-200 bg-white shadow-lg hover:shadow-xl group cursor-pointer transition-all"
-      >
-        <div 
-          className="absolute top-0 left-0 w-full h-44 bg-cover bg-center opacity-25 group-hover:opacity-35 transition-opacity"
-          style={{ backgroundImage: `url(${brand.banner_url || visual.banner})` }}
-        />
-
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="w-13 h-13 rounded-2xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-3xl">
-            {brand.logo_url ? <img src={brand.logo_url} alt={brand.name} className="w-7 h-7 object-contain" /> : visual.iconText}
-          </div>
-          <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-extrabold text-xs">
-            FLAT {brand.discount}% OFF
-          </span>
-        </div>
-
-        <div className="relative z-10 mt-auto bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="text-xl font-black text-slate-900">{brand.name}</h3>
-          <p className="text-xs text-emerald-600 font-bold mb-3">Instant ₹{savingsAmt} off on ₹{nominalVal} card</p>
-          <div className="pt-2 border-t border-slate-100 flex items-baseline justify-between mb-3">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Deal Price</span>
-              <span className="text-2xl font-black text-slate-900">₹{finalPay}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">MRP</span>
-              <span className="text-sm font-semibold text-slate-400 line-through">₹{nominalVal}</span>
-            </div>
-          </div>
-          <button
-            onClick={onSelect}
-            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md"
-          >
-            <span>Run Stacker</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// 3D BANK CARD COMPONENT (FLIP ON CLICK)
-const BANK_CARD_PALETTES = [
-  {
-    bg: 'from-slate-900 via-zinc-900 to-black',
-    border: 'border-slate-800',
-    accent: 'text-emerald-400',
-    chip: 'from-amber-200 to-yellow-500',
-    logo: 'SBI CARD',
-    textColor: 'text-white'
-  },
-  {
-    bg: 'from-blue-950 via-slate-900 to-black',
-    border: 'border-blue-900/50',
-    accent: 'text-sky-400',
-    chip: 'from-slate-200 to-slate-400',
-    logo: 'HDFC BANK',
-    textColor: 'text-white'
-  },
-  {
-    bg: 'from-purple-950 via-slate-900 to-black',
-    border: 'border-purple-900/50',
-    accent: 'text-pink-400',
-    chip: 'from-amber-200 to-yellow-500',
-    logo: 'AXIS BANK',
-    textColor: 'text-white'
-  },
-  {
-    bg: 'from-amber-950 via-zinc-900 to-black',
-    border: 'border-amber-900/50',
-    accent: 'text-amber-400',
-    chip: 'from-slate-200 to-slate-400',
-    logo: 'ICICI BANK',
-    textColor: 'text-white'
-  },
-];
-
-function Interactive3DBankCard({ card, index }: { card: any; index: number }) {
-  const [flipped, setFlipped] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const palette = BANK_CARD_PALETTES[index % BANK_CARD_PALETTES.length];
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setTilt({
-      x: ((y - rect.height / 2) / (rect.height / 2)) * -12,
-      y: ((x - rect.width / 2) / (rect.width / 2)) * 12,
-    });
-  };
-
-  const maskedCardNumber = `4820 •••• •••• ${String(1100 + index * 243).slice(-4)}`;
-
-  return (
-    <div className="w-full select-none" style={{ perspective: '1200px' }}>
-      <motion.div
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
-        style={{ transformStyle: 'preserve-3d' }}
-        className="relative h-[230px] w-full cursor-pointer"
-        onClick={() => setFlipped((f) => !f)}
-      >
-        <div
-          ref={cardRef}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={() => setTilt({ x: 0, y: 0 })}
-          style={{
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-            transformStyle: 'preserve-3d',
-            transition: 'transform 0.1s ease-out',
-          }}
-          className="w-full h-full relative"
-        >
-          {/* FRONT FACE */}
-          <div
-            className={`absolute inset-0 rounded-3xl p-5 border ${palette.border} bg-gradient-to-br ${palette.bg} shadow-xl flex flex-col justify-between overflow-hidden`}
-            style={{ backfaceVisibility: 'hidden' }}
-          >
-            <div className="flex items-center justify-between relative z-10">
-              <span className="text-xs font-black tracking-widest text-zinc-300 uppercase">
-                {palette.logo}
-              </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 border border-white/10 ${palette.accent}`}>
-                {card.base_cashback}% Cashback
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 relative z-10 my-auto">
-              <div className={`w-10 h-7 rounded-md bg-gradient-to-tr ${palette.chip} p-0.5 shadow-md flex items-center justify-center border border-black/30`}>
-                <div className="w-full h-full rounded-[3px] border border-zinc-800/40 grid grid-cols-2 gap-0.5 p-0.5">
-                  <div className="border-r border-b border-zinc-900/30" />
-                  <div className="border-b border-zinc-900/30" />
-                  <div className="border-r border-zinc-900/30" />
-                  <div />
-                </div>
-              </div>
-            </div>
-
-            <div className="relative z-10 space-y-1">
-              <div className="font-mono text-xs sm:text-sm tracking-[0.2em] text-zinc-200 font-bold">
-                {maskedCardNumber}
-              </div>
-              <div className="flex justify-between items-end pt-1">
-                <div>
-                  <h4 className="text-xs sm:text-sm font-extrabold text-white leading-tight truncate max-w-[160px]">
-                    {card.name}
-                  </h4>
-                  <span className="text-[9px] text-zinc-400 font-semibold uppercase">Reward Pass</span>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-mono font-bold tracking-wider">09/29</span>
-              </div>
-            </div>
-
-            <div className="absolute bottom-1 right-4 text-[8.5px] text-zinc-500 font-bold">
-              Tap to Flip ↻
-            </div>
-          </div>
-
-          {/* BACK FACE */}
-          <div
-            className="absolute inset-0 rounded-3xl p-5 border border-slate-800 bg-[#0C0E15] shadow-xl flex flex-col justify-between overflow-hidden"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-          >
-            <div className="-mx-5 -mt-1 h-8 bg-zinc-950 border-y border-white/5" />
-
-            <div className="space-y-1.5 text-xs bg-white/5 p-2.5 rounded-xl border border-white/5">
-              <div className="flex justify-between">
-                <span className="text-zinc-400 font-medium">Joining Fee:</span>
-                <span className="font-bold text-white">₹{card.joining_fee}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400 font-medium">Net Cashback:</span>
-                <span className="font-bold text-emerald-400">{card.base_cashback}% Flat</span>
-              </div>
-            </div>
-
-            <a
-              href={card.url}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="w-full py-2 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
-            >
-              <span>Apply Online</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 // 3-LAYER STACKING VISUALIZER SLIDER
 const STACK_BASE_CART = 2000;
 const STACK_LAYERS = [
-  { id: 'coupon', title: 'Promo Coupon', sub: 'Verified store code applied', cut: 200, icon: Ticket, tint: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
-  { id: 'voucher', title: 'Wholesale Voucher', sub: 'Discounted wholesale e-card', cut: 150, icon: Gift, tint: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
-  { id: 'card', title: '5% SBI Card Cashback', sub: 'Direct statement cash rebate', cut: 82, icon: CreditCard, tint: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  { id: 'coupon', title: 'Store Promo Coupon', sub: 'Verified promo code applied', cut: 200, icon: Ticket, tint: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+  { id: 'voucher', title: 'Wholesale Brand Voucher', sub: 'Discounted wholesale e-card balance', cut: 150, icon: Gift, tint: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+  { id: 'card', title: 'Credit Card Rebate', sub: '5% SBI statement cash return', cut: 82, icon: CreditCard, tint: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
 ];
 
 function StackingVisualizer() {
@@ -374,260 +112,107 @@ function StackingVisualizer() {
   const totalSaved = STACK_BASE_CART - runningPrice;
 
   return (
-    <section className="max-w-5xl mx-auto px-6 py-16">
-      <div className="text-center space-y-2 mb-10">
-        <span className="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-          The 3-Layer Math Secret
-        </span>
-        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-          Watch a ₹2,000 cart melt down step-by-step.
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
-          Move the slider to layer promo coupons, wholesale vouchers, and card cashbacks in real-time.
-        </p>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-lg grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-center">
-        <div className="space-y-4 order-2 lg:order-1">
-          <input
-            type="range"
-            min={0}
-            max={3}
-            step={1}
-            value={step}
-            onChange={(e) => setStep(Number(e.target.value))}
-            className="w-full accent-emerald-500 cursor-pointer h-2 bg-slate-100 rounded-lg"
-          />
-
-          <div className="space-y-2.5">
-            {STACK_LAYERS.map((layer, i) => {
-              const active = step > i;
-              const Icon = layer.icon;
-              return (
-                <div
-                  key={layer.id}
-                  onClick={() => setStep(active ? i : i + 1)}
-                  className={`flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all ${
-                    active ? `${layer.bg} ${layer.border}` : 'bg-slate-50 border-slate-100'
-                  }`}
-                >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? 'bg-white shadow-sm' : 'bg-slate-200/60'}`}>
-                    <Icon className={`w-4 h-4 ${active ? layer.tint : 'text-slate-400'}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-bold truncate ${active ? 'text-slate-900' : 'text-slate-500'}`}>
-                      Layer {i + 1}: {layer.title}
-                    </p>
-                    <p className="text-[10px] text-slate-400 truncate">{layer.sub}</p>
-                  </div>
-                  <span className={`text-xs font-black ${active ? layer.tint : 'text-slate-400'}`}>-₹{layer.cut}</span>
-                </div>
-              );
-            })}
-          </div>
+    <section className="max-w-6xl mx-auto px-6 py-14">
+      <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-10 shadow-md">
+        <div className="text-center space-y-2 mb-10">
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+            Stacking Demonstration
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            How a ₹2,000 cart melts down layer by layer.
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto font-medium">
+            Drag the slider to preview how store coupons, wholesale vouchers, and card cashbacks combine.
+          </p>
         </div>
 
-        <div className="hidden lg:block w-px h-64 bg-slate-200 order-2" />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-center">
+          <div className="space-y-4 order-2 lg:order-1">
+            <input
+              type="range"
+              min={0}
+              max={3}
+              step={1}
+              value={step}
+              onChange={(e) => setStep(Number(e.target.value))}
+              className="w-full accent-black cursor-pointer h-2 bg-slate-100 rounded-lg"
+            />
 
-        <div className="order-1 lg:order-3 rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-4">
-          <div className="flex justify-between text-xs font-semibold">
-            <span className="text-slate-500">Store Cart Value</span>
-            <span className="text-slate-400 line-through">₹{STACK_BASE_CART.toLocaleString()}</span>
+            <div className="space-y-2.5">
+              {STACK_LAYERS.map((layer, i) => {
+                const active = step > i;
+                const Icon = layer.icon;
+                return (
+                  <div
+                    key={layer.id}
+                    onClick={() => setStep(active ? i : i + 1)}
+                    className={`flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all ${
+                      active ? `${layer.bg} ${layer.border}` : 'bg-slate-50 border-slate-100'
+                    }`}
+                  >
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? 'bg-white shadow-sm' : 'bg-slate-200/60'}`}>
+                      <Icon className={`w-4 h-4 ${active ? layer.tint : 'text-slate-400'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-bold truncate ${active ? 'text-slate-900' : 'text-slate-500'}`}>
+                        Layer {i + 1}: {layer.title}
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">{layer.sub}</p>
+                    </div>
+                    <span className={`text-xs font-black ${active ? layer.tint : 'text-slate-400'}`}>-₹{layer.cut}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <AnimatePresence>
-            {STACK_LAYERS.slice(0, step).map((layer) => (
-              <motion.div
-                key={layer.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex justify-between text-xs overflow-hidden font-bold"
-              >
-                <span className={layer.tint}>{layer.title}</span>
-                <span className={layer.tint}>-₹{layer.cut}</span>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          <div className="hidden lg:block w-px h-64 bg-slate-200 order-2" />
 
-          <div className="pt-3 border-t border-slate-200">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Your Effective Payment</p>
-            <AnimatedRupee value={runningPrice} className="text-4xl font-black text-slate-900" />
+          <div className="order-1 lg:order-3 rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-4">
+            <div className="flex justify-between text-xs font-semibold">
+              <span className="text-slate-500">Standard Checkout Price</span>
+              <span className="text-slate-400 line-through">₹{STACK_BASE_CART.toLocaleString()}</span>
+            </div>
+
+            <AnimatePresence>
+              {STACK_LAYERS.slice(0, step).map((layer) => (
+                <motion.div
+                  key={layer.id}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex justify-between text-xs overflow-hidden font-bold"
+                >
+                  <span className={layer.tint}>{layer.title}</span>
+                  <span className={layer.tint}>-₹{layer.cut}</span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            <div className="pt-3 border-t border-slate-200">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Your Effective Payment</p>
+              <AnimatedRupee value={runningPrice} className="text-4xl font-black text-slate-900" />
+            </div>
+
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="text-xs font-bold text-emerald-700">Total Net Saved: <AnimatedRupee value={totalSaved} /></span>
+            </div>
+
+            <button
+              onClick={() => setStep((s) => (s >= 3 ? 0 : s + 1))}
+              className="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-900 transition-all shadow-sm"
+            >
+              {step >= 3 ? 'Reset Simulation' : `Simulate Layer ${step + 1}`}
+            </button>
           </div>
-
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="text-xs font-bold text-emerald-700">Total Net Saved: <AnimatedRupee value={totalSaved} /></span>
-          </div>
-
-          <button
-            onClick={() => setStep((s) => (s >= 3 ? 0 : s + 1))}
-            className="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-900 transition-all shadow-sm"
-          >
-            {step >= 3 ? 'Reset Simulation' : `Apply Layer ${step + 1}`}
-          </button>
         </div>
       </div>
     </section>
   );
 }
 
-// SUBMIT WORKING COUPON MODAL
-function SubmitCouponModal({
-  isOpen,
-  onClose,
-  brands,
-  onSuccess,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  brands: any[];
-  onSuccess: (newCoupon: any) => void;
-}) {
-  const [selectedSlug, setSelectedSlug] = useState(brands[0]?.slug || 'dominos');
-  const [code, setCode] = useState('');
-  const [title, setTitle] = useState('');
-  const [discountVal, setDiscountVal] = useState('50');
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setLoading(true);
-
-    try {
-      if (!supabase) throw new Error('Database client error');
-      const brandObj = brands.find((b) => b.slug === selectedSlug);
-
-      const { error } = await supabase.from('brand_coupons').insert([
-        {
-          brand_id: brandObj?.id,
-          coupon_code: code.trim().toUpperCase(),
-          title: title || `Flat ₹${discountVal} OFF`,
-          discount_type: 'FLAT',
-          discount_value: Number(discountVal),
-          stackable_with_voucher: true,
-          is_verified: true,
-        },
-      ]);
-
-      if (error) throw error;
-
-      onSuccess({
-        id: Math.random().toString(),
-        brandName: brandObj?.name || 'Partner Store',
-        code: code.trim().toUpperCase(),
-        title: title || `Flat ₹${discountVal} OFF`,
-        stackable: true,
-      });
-
-      onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Submission error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 relative shadow-2xl border border-slate-200">
-        <button onClick={onClose} className="absolute top-5 right-5 text-slate-400 hover:text-slate-900 transition">
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Community Registry</span>
-          </div>
-          <h3 className="text-xl font-black text-slate-900">Share a Working Coupon</h3>
-          <p className="text-xs text-slate-500">
-            Submit active coupons directly to the live verified registry.
-          </p>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
-            {errorMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          <div>
-            <label className="block font-bold text-slate-700 mb-1.5">
-              Select Merchant / Brand
-            </label>
-            <select
-              value={selectedSlug}
-              onChange={(e) => setSelectedSlug(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold outline-none focus:border-black"
-            >
-              {brands.map((b) => (
-                <option key={b.id} value={b.slug}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 mb-1.5">
-              Coupon Code (e.g. SWIGGYIT)
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. DOM50"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-mono font-bold outline-none focus:border-black"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1.5">
-                Discount (₹)
-              </label>
-              <input
-                type="number"
-                value={discountVal}
-                onChange={(e) => setDiscountVal(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold outline-none focus:border-black"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1.5">
-                Description
-              </label>
-              <input
-                type="text"
-                placeholder="Flat ₹50 OFF"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold outline-none focus:border-black"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-black hover:bg-zinc-800 text-white font-bold rounded-xl transition-all shadow-md uppercase tracking-wider text-xs"
-          >
-            {loading ? 'Saving in Database...' : 'Add Coupon to Live Registry'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// REAL UPI CHECKOUT MODAL (DYNAMIC INVENTORY RELEASE)
+// REAL UPI CHECKOUT MODAL
 function CheckoutModal({
   isOpen,
   onClose,
@@ -652,14 +237,14 @@ function CheckoutModal({
 
   if (!isOpen) return null;
 
-  const MERCHANT_UPI = "ashishkumar@upi"; // Apna Real UPI VPA ID
+  const MERCHANT_UPI = "ashishkumar@upi";
   const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=AllInOneVouchers&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandName}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
 
   const handleProceedToPay = (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.replace(/\D/g, '').length !== 10) {
-      alert('10-digit valid phone number enter karein.');
+      alert('Enter a valid 10-digit mobile number.');
       return;
     }
     setStep('PAYMENT');
@@ -700,7 +285,6 @@ function CheckoutModal({
         ]);
       }
 
-      // Automated WhatsApp / SMS Notification API trigger
       try {
         await fetch('/api/notify', {
           method: 'POST',
@@ -731,16 +315,16 @@ function CheckoutModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 relative"
+        className="bg-[#12131A] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-white"
       >
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-slate-900 transition"
+          className="absolute top-5 right-5 text-zinc-400 hover:text-white transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -748,35 +332,35 @@ function CheckoutModal({
         {step === 'DETAILS' && (
           <div className="space-y-5">
             <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                Direct Inventory Delivery
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                Instant Digital Delivery
               </span>
-              <h3 className="text-xl font-black text-slate-900">{brandName} Voucher</h3>
-              <p className="text-xs text-slate-500">Enter phone number to receive voucher</p>
+              <h3 className="text-xl font-black">{brandName} Voucher</h3>
+              <p className="text-xs text-zinc-400">Order verification and vault allocation</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs font-bold">
-              <div className="flex justify-between text-slate-500">
-                <span>Voucher MRP:</span>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-xs font-bold">
+              <div className="flex justify-between text-zinc-400">
+                <span>Voucher Value (MRP):</span>
                 <span className="line-through">₹{faceValue}</span>
               </div>
-              <div className="flex justify-between text-slate-700">
+              <div className="flex justify-between text-zinc-300">
                 <span>Calculated Arbitrage Savings:</span>
-                <span className="text-emerald-600 font-bold">-₹{savings}</span>
+                <span className="text-emerald-400 font-black">-₹{savings}</span>
               </div>
-              <div className="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
-                <span>Payable Amount:</span>
-                <span className="text-emerald-600 text-lg">₹{dealPrice}</span>
+              <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-black text-white">
+                <span>Total Due Now:</span>
+                <span className="text-emerald-400 text-lg">₹{dealPrice}</span>
               </div>
             </div>
 
             <form onSubmit={handleProceedToPay} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mobile Number (For Vault Access)
+                <label className="block text-[11px] font-bold text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Mobile Number (For Vault Storage)
                 </label>
                 <div className="flex">
-                  <span className="bg-slate-100 border border-r-0 border-slate-200 px-3.5 py-2.5 rounded-l-xl text-slate-700 text-xs font-bold flex items-center">
+                  <span className="bg-white/5 border border-r-0 border-white/10 px-3.5 py-2.5 rounded-l-xl text-zinc-400 text-xs font-bold flex items-center">
                     +91
                   </span>
                   <input
@@ -786,14 +370,14 @@ function CheckoutModal({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="98765 43210"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-r-xl py-2.5 px-3.5 text-slate-900 font-bold text-xs outline-none focus:border-black"
+                    className="w-full bg-white/[0.02] border border-white/10 rounded-r-xl py-2.5 px-3.5 text-white font-bold text-xs outline-none focus:border-emerald-400"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-black hover:bg-zinc-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
               >
                 <span>Proceed to UPI QR</span>
                 <ArrowRight className="w-4 h-4" />
@@ -805,27 +389,27 @@ function CheckoutModal({
         {step === 'PAYMENT' && (
           <div className="space-y-5 text-center">
             <div className="space-y-1">
-              <h3 className="text-lg font-black text-slate-900">Scan UPI QR to Pay</h3>
-              <p className="text-xs text-slate-500">Pay exactly ₹{dealPrice} via GPay, PhonePe, or Paytm</p>
+              <h3 className="text-lg font-black">Scan UPI QR to Pay</h3>
+              <p className="text-xs text-zinc-400">Pay exactly ₹{dealPrice} via any UPI app</p>
             </div>
 
-            <div className="w-48 h-48 mx-auto p-2 rounded-2xl bg-white border border-slate-200 shadow-md flex flex-col items-center justify-center">
+            <div className="w-48 h-48 mx-auto p-2 rounded-2xl bg-white flex flex-col items-center justify-center shadow-lg">
               <img src={qrCodeUrl} alt="UPI QR" className="w-36 h-36 object-contain" />
-              <span className="text-[9px] font-mono text-slate-500 font-bold mt-1">{MERCHANT_UPI}</span>
+              <span className="text-[9px] font-mono text-zinc-800 font-bold mt-1">{MERCHANT_UPI}</span>
             </div>
 
             <a
               href={upiIntentUrl}
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 flex items-center justify-center gap-2 transition sm:hidden"
+              className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition sm:hidden"
             >
-              <Smartphone className="w-4 h-4 text-slate-700" />
-              <span>Open in PhonePe / GPay App</span>
+              <Smartphone className="w-4 h-4 text-emerald-400" />
+              <span>Open PhonePe / GPay App</span>
             </a>
 
             <button
               onClick={handleVerifyPayment}
               disabled={loading}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
             >
               {loading ? <span>Confirming Transaction...</span> : <span>I Have Paid • Unlock Code</span>}
             </button>
@@ -834,23 +418,23 @@ function CheckoutModal({
 
         {step === 'SUCCESS' && (
           <div className="space-y-5 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
               <Sparkles className="w-6 h-6" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-slate-900">Voucher Code Ready!</h3>
-              <p className="text-xs text-slate-500">Redeem in {brandName} payment screen</p>
+              <h3 className="text-xl font-black text-white">Voucher Unlocked!</h3>
+              <p className="text-xs text-zinc-400">Redeem directly on official {brandName} checkout</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">16-Digit Voucher Code</span>
-              <div className="font-mono text-base font-black text-emerald-600 tracking-wider select-all">
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2">
+              <span className="text-[10px] text-zinc-400 uppercase font-bold block">16-Digit Voucher Code</span>
+              <div className="font-mono text-base font-black text-emerald-400 tracking-wider select-all">
                 {unlockedCode}
               </div>
               {unlockedPin && (
-                <div className="text-xs text-slate-600 font-semibold">
-                  PIN: <span className="font-mono text-slate-900 font-bold">{unlockedPin}</span>
+                <div className="text-xs text-zinc-400">
+                  PIN: <span className="font-mono text-white font-bold">{unlockedPin}</span>
                 </div>
               )}
               <button
@@ -861,16 +445,16 @@ function CheckoutModal({
                     setTimeout(() => setCopied(false), 2000);
                   }
                 }}
-                className="mx-auto px-4 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-900 text-xs font-bold shadow-sm flex items-center gap-1.5 transition"
+                className="mx-auto px-4 py-1.5 rounded-lg bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5 transition"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy Code'}</span>
               </button>
             </div>
 
             <a
               href="/dashboard"
-              className="w-full py-3 bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5"
+              className="w-full py-3 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5"
             >
               <span>View in Vault</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -882,7 +466,7 @@ function CheckoutModal({
   );
 }
 
-// MAIN PAGE CONTROLLER
+// MAIN PAGE
 export default function Home() {
   const [brands, setBrands] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -891,7 +475,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [selectedBrand, setSelectedBrand] = useState('dominos');
-  const [cartAmount, setCartAmount] = useState('500');
+  const [cartAmount, setCartAmount] = useState('1000');
   const [hasSbiCard, setHasSbiCard] = useState(true);
   const [calcLoading, setCalcLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -899,7 +483,6 @@ export default function Home() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -907,15 +490,13 @@ export default function Home() {
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState('');
 
-  // 100% REAL DATABASE INGESTION
+  // 100% REAL SUPABASE INGESTION
   useEffect(() => {
     async function loadRealData() {
       try {
         if (!supabase) return;
 
-        // Fetch Brands with category & discount
         const { data: bData } = await supabase
           .from('brands')
           .select(`
@@ -939,7 +520,6 @@ export default function Home() {
           setSelectedBrand(formattedBrands[0].slug);
         }
 
-        // Fetch Verified Coupons
         const { data: cData } = await supabase
           .from('brand_coupons')
           .select(`
@@ -960,7 +540,6 @@ export default function Home() {
           })));
         }
 
-        // Fetch Real Payment Cards
         const { data: cardData } = await supabase
           .from('payment_instruments')
           .select('*')
@@ -985,7 +564,7 @@ export default function Home() {
     loadRealData();
   }, []);
 
-  // Global Keyboard Shortcut Listener (⌘K / Ctrl+K)
+  // Keyboard shortcut listener (⌘K)
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -997,7 +576,7 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, []);
 
-  // Live Stacker Calculation Execution
+  // Live Stacker Calculation
   const handleCalculate = () => {
     const numCart = Number(cartAmount);
     if (!numCart || numCart <= 0) return;
@@ -1033,7 +612,7 @@ export default function Home() {
         },
       });
       setCalcLoading(false);
-    }, 200);
+    }, 180);
   };
 
   const copyCoupon = (code: string) => {
@@ -1051,63 +630,29 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-slate-900 selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-black selection:text-white">
 
-      {/* 1. TOP DARK HERO SECTION (Exact Reference Header) */}
-      <header className="bg-[#09090B] text-white px-6 pt-6 pb-20 rounded-b-[44px] shadow-2xl relative overflow-hidden">
-        
-        {/* Navigation Bar */}
-        <div className="max-w-6xl mx-auto flex items-center justify-between pb-10 border-b border-zinc-800">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-black font-black text-base shadow-sm">
-                V
-              </div>
-              <span className="font-extrabold text-lg tracking-tight text-white">AllInOneVouchers</span>
-            </div>
+      {/* 1. SEPARATE NAVBAR COMPONENT */}
+      <DynamicFintechNavbar 
+        onOpenAuth={() => setIsAuthOpen(true)}
+        brandCount={brands.length || 6}
+      />
 
-            <nav className="hidden md:flex items-center gap-6 text-xs text-zinc-400 font-bold">
-              <a href="#brands" className="hover:text-white transition">All Brands</a>
-              <a href="#coupons" className="hover:text-white transition">Coupons</a>
-              <a href="#calculator" className="hover:text-white transition">Stack Engine</a>
-              <a href="#cards" className="hover:text-white transition">Bank Cards</a>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-semibold text-zinc-400 hover:text-white transition"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>Search</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-[9px] font-mono">⌘K</kbd>
-            </button>
-
-            <button
-              onClick={() => setIsAuthOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-black text-xs font-bold hover:bg-zinc-200 transition shadow-sm"
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>My Vault</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Hero Title & Big Search Input */}
-        <div className="max-w-4xl mx-auto pt-14 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-[11px] font-bold text-emerald-400">
+      {/* 2. BLACK HERO SECTION */}
+      <header className="bg-[#09090B] text-white px-6 pt-24 pb-20 rounded-b-[40px] shadow-2xl relative">
+        <div className="max-w-4xl mx-auto pt-6 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-[11px] font-bold text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Over 12,000+ verified vouchers & live coupons</span>
+            <span>Over 12,000+ verified vouchers & live promo codes</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.15] text-white">
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.1] text-white">
             Big Brands.<br />
             <span className="text-zinc-400">Bigger Savings.</span>
           </h1>
 
           <p className="text-sm text-zinc-400 max-w-md mx-auto font-medium">
-            Grab wholesale e-vouchers, stack promo codes, and get credit card cashback instantly.
+            Stack wholesale e-vouchers, verified merchant promo codes, and credit card cashbacks to unlock the lowest checkout price.
           </p>
 
           <div className="max-w-xl mx-auto relative pt-2">
@@ -1115,7 +660,7 @@ export default function Home() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for brands, deals or categories..."
+              placeholder="Search by brand name, store or coupon..."
               className="w-full bg-white text-slate-900 rounded-full py-4 pl-12 pr-28 text-sm outline-none shadow-2xl font-semibold"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-4.5 top-1/2 -translate-y-1/2 pt-1" />
@@ -1129,135 +674,142 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 2. TOP BRANDS HORIZONTAL SCROLLER */}
+      {/* 3. WHITE SURFACE: TOP BRANDS ROW */}
       <section id="brands" className="max-w-6xl mx-auto px-6 -mt-10 relative z-10">
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-md">
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Top Brands</h2>
             <a href="#vouchers" className="text-xs font-bold text-slate-900 hover:underline">
-              View all ({brands.length}) →
+              View all inventory ({brands.length}) →
             </a>
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-            {brands.map((b) => (
-              <button
-                key={b.id}
-                onClick={() => {
-                  setSelectedBrand(b.slug);
-                  document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className={`p-3.5 rounded-2xl border transition-all flex flex-col items-center gap-2 group ${
-                  selectedBrand === b.slug
-                    ? 'border-black bg-slate-50 shadow-sm'
-                    : 'border-slate-100 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
-                  {b.logo_url ? (
-                    <img src={b.logo_url} alt={b.name} className="w-7 h-7 object-contain group-hover:scale-105 transition-transform" />
-                  ) : (
-                    <span className="text-lg font-black">{b.name[0]}</span>
-                  )}
-                </div>
-                <span className="text-xs font-bold text-slate-800 truncate w-full text-center">{b.name}</span>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  {b.discount}% OFF
-                </span>
-              </button>
-            ))}
+            {brands.map((b) => {
+              const visual = BRAND_VISUALS[b.slug];
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => {
+                    setSelectedBrand(b.slug);
+                    document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-3.5 rounded-2xl border transition-all flex flex-col items-center gap-2 group ${
+                    selectedBrand === b.slug
+                      ? 'border-black bg-slate-50 shadow-sm'
+                      : 'border-slate-100 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-2 shadow-sm">
+                    {visual?.logoUrl ? (
+                      <img src={visual.logoUrl} alt={b.name} className="w-8 h-8 object-contain group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <span className="text-sm font-black text-slate-800">{b.name.slice(0, 3)}</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-slate-800 truncate w-full text-center">{b.name}</span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    {b.discount}% OFF
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* 3. 3-LAYER STACKING VISUALIZER */}
-      <StackingVisualizer />
-
-      {/* 4. SAVINGS CALCULATOR SECTION */}
-      <section id="calculator" className="max-w-6xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+      {/* 4. BLACK SURFACE: 3-LAYER STACKING CALCULATOR */}
+      <section id="calculator" className="max-w-6xl mx-auto px-6 py-14">
+        <div className="bg-[#090A0F] border border-white/10 rounded-[32px] p-8 shadow-2xl text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
             <div>
-              <span className="text-[11px] font-black text-emerald-600 uppercase tracking-wider">Arbitrage Stacking Engine</span>
-              <h2 className="text-2xl font-black text-slate-900">Calculate Lowest Net Price</h2>
+              <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider">Arbitrage Engine</span>
+              <h2 className="text-2xl font-black text-white">Calculate Lowest Checkout Price</h2>
             </div>
-            <div className="text-xs text-slate-500 font-medium">
-              Active Store: <strong className="text-black">{brands.find(b => b.slug === selectedBrand)?.name || 'Store'}</strong>
+            <div className="text-xs text-zinc-400 font-medium">
+              Active Store: <strong className="text-white">{brands.find(b => b.slug === selectedBrand)?.name || 'Store'}</strong>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
-            {/* Left Controls */}
+            {/* Input Controls */}
             <div className="lg:col-span-7 space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Cart Order Value (₹)</label>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                  1. Order Cart Value (₹)
+                </label>
                 <input
                   type="number"
                   value={cartAmount}
                   onChange={(e) => setCartAmount(e.target.value)}
                   placeholder="1000"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-black text-slate-900 outline-none focus:border-black"
+                  className="w-full bg-white/[0.04] border border-white/15 focus:border-emerald-400 rounded-xl px-4 py-3.5 text-xl font-black text-white outline-none"
                 />
               </div>
 
-              <div
-                onClick={() => setHasSbiCard(!hasSbiCard)}
-                className={`p-4 rounded-xl border cursor-pointer flex items-center justify-between transition ${
-                  hasSbiCard ? 'bg-slate-50 border-black' : 'bg-white border-slate-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-slate-700" />
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">SBI Cashback Credit Card</h4>
-                    <p className="text-[11px] text-slate-500">5% Statement Cashback applied at purchase</p>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                  2. Payment Instrument
+                </label>
+                <div
+                  onClick={() => setHasSbiCard(!hasSbiCard)}
+                  className={`p-4 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                    hasSbiCard ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.02] border-white/[0.08]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <CreditCard className={`w-5 h-5 ${hasSbiCard ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                    <div>
+                      <h4 className="text-xs font-bold text-white">SBI Cashback Credit Card</h4>
+                      <p className="text-[11px] text-zinc-400">5% Statement Cashback applied at purchase</p>
+                    </div>
                   </div>
-                </div>
-                <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${hasSbiCard ? 'bg-black border-black text-white' : 'border-slate-300'}`}>
-                  {hasSbiCard && <Check className="w-3.5 h-3.5" />}
+                  <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${hasSbiCard ? 'bg-emerald-400 border-emerald-400 text-black' : 'border-zinc-700'}`}>
+                    {hasSbiCard && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </div>
                 </div>
               </div>
 
               <button
                 onClick={handleCalculate}
                 disabled={calcLoading}
-                className="w-full py-3.5 rounded-xl bg-black hover:bg-zinc-800 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-xl bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2"
               >
-                <Zap className="w-4 h-4 fill-white" />
+                <Zap className="w-4 h-4 fill-black" />
                 {calcLoading ? 'Calculating Lowest Price...' : 'Calculate Lowest Price'}
               </button>
             </div>
 
-            {/* Right Result Card */}
-            <div className="lg:col-span-5 bg-slate-50 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between">
+            {/* Output Card */}
+            <div className="lg:col-span-5 bg-white/[0.03] rounded-2xl p-6 border border-white/10 flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Final Effective Cost</span>
-                <div className="text-4xl font-black text-slate-900 mt-1">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Final Effective Cost</span>
+                <div className="text-4xl font-black text-white mt-1">
                   ₹{result ? result.bestEffectiveCost : cartAmount}
                 </div>
                 {result && (
-                  <span className="text-xs font-bold text-emerald-600 block mt-1">
+                  <span className="text-xs font-bold text-emerald-400 block mt-1">
                     You save ₹{result.totalSavings} on this order!
                   </span>
                 )}
               </div>
 
               {result && (
-                <div className="pt-4 border-t border-slate-200/60 space-y-1.5 text-xs text-slate-600 my-4">
+                <div className="pt-4 border-t border-white/10 space-y-1.5 text-xs text-zinc-300 my-4">
                   <div className="flex justify-between">
-                    <span>Wholesale Voucher:</span>
-                    <span className="font-bold text-slate-900">-₹{result.breakdown.voucherCut}</span>
+                    <span>Wholesale Voucher Cut:</span>
+                    <span className="font-bold text-emerald-400">-₹{result.breakdown.voucherCut}</span>
                   </div>
                   {result.breakdown.couponCut > 0 && (
                     <div className="flex justify-between">
                       <span>Promo ({result.breakdown.couponCode}):</span>
-                      <span className="font-bold text-slate-900">-₹{result.breakdown.couponCut}</span>
+                      <span className="font-bold text-emerald-400">-₹{result.breakdown.couponCut}</span>
                     </div>
                   )}
                   {result.breakdown.cardCashback > 0 && (
                     <div className="flex justify-between">
                       <span>5% Card Return:</span>
-                      <span className="font-bold text-slate-900">-₹{result.breakdown.cardCashback}</span>
+                      <span className="font-bold text-emerald-400">-₹{result.breakdown.cardCashback}</span>
                     </div>
                   )}
                 </div>
@@ -1265,7 +817,7 @@ export default function Home() {
 
               <button
                 onClick={() => setIsCheckoutOpen(true)}
-                className="mt-4 w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+                className="mt-4 w-full py-3.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
               >
                 <span>Get Voucher Now</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -1275,7 +827,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. VERIFIED COUPONS (Perkly Image 02 Filter & Cards) */}
+      {/* 5. WHITE SURFACE: VERIFIED PROMOS */}
       <section id="coupons" className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -1283,35 +835,23 @@ export default function Home() {
             <p className="text-xs text-slate-500">Showing {filteredCoupons.length} active coupons in database</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Category Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-              {categoriesList.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap ${
-                    activeCategory === cat
-                      ? 'bg-black text-white'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setIsSubmitModalOpen(true)}
-              className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-1 shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Submit Code</span>
-            </button>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {categoriesList.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap ${
+                  activeCategory === cat
+                    ? 'bg-black text-white'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Coupons List */}
         <div className="space-y-3">
           {filteredCoupons.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
@@ -1321,7 +861,7 @@ export default function Home() {
             filteredCoupons.map((c) => (
               <div
                 key={c.id}
-                className="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-400 transition"
+                className="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-400 transition shadow-sm"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 font-bold text-sm">
@@ -1366,85 +906,141 @@ export default function Home() {
             ))
           )}
         </div>
-
-        <SubmitCouponModal
-          isOpen={isSubmitModalOpen}
-          onClose={() => setIsSubmitModalOpen(false)}
-          brands={brands}
-          onSuccess={(newCoupon) => {
-            setCoupons((prev) => [newCoupon, ...prev]);
-          }}
-        />
       </section>
 
-      {/* 6. SPONSORED REELS (VIDEO ADS FEED) */}
+      {/* 6. BLACK SURFACE: WHOLESALE VOUCHERS CATALOG */}
+      <section id="vouchers" className="bg-[#09090B] py-16 px-6 mt-12">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">Direct Inventory</span>
+              <h2 className="text-3xl font-black text-white tracking-tight">Wholesale E-Vouchers Catalog</h2>
+            </div>
+            <span className="text-xs text-zinc-400 font-medium hidden sm:block">Instant delivery vouchers</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {brands.map((b) => {
+              const visual = BRAND_VISUALS[b.slug] || {
+                banner: 'https://images.unsplash.com/photo-1556742049-0a67e557224f?w=800&auto=format&fit=crop&q=70',
+                logoUrl: '',
+                fallbackText: b.name,
+              };
+              const savingsAmt = Math.round((1000 * (b.discount || 5)) / 100);
+              const finalPay = 1000 - savingsAmt;
+
+              return (
+                <div key={b.id} className="relative h-[380px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-zinc-800 bg-[#12131A] shadow-xl group hover:border-zinc-700 transition-all">
+                  <div 
+                    className="absolute top-0 left-0 w-full h-44 bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity"
+                    style={{ backgroundImage: `url(${b.banner_url || visual.banner})` }}
+                  />
+                  <div className="absolute top-0 left-0 w-full h-44 bg-gradient-to-b from-transparent to-[#12131A]" />
+
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="w-14 h-14 rounded-2xl bg-white p-2.5 shadow-md flex items-center justify-center border border-white/20">
+                      {visual.logoUrl ? (
+                        <img src={visual.logoUrl} alt={b.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <span className="text-black font-black text-xs uppercase">{visual.fallbackText.slice(0, 3)}</span>
+                      )}
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black text-xs">
+                      {b.discount}% OFF
+                    </span>
+                  </div>
+
+                  <div className="relative z-10 mt-auto bg-black/60 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                    <h3 className="text-lg font-black text-white">{b.name}</h3>
+                    <p className="text-xs text-emerald-400 font-bold mb-3">Instant ₹{savingsAmt} off on ₹1000 card</p>
+                    <div className="pt-2 border-t border-white/10 flex items-baseline justify-between mb-3">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 uppercase font-bold block">Deal Price</span>
+                        <span className="text-2xl font-black text-white">₹{finalPay}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-zinc-500 uppercase font-bold block">MRP</span>
+                        <span className="text-sm font-semibold text-zinc-500 line-through">₹1000</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedBrand(b.slug);
+                        setCartAmount('1000');
+                        document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]"
+                    >
+                      <span>Stack This Deal</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. WHITE SURFACE: EDUCATIONAL STACKING SLIDER */}
+      <StackingVisualizer />
+
+      {/* 8. BLACK SURFACE: FINANCIAL CASHBACK CARDS */}
+      <section id="cards" className="bg-[#090A0F] py-16 px-6">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-indigo-400">
+                Financial Rails
+              </span>
+              <h2 className="text-3xl font-black text-white tracking-tight">
+                Recommended Cashback Cards
+              </h2>
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">
+              Click any card to flip and view cashback terms
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {cards.map((c) => (
+              <div key={c.id} className="relative h-[230px] rounded-3xl p-5 border border-white/15 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black shadow-xl flex flex-col justify-between overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black tracking-widest text-zinc-300 uppercase">{c.issuer_bank}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 border border-white/10 text-emerald-400">
+                    {c.base_cashback}% Cashback
+                  </span>
+                </div>
+                <div className="my-auto">
+                  <h4 className="text-sm font-extrabold text-white leading-tight">{c.name}</h4>
+                  <span className="text-[10px] text-zinc-400">Fee: ₹{c.joining_fee}</span>
+                </div>
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2 bg-white hover:bg-zinc-200 text-black text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5"
+                >
+                  <span>Apply Online</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 9. REELS, QUIZZES & ALERTS */}
       <SponsoredReelsFeed
         onSelectBrand={(slug) => {
           setSelectedBrand(slug);
           document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
-
-      {/* 7. 3D WHOLESALE VOUCHERS CATALOG */}
-      <section id="vouchers" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
-        <Reveal className="flex justify-between items-end">
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-600">Direct Inventory</span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Wholesale E-Vouchers Catalog</h2>
-          </div>
-          <span className="text-xs text-slate-500 font-semibold hidden sm:block">Instant gyroscopic 3D cards</span>
-        </Reveal>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {brands.map((b) => (
-            <Interactive3DVoucherCard
-              key={b.id}
-              brand={b}
-              nominalVal={1000}
-              onSelect={() => {
-                setSelectedBrand(b.slug);
-                setCartAmount('1000');
-                document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* 8. 3D BANK CARDS SHOWCASE */}
-      <section id="cards" className="max-w-7xl mx-auto px-6 py-16 space-y-8">
-        <Reveal>
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-            <div>
-              <span className="text-xs font-black uppercase tracking-wider text-indigo-600">
-                Financial Rails
-              </span>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-                Recommended 3D Bank Cards
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 font-medium">
-              Hover to tilt • Click card to flip
-            </p>
-          </div>
-        </Reveal>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cards.map((c, idx) => (
-            <Reveal key={c.id} delay={idx * 0.08}>
-              <Interactive3DBankCard card={c} index={idx} />
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* 9. CARD QUIZ */}
       <CardEligibilityQuiz />
-
-      {/* 10. VIP WHATSAPP ALERTS */}
       <WhatsAppAlerts />
 
-      {/* 11. FAQ SECTION */}
+      {/* 10. WHITE SURFACE: FAQS */}
       <section id="faq" className="max-w-4xl mx-auto px-6 py-16 space-y-6">
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-black text-slate-900">Frequently Asked Questions</h2>
@@ -1456,7 +1052,7 @@ export default function Home() {
             <div
               key={i}
               onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              className="p-5 rounded-2xl bg-white border border-slate-200/80 cursor-pointer shadow-sm"
+              className="p-5 rounded-2xl bg-white border border-slate-200 cursor-pointer shadow-sm"
             >
               <div className="flex justify-between items-center gap-4">
                 <h4 className="text-sm font-bold text-slate-900">{faq.q}</h4>
@@ -1472,7 +1068,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 12. SPOTLIGHT SEARCH (⌘K / Ctrl+K) */}
+      {/* SPOTLIGHT SEARCH MODAL (⌘K) */}
       <SpotlightSearch
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
@@ -1491,7 +1087,7 @@ export default function Home() {
         }}
       />
 
-      {/* 13. DIRECT BUY CHECKOUT MODAL */}
+      {/* CHECKOUT MODAL */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
@@ -1501,15 +1097,14 @@ export default function Home() {
         savings={result?.totalSavings || 50}
       />
 
-      {/* 14. AUTH MODAL */}
+      {/* AUTH MODAL */}
       {isAuthOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl border border-slate-200">
             <button 
               onClick={() => {
                 setIsAuthOpen(false);
                 setOtpSent(false);
-                setAuthError('');
                 setOtp('');
               }}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-900 transition"
@@ -1529,25 +1124,19 @@ export default function Home() {
               </p>
             </div>
 
-            {authError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
-                {authError}
-              </div>
-            )}
-
             {!otpSent ? (
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (phoneNumber.replace(/\D/g, '').length !== 10) {
-                    setAuthError('10-digit valid number enter karein.');
+                    alert('Enter a valid 10-digit mobile number.');
                     return;
                   }
                   setAuthLoading(true);
                   setTimeout(() => {
                     setAuthLoading(false);
                     setOtpSent(true);
-                  }, 300);
+                  }, 250);
                 }}
                 className="space-y-3"
               >
@@ -1578,19 +1167,15 @@ export default function Home() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (otp.length < 6) {
-                    setAuthError('6-digit OTP daalein.');
+                    alert('Enter 6-digit code.');
                     return;
                   }
-                  setAuthLoading(true);
                   try {
                     localStorage.setItem('bachat_user_phone', phoneNumber);
-                    localStorage.setItem('bachat_auth_token', 'demo_active');
+                    localStorage.setItem('bachat_auth_token', 'active');
                   } catch (e) {}
-                  setTimeout(() => {
-                    setAuthLoading(false);
-                    setIsAuthOpen(false);
-                    window.location.href = '/dashboard';
-                  }, 300);
+                  setIsAuthOpen(false);
+                  window.location.href = '/dashboard';
                 }}
                 className="space-y-3"
               >
@@ -1605,10 +1190,9 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  disabled={authLoading}
                   className="w-full py-3 bg-black hover:bg-zinc-800 text-white text-xs font-bold rounded-xl transition shadow-sm"
                 >
-                  {authLoading ? 'Verifying...' : 'Verify & Open Vault'}
+                  Verify & Open Vault
                 </button>
               </form>
             )}
@@ -1616,17 +1200,17 @@ export default function Home() {
         </div>
       )}
 
-      {/* 15. LIVE ARBITRAGE TOAST */}
+      {/* TICKER */}
       <LiveArbitrageTicker />
 
-      {/* 16. FOOTER */}
-      <footer className="bg-white border-t border-slate-200 py-10 mt-16 text-xs text-slate-500 font-medium">
+      {/* FOOTER */}
+      <footer className="bg-[#09090B] text-white border-t border-zinc-800 py-12 text-xs">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <span className="font-bold text-slate-800">AllInOneVouchers • Instant Savings Discovery</span>
-          <div className="flex gap-6">
-            <span className="hover:text-black cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-black cursor-pointer">Terms of Service</span>
-            <span className="hover:text-black cursor-pointer">Security Protocol</span>
+          <span className="font-bold text-zinc-300">AllInOneVouchers • Real-Time Savings Discovery & Stacking Engine</span>
+          <div className="flex gap-6 text-zinc-400 font-medium">
+            <span className="hover:text-white cursor-pointer">Privacy Policy</span>
+            <span className="hover:text-white cursor-pointer">Terms of Service</span>
+            <span className="hover:text-white cursor-pointer">Security Protocol</span>
           </div>
         </div>
       </footer>
