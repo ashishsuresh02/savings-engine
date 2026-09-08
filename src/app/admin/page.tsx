@@ -11,23 +11,22 @@ import {
   Link as LinkIcon, 
   Plus, 
   TrendingUp, 
-  Sparkles, 
   ArrowUpRight,
   Lock,
   LogOut,
   RefreshCw,
-  ShieldCheck
+  Sliders
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-const ADMIN_MASTER_PIN = '2026'; // Aap apna master pin yahan change kar sakte hain
+const ADMIN_MASTER_PIN = '2026';
 
 export default function AdminEnterpriseDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [enteredPin, setEnteredPin] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
 
-  const [activeView, setActiveView] = useState<'overview' | 'vouchers' | 'orders' | 'sponsors' | 'affiliates'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'brands-manager' | 'vouchers' | 'orders' | 'sponsors' | 'affiliates'>('overview');
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
@@ -37,7 +36,7 @@ export default function AdminEnterpriseDashboard() {
   const [sponsorIncome, setSponsorIncome] = useState<number>(45000);
 
   // Forms State
-  const [vBrand, setVBrand] = useState('Amazon Pay');
+  const [vBrandId, setVBrandId] = useState('');
   const [vCode, setVCode] = useState('');
   const [vPin, setVPin] = useState('');
   const [vFace, setVFace] = useState('');
@@ -50,14 +49,13 @@ export default function AdminEnterpriseDashboard() {
   const [sPlan, setSPlan] = useState('FEATURED_CALCULATOR');
 
   // Real DB collections
+  const [brandsList, setBrandsList] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [sponsors, setSponsors] = useState<any[]>([
     { id: 'sp-1', company_name: 'AU Small Finance Bank', deal_type: 'Featured Credit Card Banner', deal_amount: 25000, payment_status: 'RECEIVED' },
-    { id: 'sp-2', company_name: 'Cashkaro Network', deal_type: 'Exclusive API Integration', deal_amount: 20000, payment_status: 'RECEIVED' },
   ]);
 
-  // Check existing session
   useEffect(() => {
     const session = sessionStorage.getItem('bachat_admin_session');
     if (session === 'authenticated') {
@@ -65,13 +63,33 @@ export default function AdminEnterpriseDashboard() {
     }
   }, []);
 
-  // Fetch real data from Supabase
   const fetchLiveMetrics = async () => {
     setLoading(true);
     try {
       if (!supabase) return;
 
-      // 1. Fetch live inventory
+      // 1. Fetch Brands & Resale Discounts
+      const { data: bData } = await supabase
+        .from('brands')
+        .select(`
+          id, name, slug, logo_url, banner_url, is_active,
+          brand_vouchers(id, resale_discount_pct, wholesale_discount_pct)
+        `)
+        .eq('is_active', true);
+
+      if (bData) {
+        const formatted = bData.map((b: any) => ({
+          ...b,
+          discount: b.brand_vouchers?.[0]?.resale_discount_pct || 10,
+          voucher_table_id: b.brand_vouchers?.[0]?.id,
+        }));
+        setBrandsList(formatted);
+        if (formatted.length > 0 && !vBrandId) {
+          setVBrandId(formatted[0].name);
+        }
+      }
+
+      // 2. Fetch live inventory
       const { data: invData } = await supabase
         .from('voucher_inventory')
         .select('*')
@@ -81,7 +99,7 @@ export default function AdminEnterpriseDashboard() {
         setInventory(invData);
       }
 
-      // 2. Fetch live customer orders
+      // 3. Fetch live customer orders
       const { data: ordData } = await supabase
         .from('customer_orders')
         .select('*')
@@ -89,8 +107,6 @@ export default function AdminEnterpriseDashboard() {
 
       if (ordData) {
         setOrders(ordData);
-
-        // Real calculations
         const gmv = ordData.reduce((acc: number, item: any) => acc + (Number(item.amount_paid) || 0), 0);
         const profit = ordData.reduce((acc: number, item: any) => acc + (Number(item.profit_earned) || 0), 0);
         setTotalRevenue(gmv);
@@ -131,7 +147,7 @@ export default function AdminEnterpriseDashboard() {
     setActionLoading(true);
 
     const newVoucher = {
-      brand_name: vBrand,
+      brand_name: vBrandId,
       voucher_code: vCode,
       voucher_pin: vPin || '0000',
       face_value: Number(vFace),
@@ -155,14 +171,13 @@ export default function AdminEnterpriseDashboard() {
       setVSell('');
       alert('Voucher successfully synced to Supabase database!');
     } catch (err) {
-      console.warn('DB upload failed, local fallback:', err);
+      console.warn('DB upload failed:', err);
       setInventory([newVoucher, ...inventory]);
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Handle Adding Sponsor
   const handleAddSponsor = (e: React.FormEvent) => {
     e.preventDefault();
     const newSp = {
@@ -179,7 +194,6 @@ export default function AdminEnterpriseDashboard() {
     alert('Sponsorship deal logged!');
   };
 
-  // 1. SECURITY LOCK SCREEN
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#09090B] text-white flex items-center justify-center p-4 antialiased">
@@ -187,12 +201,10 @@ export default function AdminEnterpriseDashboard() {
           <div className="w-14 h-14 rounded-2xl bg-white text-black flex items-center justify-center mx-auto shadow-md">
             <Lock className="w-6 h-6" />
           </div>
-
           <div className="space-y-1.5">
             <h2 className="text-xl font-black tracking-tight">Admin Vault Lock</h2>
-            <p className="text-xs text-zinc-400 font-medium">Enter system master passkey to access financial engine</p>
+            <p className="text-xs text-zinc-400 font-medium">Enter master passcode (Default: 2026)</p>
           </div>
-
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <input
@@ -205,7 +217,6 @@ export default function AdminEnterpriseDashboard() {
               />
               {authError && <span className="text-[11px] text-rose-400 font-bold block mt-1.5">{authError}</span>}
             </div>
-
             <button
               type="submit"
               className="w-full py-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider transition shadow-sm active:scale-95"
@@ -218,10 +229,9 @@ export default function AdminEnterpriseDashboard() {
     );
   }
 
-  // 2. UNLOCKED REAL-TIME WORKSTATION
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex antialiased">
-      {/* Sidebar Navigation */}
+      {/* Sidebar */}
       <aside className="w-64 border-r border-zinc-800 bg-[#09090B] p-6 flex flex-col justify-between hidden md:flex shrink-0 text-white">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
@@ -237,6 +247,7 @@ export default function AdminEnterpriseDashboard() {
           <nav className="space-y-1.5">
             {[
               { key: 'overview', label: 'Financial Overview', icon: BarChart3 },
+              { key: 'brands-manager', label: 'Brand & Discount Manager', icon: Sliders },
               { key: 'vouchers', label: 'Voucher Inventory', icon: Tag },
               { key: 'orders', label: 'Live Orders Ledger', icon: Users },
               { key: 'sponsors', label: 'Brand Partnerships', icon: Building2 },
@@ -276,13 +287,13 @@ export default function AdminEnterpriseDashboard() {
       {/* Main Workstation */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto space-y-8 max-w-7xl mx-auto">
         
-        {/* Top Control Bar */}
+        {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-900 capitalize tracking-tight">
-              {activeView} Control Center
+              {activeView.replace('-', ' ')} Control Center
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Direct Supabase database ingestion and transaction audit</p>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Direct Supabase database ingestion and dynamic management</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -296,15 +307,14 @@ export default function AdminEnterpriseDashboard() {
             </button>
             <span className="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Mode
+              Live Connected
             </span>
           </div>
         </header>
 
-        {/* OVERVIEW TAB */}
+        {/* 1. OVERVIEW TAB */}
         {activeView === 'overview' && (
           <div className="space-y-8">
-            {/* 4 Financial Pillar Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2">
                 <span className="text-xs font-bold uppercase text-slate-400 flex items-center justify-between">
@@ -343,7 +353,6 @@ export default function AdminEnterpriseDashboard() {
               </div>
             </div>
 
-            {/* Live Orders Audit Table */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -372,10 +381,60 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* VOUCHER INVENTORY MANAGER */}
+        {/* 2. BRAND & DISCOUNT MANAGER TAB */}
+        {activeView === 'brands-manager' && (
+          <div className="space-y-6">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Dynamic Brand Discount & Visual Manager</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Update resale discount percentages live. Changes reflect immediately across the calculation engine.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {brandsList.map((b: any) => (
+                  <div key={b.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center font-bold text-sm text-slate-900 shadow-sm">
+                        {b.name[0]}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">{b.name}</h4>
+                        <span className="text-[10px] text-slate-400 font-mono">slug: {b.slug}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Resale Discount %</span>
+                        <input 
+                          type="number" 
+                          defaultValue={b.discount} 
+                          onBlur={async (e) => {
+                            const newPct = Number(e.target.value);
+                            if (!supabase) return;
+                            if (b.voucher_table_id) {
+                              await supabase.from('brand_vouchers').update({ resale_discount_pct: newPct }).eq('id', b.voucher_table_id);
+                            } else {
+                              await supabase.from('brand_vouchers').insert([{ brand_id: b.id, wholesale_discount_pct: newPct + 3, resale_discount_pct: newPct, min_denomination: 100, max_denomination: 5000 }]);
+                            }
+                            alert(`${b.name} resale discount updated to ${newPct}%!`);
+                          }}
+                          className="w-24 bg-white border border-slate-300 rounded-xl p-2 text-xs text-center font-black text-slate-900 shadow-sm focus:outline-none focus:border-black"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. VOUCHER INVENTORY MANAGER */}
         {activeView === 'vouchers' && (
           <div className="space-y-8">
-            {/* Add Voucher Form Card */}
             <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
               <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                 <Plus className="w-4 h-4 text-slate-900" /> Upload Live Voucher to DB
@@ -383,18 +442,15 @@ export default function AdminEnterpriseDashboard() {
 
               <form onSubmit={handleAddVoucher} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Brand</label>
-                  <select 
-                    value={vBrand} 
-                    onChange={e => setVBrand(e.target.value)}
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Brand Name</label>
+                  <input
+                    type="text"
+                    placeholder="Domino's Pizza"
+                    value={vBrandId}
+                    onChange={e => setVBrandId(e.target.value)}
+                    required
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold outline-none focus:border-black"
-                  >
-                    <option value="Amazon Pay">Amazon Pay</option>
-                    <option value="Swiggy Money">Swiggy Money</option>
-                    <option value="Domino's Pizza">Domino's Pizza</option>
-                    <option value="Myntra">Myntra</option>
-                    <option value="Zomato">Zomato</option>
-                  </select>
+                  />
                 </div>
 
                 <div>
@@ -437,7 +493,7 @@ export default function AdminEnterpriseDashboard() {
                   <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Secret 16-Digit Code</label>
                   <input
                     type="text"
-                    placeholder="AMZ-XXXX-YYYY"
+                    placeholder="DOM-XXXX-YYYY"
                     value={vCode}
                     onChange={e => setVCode(e.target.value)}
                     required
@@ -468,7 +524,6 @@ export default function AdminEnterpriseDashboard() {
               </form>
             </div>
 
-            {/* Inventory List Table */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200 overflow-x-auto shadow-sm">
               <h3 className="text-sm font-extrabold text-slate-900 mb-4">Stock Ledger ({inventory.length} Records)</h3>
               <table className="w-full text-left text-xs">
@@ -507,7 +562,7 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* CUSTOMER ORDERS LEDGER */}
+        {/* 4. CUSTOMER ORDERS LEDGER */}
         {activeView === 'orders' && (
           <div className="p-6 rounded-3xl bg-white border border-slate-200 overflow-x-auto shadow-sm">
             <h3 className="text-sm font-extrabold text-slate-900 mb-4">Customer Orders & Code Deliveries</h3>
@@ -538,7 +593,7 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* SPONSORSHIPS TAB */}
+        {/* 5. SPONSORSHIPS TAB */}
         {activeView === 'sponsors' && (
           <div className="space-y-8">
             <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
@@ -608,7 +663,7 @@ export default function AdminEnterpriseDashboard() {
           </div>
         )}
 
-        {/* AFFILIATES TAB */}
+        {/* 6. AFFILIATES TAB */}
         {activeView === 'affiliates' && (
           <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
