@@ -49,7 +49,7 @@ export default function CheckoutModal({
 
   if (!isOpen) return null;
 
-  const MERCHANT_UPI = "ashishkumar@upi"; 
+  const MERCHANT_UPI = "ashishsuresh502-1@okhdfcbank"; 
   const MERCHANT_NAME = "AllInOneVouchers";
   const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandSlug}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
