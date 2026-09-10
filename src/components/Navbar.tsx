@@ -26,7 +26,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 60);
+    setIsScrolled(latest > 50);
   });
 
   return (
@@ -34,49 +34,41 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-3 sm:px-6 pt-3 pointer-events-none transition-all duration-500">
         <motion.nav
           layout
-          transition={{ type: 'spring', stiffness: 220, damping: 26 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 28 }}
           className={`pointer-events-auto flex items-center justify-between border transition-all duration-300 ${
             isScrolled
-              ? 'w-full max-w-4xl py-2 px-4 sm:px-6 rounded-full bg-[#09090B]/90 border-white/20 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(16,185,129,0.1)]'
-              : 'w-full max-w-7xl py-3 px-4 sm:px-8 rounded-3xl bg-[#09090B]/75 border-white/10 backdrop-blur-xl shadow-xl'
+              ? 'w-full max-w-4xl py-2 px-4 sm:px-6 rounded-full bg-[#08090C]/85 border-white/[0.12] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(16,185,129,0.06)]'
+              : 'w-full max-w-7xl py-3 px-4 sm:px-8 rounded-3xl bg-[#08090C]/60 border-white/[0.08] backdrop-blur-xl shadow-xl'
           }`}
         >
-          {/* 1. Brand 3D Crystal Icon & Name */}
+          {/* 1. Frameless Floating Brand Asset & Name */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="relative">
-                {/* 3D Crystal Beveled Navbar Token */}
-                <motion.div 
-                  layoutId="brand-3d-crystal-logo"
-                  transition={{ type: 'spring', stiffness: 180, damping: 22, mass: 0.8 }}
-                  className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-white/25 via-white/5 to-white/0 p-[1.5px] shadow-[0_4px_15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-xl overflow-hidden group-hover:scale-105 transition-transform"
-                >
-                  <div className="w-full h-full rounded-[14px] bg-[#0c0d12]/90 flex items-center justify-center p-1.5 relative overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]">
-                    <Image 
-                      src="/logo.png" 
-                      alt="AllInOneVouchers" 
-                      width={36} 
-                      height={36} 
-                      className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]"
-                      priority
-                    />
-                    {/* Subtle micro shine */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-                  </div>
-                </motion.div>
+              <div className="relative flex items-center justify-center">
+                {/* Zero border, pure frameless floating logo */}
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                  <Image 
+                    src="/logo.png" 
+                    alt="AllInOneVouchers Logo" 
+                    width={40} 
+                    height={40} 
+                    className="w-full h-full object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
+                    priority
+                  />
+                </div>
 
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#09090B] flex items-center justify-center shadow-[0_0_8px_#10b981]">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-black flex items-center justify-center shadow-[0_0_8px_#34d399]">
+                  <span className="w-1 h-1 bg-white rounded-full animate-ping" />
                 </span>
               </div>
 
               <div className="flex flex-col">
                 <span className="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-1 group-hover:text-zinc-200 transition">
-                  AllInOne<span className="text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]">Vouchers</span>
+                  AllInOne<span className="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)]">Vouchers</span>
                 </span>
                 <span className="flex items-center gap-1 text-[9px] text-zinc-400 font-bold uppercase tracking-widest -mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{brandCount} Live Deals</span>
+                  <span>{brandCount} Merchants Live</span>
                 </span>
               </div>
             </Link>
@@ -97,10 +89,10 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
           <div className="flex items-center gap-2">
             <a
               href="#calculator"
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-[11px] font-bold text-zinc-200 hover:text-white transition backdrop-blur-md"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] font-bold text-zinc-200 hover:text-white transition backdrop-blur-md"
             >
               <Zap className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Instant Calc</span>
+              <span>Instant Rate</span>
             </a>
 
             <button
@@ -124,7 +116,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
         </motion.nav>
       </div>
 
-      {/* 4. Mobile Glass Drawer Menu */}
+      {/* 4. Mobile Drawer Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -132,7 +124,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -15, scale: 0.96 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="fixed inset-x-4 top-20 z-40 md:hidden bg-[#0a0b10]/95 border border-white/15 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col gap-3.5 text-white"
+            className="fixed inset-x-4 top-20 z-40 md:hidden bg-[#090A0F]/95 border border-white/15 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col gap-3.5 text-white"
           >
             <div className="flex flex-col gap-2">
               <a
