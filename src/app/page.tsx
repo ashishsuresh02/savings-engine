@@ -252,7 +252,7 @@ function StackingVisualizer() {
   );
 }
 
-// 4-LAYER INTERACTIVE LIVE 3D HERO COMPONENT (ZOOMED IN & TIGHTLY CLUSTERED)
+// 4-LAYER INTERACTIVE LIVE 3D HERO (HD SCALED, TIGHT VOUCHER & ZERO PIXELATION)
 function TrulyLive3DHero() {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -263,14 +263,14 @@ function TrulyLive3DHero() {
   const rotateX = useTransform(mouseY, [-0.5, 0.5], ['7deg', '-7deg']);
   const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-9deg', '9deg']);
 
-  // Parallax layers (Subtle tight motion taaki door na bhagein)
-  const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
-  const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-5, 5]);
+  // Parallax layers (Tight displacement taaki assets bikhrein nahi)
+  const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-6, 6]);
+  const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-6, 6]);
 
-  const layerLeftX = useTransform(mouseX, [-0.5, 0.5], [-12, 12]);
+  const layerLeftX = useTransform(mouseX, [-0.5, 0.5], [-14, 14]);
   const layerLeftY = useTransform(mouseY, [-0.5, 0.5], [-10, 10]);
 
-  const layerRightX = useTransform(mouseX, [-0.5, 0.5], [14, -14]);
+  const layerRightX = useTransform(mouseX, [-0.5, 0.5], [16, -16]);
   const layerRightY = useTransform(mouseY, [-0.5, 0.5], [-12, 12]);
 
   const layerVoucherX = useTransform(mouseX, [-0.5, 0.5], [-8, 8]);
@@ -291,8 +291,11 @@ function TrulyLive3DHero() {
     <div 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full max-w-[760px] h-[540px] sm:h-[650px] flex items-center justify-center perspective-[1200px] select-none py-2 overflow-visible"
+      className="relative w-full max-w-[820px] h-[520px] sm:h-[620px] flex items-center justify-center perspective-[1200px] select-none py-2 overflow-visible"
     >
+      {/* Dynamic Floor Spotlight under 3D Scene */}
+      <div className="absolute bottom-10 w-[80%] h-24 bg-gradient-to-r from-transparent via-[#E51B24]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
+
       <motion.div
         style={{
           rotateX,
@@ -301,19 +304,20 @@ function TrulyLive3DHero() {
         }}
         className="relative w-full h-full flex items-center justify-center"
       >
-        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE (MEGA SIZE CENTER) */}
+        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE (Crisp Mega Center) */}
         <motion.div 
           style={{ x: layerStageX, y: layerStageY }}
           animate={{ y: [0, -6, 0] }}
           transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-          className="relative z-10 w-[500px] sm:w-[640px] lg:w-[680px] flex items-center justify-center shrink-0"
+          className="relative z-10 w-[500px] sm:w-[620px] lg:w-[660px] flex items-center justify-center shrink-0"
         >
           <Image 
             src="/3d/phone-stage.png" 
             alt="AllInOneVouchers Phone Stage"
-            width={720}
-            height={720}
-            className="w-full h-auto object-contain drop-shadow-[0_30px_70px_rgba(0,0,0,0.3)]"
+            width={750}
+            height={750}
+            quality={100}
+            className="w-full h-auto object-contain drop-shadow-[0_25px_60px_rgba(0,0,0,0.22)]"
             priority
             onError={(e: any) => {
               e.currentTarget.src = '/hero-3d-mockup.png';
@@ -321,62 +325,66 @@ function TrulyLive3DHero() {
           />
         </motion.div>
 
-        {/* LAYER 2: LEFT FLOATING BRANDS (TIGHTLY CHIPKA HUA TO PHONE LEFT EDGE) */}
+        {/* LAYER 2: LEFT FLOATING BRANDS (Amazon, Flipkart, Myntra - Scaled Up & Bold) */}
         <motion.div
           style={{ x: layerLeftX, y: layerLeftY }}
           animate={{ 
-            y: [0, -8, 0],
+            y: [0, -9, 0],
             rotate: [-1, 1.5, -1]
           }}
           transition={{ repeat: Infinity, duration: 3.8, ease: 'easeInOut' }}
-          className="absolute left-6 sm:left-12 lg:left-14 top-16 sm:top-20 z-20 w-[180px] sm:w-[240px] pointer-events-none"
+          className="absolute left-2 sm:left-6 lg:left-8 top-12 sm:top-14 z-20 w-[200px] sm:w-[280px] lg:w-[310px] pointer-events-none"
         >
           <Image 
             src="/3d/brands-left.png" 
             alt="Amazon Flipkart Myntra"
-            width={260}
-            height={300}
-            className="w-full h-auto object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+            width={340}
+            height={380}
+            quality={100}
+            className="w-full h-auto object-contain drop-shadow-[0_15px_35px_rgba(0,0,0,0.25)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* LAYER 3: RIGHT FLOATING BRANDS (TIGHTLY CHIPKA HUA TO PHONE RIGHT EDGE) */}
+        {/* LAYER 3: RIGHT FLOATING BRANDS (Zomato, Swiggy, Blinkit + 70% Badge - Scaled Up & Bold) */}
         <motion.div
           style={{ x: layerRightX, y: layerRightY }}
           animate={{ 
-            y: [0, 8, 0],
+            y: [0, 9, 0],
             rotate: [1, -1.5, 1]
           }}
           transition={{ repeat: Infinity, duration: 4.2, ease: 'easeInOut' }}
-          className="absolute right-6 sm:right-12 lg:right-14 top-12 sm:top-16 z-20 w-[190px] sm:w-[250px] pointer-events-none"
+          className="absolute right-2 sm:right-6 lg:right-8 top-8 sm:top-12 z-20 w-[210px] sm:w-[290px] lg:w-[320px] pointer-events-none"
         >
           <Image 
             src="/3d/brands-right.png" 
             alt="Zomato Swiggy Blinkit"
-            width={270}
-            height={320}
-            className="w-full h-auto object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+            width={350}
+            height={400}
+            quality={100}
+            className="w-full h-auto object-contain drop-shadow-[0_15px_35px_rgba(0,0,0,0.25)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* LAYER 4: FRONT TILTED VOUCHER TICKET (ATTACHED TIGHT AT PODIUM BASE) */}
+        {/* LAYER 4: FRONT TILTED VOUCHER TICKET (UPPER PLACEMENT & ATTACHED TO PHONE) */}
         <motion.div
           style={{ x: layerVoucherX, y: layerVoucherY }}
           animate={{ 
-            scale: [1, 1.04, 1],
-            rotate: [-1, 2, -1]
+            scale: [1, 1.03, 1],
+            rotate: [-1, 2, -1],
+            y: [0, -4, 0]
           }}
-          transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
-          className="absolute bottom-6 sm:bottom-8 right-24 sm:right-36 lg:right-40 z-30 w-[140px] sm:w-[190px] pointer-events-none"
+          transition={{ repeat: Infinity, duration: 3.4, ease: 'easeInOut' }}
+          className="absolute bottom-16 sm:bottom-20 right-16 sm:right-28 lg:right-32 z-30 w-[160px] sm:w-[220px] pointer-events-none"
         >
           <Image 
             src="/3d/voucher-tag.png" 
             alt="Discount Voucher Tag"
-            width={210}
-            height={135}
-            className="w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(229,27,36,0.35)]"
+            width={260}
+            height={160}
+            quality={100}
+            className="w-full h-auto object-contain drop-shadow-[0_18px_30px_rgba(229,27,36,0.35)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
@@ -576,8 +584,38 @@ export default function Home() {
         brandCount={brands.length || 7}
       />
 
-      {/* 2. SPLIT HERO SECTION (Exact Reference Look + TrulyLive 3D Parallax) */}
-      <section className="bg-white border-b border-slate-200 pt-8 sm:pt-12 pb-14 sm:pb-20 relative overflow-hidden">
+      {/* 2. SPLIT HERO SECTION WITH DYNAMIC FINTECH AMBIENT BACKGROUND */}
+      <section className="bg-gradient-to-b from-[#FFFFFF] via-[#FBFDFF] to-[#F3F6FA] border-b border-slate-200 pt-8 sm:pt-14 pb-14 sm:pb-20 relative overflow-hidden">
+        
+        {/* Layer A: High-Tech Micro Dot Pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(#0B2B5C 1.2px, transparent 1.2px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+
+        {/* Layer B: Animated Deal-Red Glow Pulse (Center-Right behind Phone) */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.15, 1],
+            opacity: [0.35, 0.55, 0.35]
+          }}
+          transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
+          className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[420px] sm:w-[580px] h-[420px] sm:h-[580px] bg-gradient-to-br from-[#E51B24]/20 via-[#FF4D55]/10 to-transparent rounded-full blur-[130px] pointer-events-none"
+        />
+
+        {/* Layer C: Subtle Deep Navy Ambient Light (Top-Left behind Text) */}
+        <div className="absolute -top-20 left-10 w-[350px] sm:w-[500px] h-[350px] sm:h-[500px] bg-[#0B2B5C]/5 rounded-full blur-[120px] pointer-events-none" />
+
+        {/* Layer D: Soft Floating Geometric Orb Effects */}
+        <motion.div 
+          animate={{ y: [0, -18, 0], x: [0, 8, 0] }}
+          transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+          className="absolute top-20 right-10 w-24 h-24 rounded-full border border-red-200/30 bg-red-500/5 blur-xl pointer-events-none"
+        />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
           
           {/* LEFT: Copy, Live Search & Trust Badges */}
