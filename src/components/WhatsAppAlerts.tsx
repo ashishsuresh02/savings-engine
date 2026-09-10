@@ -2,17 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  BellRing, 
   ShieldCheck, 
   Flame, 
-  Clock, 
   ArrowUpRight, 
   Send, 
-  Instagram, 
   MessageCircle, 
-  Sparkles,
-  Zap,
-  Timer
+  Zap, 
+  Timer 
 } from 'lucide-react';
 
 interface CommunityAlertsProps {
@@ -21,12 +17,29 @@ interface CommunityAlertsProps {
   instagramLink?: string;
 }
 
+function InstagramIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg 
+      className={className} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
 export default function WhatsAppAlerts({ 
   whatsappLink = "https://chat.whatsapp.com/your-real-invite-link",
   telegramLink = "https://t.me/allinonevouchers",
   instagramLink = "https://instagram.com/allinonevouchers"
 }: CommunityAlertsProps) {
-  // Live Urgency Countdown Timer (Auto-resets smoothly)
   const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 44, seconds: 18 });
 
   useEffect(() => {
@@ -53,17 +66,15 @@ export default function WhatsAppAlerts({
 
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
           
-          {/* Left: High-Converting Copy + Live Urgency */}
+          {/* Left: Copy + Countdown */}
           <div className="space-y-5 text-center lg:text-left max-w-2xl">
             
-            {/* Urgent Top Bar */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 text-[#E51B24] text-[11px] font-black uppercase tracking-wider shadow-sm">
                 <Flame className="w-3.5 h-3.5 fill-[#E51B24]" />
                 <span>Lightning Price Drops Active</span>
               </div>
 
-              {/* Countdown Pill */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 text-white text-[11px] font-mono font-black tracking-wider shadow-sm">
                 <Timer className="w-3.5 h-3.5 text-[#E51B24] animate-pulse" />
                 <span>Round Ends:</span>
@@ -73,17 +84,15 @@ export default function WhatsAppAlerts({
               </div>
             </div>
 
-            {/* Main Hook Title */}
             <h3 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-[1.12]">
               Loot Prices & Vouchers Drop Hote Hi <span className="text-[#E51B24]">Sabse Pehle Link Pao!</span>
             </h3>
 
-            {/* Irresistible Value Proposition */}
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
               Amazon, Swiggy, Flipkart aur Myntra ke glitch rates aur wholesale brand vouchers sirf <strong>5 se 10 minute</strong> ke liye aate hain. Group me judoge toh offer expire hone se pehle direct link aapke haath me hoga!
             </p>
 
-            {/* Live Dropping Deal Pills (Visual Proof) */}
+            {/* Teaser Pills */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
               <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-black text-slate-800 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#E51B24]" />
@@ -99,7 +108,7 @@ export default function WhatsAppAlerts({
               </div>
             </div>
 
-            {/* Trust Assurance (Authentic, No Fake Count) */}
+            {/* Trust Points */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-1 text-xs font-bold text-slate-600">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -115,10 +124,10 @@ export default function WhatsAppAlerts({
             </div>
           </div>
 
-          {/* Right: Conversion Action Cards */}
+          {/* Right: Join Channels */}
           <div className="w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-3.5 shrink-0 min-w-[290px] sm:min-w-[340px]">
             
-            {/* 1. WhatsApp Channel (Primary Loot Access) */}
+            {/* WhatsApp */}
             <a
               href={whatsappLink}
               target="_blank"
@@ -137,7 +146,7 @@ export default function WhatsAppAlerts({
               <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </a>
 
-            {/* 2. Telegram Channel (Fastest Glitches) */}
+            {/* Telegram */}
             <a
               href={telegramLink}
               target="_blank"
@@ -156,7 +165,7 @@ export default function WhatsAppAlerts({
               <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </a>
 
-            {/* 3. Instagram (Proof & Reel Guides) */}
+            {/* Instagram */}
             <a
               href={instagramLink}
               target="_blank"
@@ -165,7 +174,7 @@ export default function WhatsAppAlerts({
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-inner">
-                  <Instagram className="w-5 h-5" />
+                  <InstagramIcon className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left">
                   <span className="block text-sm font-black normal-case leading-tight">Instagram Reels</span>
