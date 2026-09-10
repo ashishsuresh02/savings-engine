@@ -112,11 +112,11 @@ const FAQS = [
   },
   { 
     q: "How do I redeem an unlocked voucher code?", 
-    a: "Upon checkout confirmation, your 16-digit voucher number and secret PIN are displayed immediately on-screen and synced to your vault. In the merchant application (such as Domino's or Swiggy), select 'Gift Card' during payment to deduct 100% of the balance."[ 4]
+    a: "Upon checkout confirmation, your 16-digit voucher number and secret PIN are displayed immediately on-screen and synced to your vault. In the merchant application (such as Domino's or Swiggy), select 'Gift Card' during payment to deduct 100% of the balance."
   },
   { 
     q: "When is the credit card cashback credited?", 
-    a: "If you pay via eligible cashback instruments (like SBI Cashback), your 5% rebate reflects automatically in your credit card billing cycle statement as an official statement credit."[ 4]
+    a: "If you pay via eligible cashback instruments (like SBI Cashback), your 5% rebate reflects automatically in your credit card billing cycle statement as an official statement credit."
   }
 ];
 
@@ -138,7 +138,7 @@ function AnimatedRupee({ value, className }: { value: number; className?: string
   return <span className={className}>{text}</span>;
 }
 
-// 3-LAYER STACKING VISUALIZER SLIDER[cite: 4]
+// 3-LAYER STACKING VISUALIZER SLIDER
 const STACK_BASE_CART = 2000;
 const STACK_LAYERS = [
   { id: 'coupon', title: 'Store Promo Coupon', sub: 'Verified promo code applied', cut: 200, icon: Ticket, tint: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
@@ -315,7 +315,6 @@ function TrulyLive3DHero() {
             className="w-full h-auto object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.25)]"
             priority
             onError={(e: any) => {
-              // Fallback agar abhi 4 layers split na hui ho
               e.currentTarget.src = '/hero-3d-mockup.png';
             }}
           />
@@ -427,7 +426,7 @@ export default function Home() {
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
-  // SUPABASE REAL DATABASE SYNC[cite: 4]
+  // SUPABASE REAL DATABASE SYNC
   useEffect(() => {
     async function loadRealData() {
       try {
@@ -501,7 +500,7 @@ export default function Home() {
     loadRealData();
   }, []);
 
-  // Keyboard shortcut listener (⌘K)[cite: 4]
+  // Keyboard shortcut listener (⌘K)
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -513,7 +512,7 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, []);
 
-  // Live Stacker Calculation[cite: 4]
+  // Live Stacker Calculation
   const handleCalculate = (overrideAmount?: string, overrideBrand?: string) => {
     const activeAmount = overrideAmount || cartAmount;
     const activeBrandSlug = overrideBrand || selectedBrand;
@@ -659,7 +658,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. TOP BRANDS, EXCLUSIVE OFFERS BAR (With Authentic Brand Logos) */}
+      {/* 3. TOP BRANDS, EXCLUSIVE OFFERS BAR */}
       <section id="brands" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-b border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -674,7 +673,6 @@ export default function Home() {
           </a>
         </div>
 
-        {/* Real Brand Logo Carousel */}
         <div className="flex items-center gap-3.5 overflow-x-auto pb-2 scrollbar-none">
           {Object.entries(BRAND_DATA).map(([slug, b]) => (
             <button
@@ -764,7 +762,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. HOW WE SAVE YOU MONEY (3-STEP VISUAL FORMULA + LIVE EXPENSE TRACKER) */}
+      {/* 5. HOW WE SAVE YOU MONEY */}
       <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
         <div className="mb-6">
           <span className="text-xs font-black text-[#E51B24] uppercase tracking-wider block">Simple steps. Bigger savings.</span>
@@ -772,7 +770,6 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-2">
               <div className="w-10 h-10 rounded-xl bg-red-50 text-[#E51B24] flex items-center justify-center font-black text-base shadow-sm">
@@ -858,11 +855,10 @@ export default function Home() {
               </a>
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* 6. VERIFIED COUPONS DIRECTORY[cite: 4] */}
+      {/* 6. VERIFIED COUPONS DIRECTORY */}
       <section id="coupons" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -943,10 +939,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. FULL STACKING VISUALIZER SLIDER (PRESERVED)[cite: 4] */}
+      {/* 7. FULL STACKING VISUALIZER SLIDER */}
       <StackingVisualizer />
 
-      {/* 8. FINANCIAL CASHBACK CARDS[cite: 4] */}
+      {/* 8. FINANCIAL CASHBACK CARDS */}
       <section id="cards" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
           <div>
@@ -983,7 +979,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 9. REELS, QUIZZES & ALERTS (ALL PRESERVED)[cite: 4] */}
+      {/* 9. REELS, QUIZZES & ALERTS */}
       <SponsoredReelsFeed
         onSelectBrand={(slug) => {
           setSelectedBrand(slug);
@@ -994,7 +990,7 @@ export default function Home() {
       <CardEligibilityQuiz />
       <WhatsAppAlerts />
 
-      {/* 10. FAQS SECTION[cite: 4] */}
+      {/* 10. FAQS SECTION */}
       <section id="faq" className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-6">
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-black text-slate-900">Frequently Asked Questions</h2>
@@ -1022,7 +1018,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* MODALS[cite: 4] */}
+      {/* MODALS */}
       <SpotlightSearch
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
@@ -1046,7 +1042,7 @@ export default function Home() {
         savings={result?.totalSavings || 150}
       />
 
-      {/* MEMBER VAULT AUTH MODAL[cite: 4] */}
+      {/* MEMBER VAULT AUTH MODAL */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-7 max-w-sm w-full space-y-5 relative shadow-2xl border border-slate-200">
@@ -1145,10 +1141,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* TICKER[cite: 4] */}
+      {/* TICKER */}
       <LiveArbitrageTicker />
 
-      {/* 11. HIGH-CONVERSION RICH MASTER FOOTER (With logo1.png)[cite: 4] */}
+      {/* 11. HIGH-CONVERSION RICH MASTER FOOTER */}
       <footer className="bg-[#0A0D14] text-white pt-16 pb-10 border-t border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-slate-800">
           
