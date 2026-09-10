@@ -390,72 +390,94 @@ export default function Home() {
         brandCount={brands.length || 6}
       />
 
-      {/* 2. BLACK HERO SECTION WITH QUICK ENGINE WORKSTATION */}
-      <header className="bg-[#09090B] text-white px-6 pt-28 pb-24 rounded-b-[44px] shadow-2xl relative">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
+      {/* 2. BLACK HERO SECTION WITH 3D CRYSTAL LOGO */}
+      <header className="bg-[#09090B] text-white px-4 sm:px-6 pt-24 sm:pt-28 pb-20 sm:pb-24 rounded-b-[36px] sm:rounded-b-[48px] shadow-[0_25px_60px_rgba(0,0,0,0.8)] relative overflow-hidden">
+        {/* Ambient Glows */}
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-36 left-1/2 -translate-x-1/2 w-48 h-48 bg-teal-500/10 rounded-full blur-[70px] pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto text-center space-y-5 sm:space-y-6 relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-[11px] font-bold text-emerald-400"
+            className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-bold text-emerald-400 backdrop-blur-md shadow-[0_0_20px_rgba(16,185,129,0.1)]"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
             <span>Over 12,000+ verified vouchers & live promo codes</span>
           </motion.div>
 
-          {/* 🌟 BIG CENTER LOGO: Scroll karne par Navbar ke icon me morph ho jayega */}
-          <div className="py-2 flex flex-col items-center justify-center min-h-[170px]">
-            <AnimatePresence mode="wait">
-              {!isScrolled && (
-                <motion.div
-                  layoutId="brand-logo-swap"
-                  transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-white p-2 shadow-[0_0_50px_rgba(255,255,255,0.15)] flex items-center justify-center border border-white/20 overflow-hidden"
-                >
-                  <div className="w-full h-full bg-[#09090B] rounded-2xl flex items-center justify-center p-3">
+          {/* 💎 3D CRYSTAL RAISED LOGO SHOWCASE (Zero Glitch Morph) */}
+          <div className="py-3 flex flex-col items-center justify-center">
+            <div className="relative group cursor-pointer">
+              {/* Outer 3D Neon Backlight */}
+              <div className="absolute -inset-2 rounded-[36px] bg-gradient-to-r from-emerald-500/25 via-teal-500/20 to-emerald-500/25 blur-xl opacity-75 group-hover:opacity-100 transition duration-700 pointer-events-none" />
+
+              {/* Raised 3D Glass Box */}
+              <motion.div
+                layoutId="brand-3d-crystal-logo"
+                transition={{ type: 'spring', stiffness: 180, damping: 22, mass: 0.8 }}
+                className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-[32px] sm:rounded-[36px] p-[2px] bg-gradient-to-b from-white/40 via-white/10 to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(16,185,129,0.2),inset_0_2px_4px_rgba(255,255,255,0.6)] backdrop-blur-2xl overflow-hidden"
+              >
+                {/* Inner Beveled Surface */}
+                <div className="w-full h-full rounded-[30px] sm:rounded-[34px] bg-gradient-to-b from-[#11131c] via-[#090a0f] to-[#040507] p-5 sm:p-6 flex items-center justify-center relative overflow-hidden shadow-[inset_0_4px_16px_rgba(0,0,0,0.9),inset_0_-2px_6px_rgba(255,255,255,0.08)]">
+                  
+                  {/* Continuous Diagonal Light Sweep (Shine Effect) */}
+                  <motion.div 
+                    initial={{ x: '-150%' }}
+                    animate={{ x: '180%' }}
+                    transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut', repeatDelay: 1.5 }}
+                    className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-25deg] pointer-events-none"
+                  />
+
+                  {/* High Quality Logo Image */}
+                  <div className="relative w-full h-full flex items-center justify-center">
                     <Image 
                       src="/logo.png" 
-                      alt="AllInOneVouchers Big Logo" 
-                      width={120} 
-                      height={120} 
-                      className="w-full h-full object-contain"
+                      alt="AllInOneVouchers 3D Logo" 
+                      width={130} 
+                      height={130} 
+                      className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.8)] group-hover:scale-105 transition-transform duration-500"
                       priority
                     />
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </motion.div>
+            </div>
 
-            <motion.h2 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.15 }}
-              className="text-3xl sm:text-4xl font-black tracking-tight text-white mt-4"
+            {/* Brand Typography with Ambient Glow */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="mt-4 flex flex-col items-center"
             >
-              AllInOne<span className="text-zinc-400">Vouchers</span>
-            </motion.h2>
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white flex items-center gap-1.5">
+                AllInOne<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200 drop-shadow-[0_0_25px_rgba(52,211,153,0.3)]">Vouchers</span>
+              </h1>
+              <p className="text-[11px] sm:text-xs text-zinc-400 font-bold uppercase tracking-[0.25em] mt-1 text-center">
+                Next-Gen Arbitrage & Savings Engine
+              </p>
+            </motion.div>
           </div>
 
           <motion.p 
-            initial={{ opacity: 0, y: 15 }} 
+            initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18 }}
-            className="text-sm text-zinc-400 max-w-md mx-auto font-medium"
+            className="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto font-medium px-2"
           >
             Stack wholesale e-vouchers, verified merchant promo codes, and credit card cashbacks to unlock the lowest checkout price.
           </motion.p>
 
-          {/* Quick Engine Command Bar: User ko scroll na karna pade */}
+          {/* Quick Engine Command Bar */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.96 }} 
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.25 }}
-            className="max-w-2xl mx-auto p-2 bg-white/[0.05] border border-white/10 rounded-2xl sm:rounded-full backdrop-blur-xl flex flex-col sm:flex-row items-center gap-2 shadow-2xl"
+            transition={{ delay: 0.22 }}
+            className="max-w-2xl mx-auto p-2 bg-white/[0.04] border border-white/10 rounded-2xl sm:rounded-full backdrop-blur-xl flex flex-col sm:flex-row items-center gap-2 shadow-2xl"
           >
             <div className="flex items-center gap-2 px-3 w-full sm:w-auto">
-              <span className="text-zinc-500 font-bold text-sm">₹</span>
+              <span className="text-emerald-400 font-bold text-sm">₹</span>
               <input
                 type="number"
                 value={cartAmount}
@@ -477,7 +499,7 @@ export default function Home() {
                   }}
                   className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 ${
                     selectedBrand === b.slug 
-                      ? 'bg-white text-black' 
+                      ? 'bg-white text-black shadow-md' 
                       : 'bg-white/5 hover:bg-white/10 text-zinc-300'
                   }`}
                 >
@@ -491,7 +513,7 @@ export default function Home() {
                 handleCalculate();
                 document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto sm:ml-auto px-5 py-2.5 rounded-xl sm:rounded-full bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 active:scale-95"
+              className="w-full sm:w-auto sm:ml-auto px-5 py-2.5 rounded-xl sm:rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-black font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(52,211,153,0.3)] active:scale-95"
             >
               <Zap className="w-3.5 h-3.5 fill-black" />
               <span>Calculate</span>
@@ -505,12 +527,12 @@ export default function Home() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by brand name, store or coupon..."
-              className="w-full bg-white text-slate-900 rounded-full py-4 pl-12 pr-28 text-sm outline-none shadow-2xl font-semibold"
+              className="w-full bg-white text-slate-900 rounded-full py-3.5 sm:py-4 pl-12 pr-28 text-xs sm:text-sm outline-none shadow-2xl font-semibold border border-slate-200 focus:ring-2 focus:ring-emerald-400/50"
             />
-            <Search className="w-4 h-4 text-slate-400 absolute left-4.5 top-1/2 -translate-y-1/2 pt-1" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-4.5 top-1/2 -translate-y-1/2 pt-0.5" />
             <button
               onClick={() => document.getElementById('coupons')?.scrollIntoView({ behavior: 'smooth' })}
-              className="absolute right-2 top-1/2 -translate-y-1/2 pt-1 px-5 py-2.5 rounded-full bg-black text-white text-xs font-bold hover:bg-zinc-800 transition"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-black text-white text-xs font-bold hover:bg-zinc-800 transition"
             >
               Search
             </button>
