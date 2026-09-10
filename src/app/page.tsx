@@ -252,44 +252,33 @@ function StackingVisualizer() {
   );
 }
 
-// 60FPS V-SYNC HARDWARE ACCELERATED 3D HERO
+// 4-LAYER FULLY FLOATING 3D HERO (MEGA SCALE + SMOOTH FLOATING LOOPS)
 function TrulyLive3DHero() {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Pure GPU damping - zero stutter
-  const mouseX = useSpring(x, { stiffness: 60, damping: 20, mass: 0.5 });
-  const mouseY = useSpring(y, { stiffness: 60, damping: 20, mass: 0.5 });
+  const mouseX = useSpring(x, { stiffness: 90, damping: 22 });
+  const mouseY = useSpring(y, { stiffness: 90, damping: 22 });
 
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['4deg', '-4deg']);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-5deg', '5deg']);
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['6deg', '-6deg']);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-7deg', '7deg']);
 
-  const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-3, 3]);
-  const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-3, 3]);
+  const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
+  const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-5, 5]);
 
-  const layerLeftX = useTransform(mouseX, [-0.5, 0.5], [-6, 6]);
-  const layerLeftY = useTransform(mouseY, [-0.5, 0.5], [-5, 5]);
+  const layerLeftX = useTransform(mouseX, [-0.5, 0.5], [-10, 10]);
+  const layerLeftY = useTransform(mouseY, [-0.5, 0.5], [-8, 8]);
 
-  const layerRightX = useTransform(mouseX, [-0.5, 0.5], [7, -7]);
-  const layerRightY = useTransform(mouseY, [-0.5, 0.5], [-6, 6]);
+  const layerRightX = useTransform(mouseX, [-0.5, 0.5], [12, -12]);
+  const layerRightY = useTransform(mouseY, [-0.5, 0.5], [-10, 10]);
 
-  const layerVoucherX = useTransform(mouseX, [-0.5, 0.5], [-4, 4]);
-  const layerVoucherY = useTransform(mouseY, [-0.5, 0.5], [4, -4]);
+  const layerVoucherX = useTransform(mouseX, [-0.5, 0.5], [-6, 6]);
+  const layerVoucherY = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
 
-  // RequestAnimationFrame based throttle to guarantee 60 FPS
-  let ticking = false;
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        const rect = e.currentTarget?.getBoundingClientRect();
-        if (rect) {
-          x.set((e.clientX - rect.left) / rect.width - 0.5);
-          y.set((e.clientY - rect.top) / rect.height - 0.5);
-        }
-        ticking = false;
-      });
-      ticking = true;
-    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
   };
 
   const handleMouseLeave = () => {
@@ -301,47 +290,46 @@ function TrulyLive3DHero() {
     <div 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full max-w-[780px] h-[480px] sm:h-[580px] lg:h-[620px] flex items-center justify-center select-none py-2 overflow-visible [transform:translateZ(0)]"
+      className="relative w-full max-w-[860px] h-[520px] sm:h-[620px] lg:h-[660px] flex items-center justify-center select-none py-2 overflow-visible"
     >
       {/* Hand-drawn style 'Get Best Deals!' pointer */}
-      <div className="absolute top-2 sm:top-4 right-10 sm:right-16 z-40 hidden sm:flex flex-col items-center pointer-events-none">
+      <div className="absolute top-1 sm:top-3 right-8 sm:right-14 z-40 hidden sm:flex flex-col items-center pointer-events-none">
         <span className="font-serif italic font-black text-sm text-slate-900 tracking-tight">Get Best Deals!</span>
         <span className="text-[#E51B24] text-lg font-black -rotate-45 leading-none">⤵</span>
       </div>
 
-      {/* Target Concentric Ring Accent */}
-      <div className="absolute top-28 right-2 sm:right-6 w-10 h-10 rounded-full border-2 border-red-500/50 flex items-center justify-center pointer-events-none">
-        <div className="w-4 h-4 rounded-full border-2 border-[#E51B24] flex items-center justify-center">
+      {/* Target Ring Graphic */}
+      <div className="absolute top-24 right-2 sm:right-6 w-10 h-10 rounded-full border-2 border-red-400/50 flex items-center justify-center pointer-events-none">
+        <div className="w-4 h-4 rounded-full border-2 border-[#E51B24]/70 flex items-center justify-center">
           <div className="w-1.5 h-1.5 rounded-full bg-[#E51B24]" />
         </div>
       </div>
 
-      {/* Darker Ambient Backdrop Glow Behind the 3D Assets */}
-      <div className="absolute inset-0 m-auto w-[85%] h-[75%] bg-gradient-to-br from-[#990A12]/30 via-[#E51B24]/20 to-transparent blur-[80px] rounded-full pointer-events-none [transform:translateZ(0)]" />
-
-      {/* Soft Base Floor Contact Shadow */}
-      <div className="absolute bottom-6 sm:bottom-10 w-[70%] h-16 bg-black/25 blur-2xl rounded-full pointer-events-none [transform:translateZ(0)]" />
+      {/* Soft Contact Floor Shadow */}
+      <div className="absolute bottom-6 sm:bottom-8 w-[72%] h-20 bg-black/15 blur-2xl rounded-full pointer-events-none" />
 
       <motion.div
         style={{
           rotateX,
           rotateY,
-          transformPerspective: 1000,
+          transformPerspective: 1100,
         }}
-        className="relative w-full h-full flex items-center justify-center will-change-transform [transform:translateZ(0)]"
+        className="relative w-full h-full flex items-center justify-center will-change-transform"
       >
-        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE */}
+        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE (MEGA SIZE) */}
         <motion.div 
           style={{ x: layerStageX, y: layerStageY }}
-          className="relative z-10 w-[460px] sm:w-[580px] lg:w-[620px] flex items-center justify-center shrink-0 will-change-transform [transform:translateZ(0)]"
+          animate={{ y: [0, -7, 0] }}
+          transition={{ repeat: Infinity, duration: 4.8, ease: 'easeInOut' }}
+          className="relative z-10 w-[520px] sm:w-[660px] lg:w-[720px] flex items-center justify-center shrink-0 will-change-transform"
         >
           <Image 
             src="/3d/phone-stage.png" 
             alt="AllInOneVouchers Phone Stage"
-            width={700}
-            height={700}
+            width={780}
+            height={780}
             quality={100}
-            className="w-full h-auto object-contain pointer-events-none"
+            className="w-full h-auto object-contain pointer-events-none drop-shadow-[0_20px_45px_rgba(0,0,0,0.18)]"
             priority
             onError={(e: any) => {
               e.currentTarget.src = '/hero-3d-mockup.png';
@@ -349,50 +337,65 @@ function TrulyLive3DHero() {
           />
         </motion.div>
 
-        {/* LAYER 2: LEFT FLOATING BRANDS */}
+        {/* LAYER 2: LEFT FLOATING BRANDS (Amazon, Flipkart, Myntra) */}
         <motion.div
           style={{ x: layerLeftX, y: layerLeftY }}
-          className="absolute left-2 sm:left-8 lg:left-10 top-24 sm:top-28 lg:top-32 z-20 w-[170px] sm:w-[230px] lg:w-[260px] pointer-events-none will-change-transform [transform:translateZ(0)]"
+          animate={{ 
+            y: [0, -9, 0],
+            rotate: [-1, 1.5, -1]
+          }}
+          transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+          className="absolute left-1 sm:left-6 lg:left-8 top-20 sm:top-24 lg:top-28 z-20 w-[190px] sm:w-[260px] lg:w-[290px] pointer-events-none will-change-transform"
         >
           <Image 
             src="/3d/brands-left.png" 
             alt="Amazon Flipkart Myntra"
-            width={320}
-            height={360}
+            width={340}
+            height={380}
             quality={100}
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.2)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* LAYER 3: RIGHT FLOATING BRANDS */}
+        {/* LAYER 3: RIGHT FLOATING BRANDS (Zomato, Swiggy, Blinkit + 70% Badge) */}
         <motion.div
           style={{ x: layerRightX, y: layerRightY }}
-          className="absolute right-2 sm:right-8 lg:right-10 top-16 sm:top-20 lg:top-24 z-20 w-[180px] sm:w-[240px] lg:w-[270px] pointer-events-none will-change-transform [transform:translateZ(0)]"
+          animate={{ 
+            y: [0, 8, 0],
+            rotate: [1, -1.5, 1]
+          }}
+          transition={{ repeat: Infinity, duration: 4.4, ease: 'easeInOut' }}
+          className="absolute right-1 sm:right-6 lg:right-8 top-12 sm:top-16 lg:top-20 z-20 w-[200px] sm:w-[270px] lg:w-[305px] pointer-events-none will-change-transform"
         >
           <Image 
             src="/3d/brands-right.png" 
             alt="Zomato Swiggy Blinkit"
-            width={330}
-            height={380}
+            width={350}
+            height={400}
             quality={100}
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.2)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* LAYER 4: FRONT TILTED VOUCHER TICKET */}
+        {/* LAYER 4: FRONT TILTED VOUCHER TICKET (Higher & Near Podium) */}
         <motion.div
           style={{ x: layerVoucherX, y: layerVoucherY }}
-          className="absolute bottom-20 sm:bottom-28 lg:bottom-32 right-14 sm:right-28 lg:right-32 z-30 w-[150px] sm:w-[210px] lg:w-[230px] pointer-events-none will-change-transform [transform:translateZ(0)]"
+          animate={{ 
+            scale: [1, 1.03, 1],
+            y: [0, -4, 0]
+          }}
+          transition={{ repeat: Infinity, duration: 3.6, ease: 'easeInOut' }}
+          className="absolute bottom-20 sm:bottom-28 lg:bottom-32 right-12 sm:right-28 lg:right-32 z-30 w-[160px] sm:w-[225px] lg:w-[245px] pointer-events-none will-change-transform"
         >
           <Image 
             src="/3d/voucher-tag.png" 
             alt="Discount Voucher Tag"
-            width={260}
-            height={160}
+            width={270}
+            height={165}
             quality={100}
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-contain drop-shadow-[0_16px_28px_rgba(229,27,36,0.3)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
@@ -584,25 +587,22 @@ export default function Home() {
         brandCount={brands.length || 7}
       />
 
-      {/* 2. SPLIT HERO SECTION WITH DEEPER AMBIENT BACKDROP */}
+      {/* 2. SPLIT HERO SECTION WITH SOFT VIBRANT RED 3D BACKGROUND */}
       <section className="relative bg-[#FFFFFF] border-b border-slate-200 pt-8 sm:pt-14 pb-14 sm:pb-20 overflow-hidden">
         
-        {/* Darker Radial Depth behind the 3D Stage on Right */}
-        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[700px] sm:w-[900px] h-[600px] sm:h-[800px] bg-[radial-gradient(circle_at_65%_50%,rgba(168,14,24,0.22)_0%,rgba(229,27,36,0.12)_35%,rgba(255,255,255,0)_70%)] pointer-events-none [transform:translateZ(0)]" />
+        {/* Soft Radial Ambient Glow behind 3D Scene */}
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[650px] sm:w-[820px] h-[550px] sm:h-[720px] bg-[radial-gradient(circle_at_65%_50%,rgba(229,27,36,0.14)_0%,rgba(255,100,105,0.06)_40%,rgba(255,255,255,0)_72%)] pointer-events-none" />
 
-        {/* Deep Contrast Vignette Layer */}
-        <div className="absolute -top-24 -right-24 w-[500px] sm:w-[700px] h-[500px] sm:h-[700px] bg-gradient-to-bl from-[#7A060C]/25 via-[#A80E18]/15 to-transparent rounded-full blur-[110px] pointer-events-none [transform:translateZ(0)]" />
+        {/* Diagonal Soft Crimson Aura Waves */}
+        <div className="absolute -top-24 -right-24 w-[480px] sm:w-[640px] h-[480px] sm:h-[640px] bg-gradient-to-bl from-[#E51B24]/12 via-[#FF6B6B]/08 to-transparent rounded-full blur-[90px] pointer-events-none" />
 
-        {/* Subtle Navy Anchor Glow on Left side */}
-        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] bg-[#0B2B5C]/6 rounded-full blur-[100px] pointer-events-none" />
-
-        {/* Crisp Floating 3D Crystal Confetti Elements */}
+        {/* Floating 3D Crystal Confetti Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-          <div className="absolute top-20 left-1/3 w-4 h-4 bg-gradient-to-tr from-[#E51B24] to-red-600 rounded-sm rotate-45 opacity-60 shadow-sm" />
-          <div className="absolute bottom-16 left-1/4 w-3.5 h-3.5 bg-gradient-to-br from-[#E51B24] to-red-400 rounded-sm -rotate-12 opacity-50 shadow-sm" />
-          <div className="absolute top-1/2 left-[48%] w-5 h-5 bg-gradient-to-br from-[#E51B24] to-red-800 rounded-sm rotate-12 opacity-70 shadow-md" />
-          <div className="absolute top-16 right-1/4 w-4 h-4 bg-gradient-to-tr from-[#E51B24] to-rose-400 rounded-sm rotate-45 opacity-55" />
-          <div className="absolute bottom-20 right-8 w-6 h-6 bg-gradient-to-br from-[#990A12] to-[#E51B24] rounded-sm -rotate-45 opacity-80 shadow-md" />
+          <div className="absolute top-20 left-1/3 w-4 h-4 bg-gradient-to-tr from-[#E51B24] to-red-500 rounded-sm rotate-45 opacity-50 shadow-sm" />
+          <div className="absolute bottom-16 left-1/4 w-3.5 h-3.5 bg-gradient-to-br from-[#E51B24] to-rose-400 rounded-sm -rotate-12 opacity-45 shadow-sm" />
+          <div className="absolute top-1/2 left-[48%] w-5 h-5 bg-gradient-to-br from-[#E51B24] to-red-600 rounded-sm rotate-12 opacity-60 shadow-sm" />
+          <div className="absolute top-16 right-1/4 w-4 h-4 bg-gradient-to-tr from-[#E51B24] to-rose-400 rounded-sm rotate-45 opacity-50" />
+          <div className="absolute bottom-20 right-8 w-6 h-6 bg-gradient-to-br from-[#E51B24] to-red-600 rounded-sm -rotate-45 opacity-70 shadow-sm" />
         </div>
 
         {/* Hero Content Container */}
@@ -679,7 +679,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* RIGHT: TRULY LIVE 3D INTERACTIVE HERO (Smooth 60FPS) */}
+          {/* RIGHT: TRULY LIVE 3D INTERACTIVE HERO (Large Scale & Floating) */}
           <div className="lg:col-span-5 relative flex items-center justify-center">
             <TrulyLive3DHero />
           </div>
