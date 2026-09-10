@@ -25,7 +25,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Scroll Detection
+  // Scroll Detection for Dynamic Floating Island
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (latest > 40) {
       setIsScrolled(true);
@@ -46,11 +46,16 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
               : 'w-full max-w-7xl py-3 px-4 sm:px-8 rounded-3xl bg-[#09090B]/80 border-white/10 backdrop-blur-xl shadow-xl'
           }`}
         >
-          {/* 1. Brand Logo & Name */}
+          {/* 1. Brand Logo (with smooth shared layoutId animation) & Title */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="relative">
-                <div className="w-10 h-10 rounded-2xl bg-white text-black p-[1.5px] shadow-md flex items-center justify-center group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                {/* Hero section ka center logo scroll par yahan aakar morph hoga */}
+                <motion.div 
+                  layoutId="brand-logo-swap"
+                  transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+                  className="w-10 h-10 rounded-2xl bg-white text-black p-[1.5px] shadow-md flex items-center justify-center group-hover:scale-105 transition-transform duration-300 overflow-hidden"
+                >
                   <div className="w-full h-full bg-[#09090B] rounded-2xl flex items-center justify-center overflow-hidden p-1">
                     <Image 
                       src="/logo.png" 
@@ -61,7 +66,8 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
                       priority
                     />
                   </div>
-                </div>
+                </motion.div>
+
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#09090B] flex items-center justify-center">
                   <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
                 </span>
@@ -90,7 +96,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
             <a href="#cards" className="hover:text-white transition-colors">Cards</a>
           </div>
 
-          {/* 3. Action Command + Open Vault + Mobile Toggle */}
+          {/* 3. Actions + Member Vault + Mobile Menu Button */}
           <div className="flex items-center gap-2">
             <a
               href="#calculator"
@@ -109,7 +115,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
               <ArrowRight className="w-3 h-3" />
             </button>
 
-            {/* Mobile Hamburger Button */}
+            {/* Mobile Toggle Button */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -122,7 +128,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
         </motion.nav>
       </div>
 
-      {/* 4. Smooth Mobile Drawer Menu */}
+      {/* 4. Mobile Drawer Menu with Smooth Motion */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -132,7 +138,6 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="fixed inset-x-4 top-20 z-40 md:hidden bg-[#09090B]/95 border border-white/15 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col gap-4 text-white"
           >
-            {/* Quick Links List */}
             <div className="flex flex-col gap-2">
               <a
                 href="#calculator"
@@ -170,7 +175,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
               </a>
             </div>
 
-            {/* Telegram Channel & Bot Highlight Buttons */}
+            {/* Telegram Channel & Bot Shortcuts */}
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
               <a
                 href="https://t.me/allinonevouchers"
@@ -193,7 +198,6 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 6 }: Nav
               </a>
             </div>
 
-            {/* Auth Open Vault Button for Mobile */}
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

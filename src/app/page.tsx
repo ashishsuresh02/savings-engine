@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useScroll, useMotionValueEvent } from 'framer-motion';
 import { 
   ArrowUpRight, 
   CreditCard, 
@@ -17,6 +17,7 @@ import {
   Layers, 
   Search
 } from 'lucide-react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import DynamicFintechNavbar from '@/components/Navbar';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
@@ -209,6 +210,13 @@ function StackingVisualizer() {
 
 // MAIN PAGE
 export default function Home() {
+  const { scrollY } = useScroll();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Scroll detect karke logo swap trigger karega
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 50);
+  });
   const [brands, setBrands] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
@@ -394,15 +402,41 @@ export default function Home() {
             <span>Over 12,000+ verified vouchers & live promo codes</span>
           </motion.div>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 15 }} 
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.1] text-white"
-          >
-            Big Brands.<br />
-            <span className="text-zinc-400">Bigger Savings.</span>
-          </motion.h1>
+          {/* 🌟 BIG CENTER LOGO: Scroll karne par Navbar ke icon me morph ho jayega */}
+          <div className="py-2 flex flex-col items-center justify-center min-h-[170px]">
+            <AnimatePresence mode="wait">
+              {!isScrolled && (
+                <motion.div
+                  layoutId="brand-logo-swap"
+                  transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-white p-2 shadow-[0_0_50px_rgba(255,255,255,0.15)] flex items-center justify-center border border-white/20 overflow-hidden"
+                >
+                  <div className="w-full h-full bg-[#09090B] rounded-2xl flex items-center justify-center p-3">
+                    <Image 
+                      src="/logo.png" 
+                      alt="AllInOneVouchers Big Logo" 
+                      width={120} 
+                      height={120} 
+                      className="w-full h-full object-contain"
+                      priority
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.h2 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="text-3xl sm:text-4xl font-black tracking-tight text-white mt-4"
+            >
+              AllInOne<span className="text-zinc-400">Vouchers</span>
+            </motion.h2>
+          </div>
 
           <motion.p 
             initial={{ opacity: 0, y: 15 }} 
