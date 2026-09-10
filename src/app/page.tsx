@@ -252,7 +252,7 @@ function StackingVisualizer() {
   );
 }
 
-// 4-LAYER INTERACTIVE LIVE 3D HERO COMPONENT
+// 4-LAYER INTERACTIVE LIVE 3D HERO COMPONENT (FULL-SCALE PROMINENT SIZE)
 function TrulyLive3DHero() {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -290,7 +290,7 @@ function TrulyLive3DHero() {
     <div 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full max-w-[580px] h-[450px] sm:h-[480px] flex items-center justify-center perspective-[1200px] select-none py-2"
+      className="relative w-full max-w-[720px] h-[520px] sm:h-[620px] flex items-center justify-center perspective-[1200px] select-none py-2 overflow-visible"
     >
       <motion.div
         style={{
@@ -300,19 +300,19 @@ function TrulyLive3DHero() {
         }}
         className="relative w-full h-full flex items-center justify-center"
       >
-        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE */}
+        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE (Scaled Up) */}
         <motion.div 
           style={{ x: layerStageX, y: layerStageY }}
-          animate={{ y: [0, -6, 0] }}
+          animate={{ y: [0, -8, 0] }}
           transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-          className="relative z-10 w-[320px] sm:w-[380px]"
+          className="relative z-10 w-[420px] sm:w-[520px] flex items-center justify-center"
         >
           <Image 
             src="/3d/phone-stage.png" 
             alt="AllInOneVouchers Phone Stage"
-            width={400}
-            height={420}
-            className="w-full h-auto object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.25)]"
+            width={600}
+            height={600}
+            className="w-full h-auto object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.28)]"
             priority
             onError={(e: any) => {
               e.currentTarget.src = '/hero-3d-mockup.png';
@@ -324,18 +324,18 @@ function TrulyLive3DHero() {
         <motion.div
           style={{ x: layerLeftX, y: layerLeftY }}
           animate={{ 
-            y: [0, -10, 0],
+            y: [0, -12, 0],
             rotate: [-1, 2, -1]
           }}
           transition={{ repeat: Infinity, duration: 3.8, ease: 'easeInOut' }}
-          className="absolute left-1 sm:left-4 top-12 z-20 w-[130px] sm:w-[160px]"
+          className="absolute -left-2 sm:-left-6 top-10 sm:top-14 z-20 w-[170px] sm:w-[220px]"
         >
           <Image 
             src="/3d/brands-left.png" 
             alt="Amazon Flipkart Myntra"
-            width={160}
-            height={200}
-            className="w-full h-auto object-contain drop-shadow-xl"
+            width={240}
+            height={280}
+            className="w-full h-auto object-contain drop-shadow-2xl"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
@@ -344,18 +344,18 @@ function TrulyLive3DHero() {
         <motion.div
           style={{ x: layerRightX, y: layerRightY }}
           animate={{ 
-            y: [0, 10, 0],
+            y: [0, 12, 0],
             rotate: [1, -2, 1]
           }}
           transition={{ repeat: Infinity, duration: 4.2, ease: 'easeInOut' }}
-          className="absolute right-0 sm:right-2 top-8 z-20 w-[140px] sm:w-[170px]"
+          className="absolute -right-2 sm:-right-6 top-6 sm:top-10 z-20 w-[180px] sm:w-[230px]"
         >
           <Image 
             src="/3d/brands-right.png" 
             alt="Zomato Swiggy Blinkit"
-            width={170}
-            height={220}
-            className="w-full h-auto object-contain drop-shadow-xl"
+            width={250}
+            height={300}
+            className="w-full h-auto object-contain drop-shadow-2xl"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
@@ -364,18 +364,18 @@ function TrulyLive3DHero() {
         <motion.div
           style={{ x: layerVoucherX, y: layerVoucherY }}
           animate={{ 
-            scale: [1, 1.04, 1],
+            scale: [1, 1.05, 1],
             rotate: [-2, 2, -2]
           }}
           transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
-          className="absolute bottom-6 right-12 sm:right-24 z-30 w-[110px] sm:w-[140px]"
+          className="absolute bottom-2 sm:bottom-4 right-10 sm:right-20 z-30 w-[140px] sm:w-[190px]"
         >
           <Image 
             src="/3d/voucher-tag.png" 
             alt="Discount Voucher Tag"
-            width={140}
-            height={90}
-            className="w-full h-auto object-contain drop-shadow-2xl"
+            width={200}
+            height={130}
+            className="w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(229,27,36,0.3)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
@@ -385,7 +385,7 @@ function TrulyLive3DHero() {
           initial={{ x: '-130%' }}
           animate={{ x: '180%' }}
           transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut', repeatDelay: 2.5 }}
-          className="absolute inset-0 w-1/3 h-full bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-[-25deg] pointer-events-none mix-blend-overlay z-40"
+          className="absolute inset-0 w-1/3 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-25deg] pointer-events-none mix-blend-overlay z-40"
         />
       </motion.div>
     </div>
