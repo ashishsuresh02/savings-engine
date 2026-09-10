@@ -252,28 +252,29 @@ function StackingVisualizer() {
   );
 }
 
-// 4-LAYER INTERACTIVE LIVE 3D HERO COMPONENT (FULL-SCALE PROMINENT SIZE)
+// 4-LAYER INTERACTIVE LIVE 3D HERO COMPONENT (ZOOMED IN & TIGHTLY CLUSTERED)
 function TrulyLive3DHero() {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseX = useSpring(x, { stiffness: 100, damping: 20 });
-  const mouseY = useSpring(y, { stiffness: 100, damping: 20 });
+  const mouseX = useSpring(x, { stiffness: 120, damping: 20 });
+  const mouseY = useSpring(y, { stiffness: 120, damping: 20 });
 
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['10deg', '-10deg']);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-12deg', '12deg']);
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['7deg', '-7deg']);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-9deg', '9deg']);
 
-  const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-8, 8]);
-  const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-8, 8]);
+  // Parallax layers (Subtle tight motion taaki door na bhagein)
+  const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
+  const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-5, 5]);
 
-  const layerLeftX = useTransform(mouseX, [-0.5, 0.5], [-20, 20]);
-  const layerLeftY = useTransform(mouseY, [-0.5, 0.5], [-16, 16]);
+  const layerLeftX = useTransform(mouseX, [-0.5, 0.5], [-12, 12]);
+  const layerLeftY = useTransform(mouseY, [-0.5, 0.5], [-10, 10]);
 
-  const layerRightX = useTransform(mouseX, [-0.5, 0.5], [22, -22]);
-  const layerRightY = useTransform(mouseY, [-0.5, 0.5], [-18, 18]);
+  const layerRightX = useTransform(mouseX, [-0.5, 0.5], [14, -14]);
+  const layerRightY = useTransform(mouseY, [-0.5, 0.5], [-12, 12]);
 
-  const layerVoucherX = useTransform(mouseX, [-0.5, 0.5], [-15, 15]);
-  const layerVoucherY = useTransform(mouseY, [-0.5, 0.5], [15, -15]);
+  const layerVoucherX = useTransform(mouseX, [-0.5, 0.5], [-8, 8]);
+  const layerVoucherY = useTransform(mouseY, [-0.5, 0.5], [8, -8]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -290,7 +291,7 @@ function TrulyLive3DHero() {
     <div 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full max-w-[720px] h-[520px] sm:h-[620px] flex items-center justify-center perspective-[1200px] select-none py-2 overflow-visible"
+      className="relative w-full max-w-[760px] h-[540px] sm:h-[650px] flex items-center justify-center perspective-[1200px] select-none py-2 overflow-visible"
     >
       <motion.div
         style={{
@@ -300,19 +301,19 @@ function TrulyLive3DHero() {
         }}
         className="relative w-full h-full flex items-center justify-center"
       >
-        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE (Scaled Up) */}
+        {/* LAYER 1: BASE SMARTPHONE & PODIUM STAGE (MEGA SIZE CENTER) */}
         <motion.div 
           style={{ x: layerStageX, y: layerStageY }}
-          animate={{ y: [0, -8, 0] }}
+          animate={{ y: [0, -6, 0] }}
           transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-          className="relative z-10 w-[420px] sm:w-[520px] flex items-center justify-center"
+          className="relative z-10 w-[500px] sm:w-[640px] lg:w-[680px] flex items-center justify-center shrink-0"
         >
           <Image 
             src="/3d/phone-stage.png" 
             alt="AllInOneVouchers Phone Stage"
-            width={600}
-            height={600}
-            className="w-full h-auto object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.28)]"
+            width={720}
+            height={720}
+            className="w-full h-auto object-contain drop-shadow-[0_30px_70px_rgba(0,0,0,0.3)]"
             priority
             onError={(e: any) => {
               e.currentTarget.src = '/hero-3d-mockup.png';
@@ -320,67 +321,67 @@ function TrulyLive3DHero() {
           />
         </motion.div>
 
-        {/* LAYER 2: LEFT FLOATING BRANDS (Amazon, Flipkart, Myntra) */}
+        {/* LAYER 2: LEFT FLOATING BRANDS (TIGHTLY CHIPKA HUA TO PHONE LEFT EDGE) */}
         <motion.div
           style={{ x: layerLeftX, y: layerLeftY }}
           animate={{ 
-            y: [0, -12, 0],
-            rotate: [-1, 2, -1]
+            y: [0, -8, 0],
+            rotate: [-1, 1.5, -1]
           }}
           transition={{ repeat: Infinity, duration: 3.8, ease: 'easeInOut' }}
-          className="absolute -left-2 sm:-left-6 top-10 sm:top-14 z-20 w-[170px] sm:w-[220px]"
+          className="absolute left-6 sm:left-12 lg:left-14 top-16 sm:top-20 z-20 w-[180px] sm:w-[240px] pointer-events-none"
         >
           <Image 
             src="/3d/brands-left.png" 
             alt="Amazon Flipkart Myntra"
-            width={240}
-            height={280}
-            className="w-full h-auto object-contain drop-shadow-2xl"
+            width={260}
+            height={300}
+            className="w-full h-auto object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* LAYER 3: RIGHT FLOATING BRANDS (Zomato, Swiggy, Blinkit + 70% Badge) */}
+        {/* LAYER 3: RIGHT FLOATING BRANDS (TIGHTLY CHIPKA HUA TO PHONE RIGHT EDGE) */}
         <motion.div
           style={{ x: layerRightX, y: layerRightY }}
           animate={{ 
-            y: [0, 12, 0],
-            rotate: [1, -2, 1]
+            y: [0, 8, 0],
+            rotate: [1, -1.5, 1]
           }}
           transition={{ repeat: Infinity, duration: 4.2, ease: 'easeInOut' }}
-          className="absolute -right-2 sm:-right-6 top-6 sm:top-10 z-20 w-[180px] sm:w-[230px]"
+          className="absolute right-6 sm:right-12 lg:right-14 top-12 sm:top-16 z-20 w-[190px] sm:w-[250px] pointer-events-none"
         >
           <Image 
             src="/3d/brands-right.png" 
             alt="Zomato Swiggy Blinkit"
-            width={250}
-            height={300}
-            className="w-full h-auto object-contain drop-shadow-2xl"
+            width={270}
+            height={320}
+            className="w-full h-auto object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* LAYER 4: FRONT TILTED VOUCHER TICKET (% VOUCHER) */}
+        {/* LAYER 4: FRONT TILTED VOUCHER TICKET (ATTACHED TIGHT AT PODIUM BASE) */}
         <motion.div
           style={{ x: layerVoucherX, y: layerVoucherY }}
           animate={{ 
-            scale: [1, 1.05, 1],
-            rotate: [-2, 2, -2]
+            scale: [1, 1.04, 1],
+            rotate: [-1, 2, -1]
           }}
           transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
-          className="absolute bottom-2 sm:bottom-4 right-10 sm:right-20 z-30 w-[140px] sm:w-[190px]"
+          className="absolute bottom-6 sm:bottom-8 right-24 sm:right-36 lg:right-40 z-30 w-[140px] sm:w-[190px] pointer-events-none"
         >
           <Image 
             src="/3d/voucher-tag.png" 
             alt="Discount Voucher Tag"
-            width={200}
-            height={130}
-            className="w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(229,27,36,0.3)]"
+            width={210}
+            height={135}
+            className="w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(229,27,36,0.35)]"
             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
           />
         </motion.div>
 
-        {/* Dynamic Studio Light Sheen Reflection */}
+        {/* Dynamic Studio Reflection Glare */}
         <motion.div 
           initial={{ x: '-130%' }}
           animate={{ x: '180%' }}
