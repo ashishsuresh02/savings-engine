@@ -1,386 +1,179 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
-  Wallet, 
-  TrendingUp, 
-  ArrowUpRight, 
-  Sparkles, 
-  Tag, 
-  CreditCard, 
+  ShieldCheck, 
+  Ticket, 
   Copy, 
   Check, 
-  ShieldCheck, 
+  ExternalLink, 
   Clock, 
-  Zap, 
-  Gift, 
-  ChevronRight, 
-  Percent, 
-  LogOut,
-  Flame,
-  Search,
-  Lock
+  Wallet, 
+  TrendingUp, 
+  ArrowLeft 
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-interface ClaimedVoucher {
-  id: string;
-  brand: string;
-  code: string;
-  value: number;
-  savedAmount: number;
-  discountPct: number;
-  expiresOn: string;
-  status: 'ACTIVE' | 'USED' | 'EXPIRING_SOON';
-  gradient: string;
-}
-
-const BRAND_GRADIENTS: Record<string, string> = {
-  Amazon: 'from-amber-500/20 via-orange-500/10 to-transparent',
-  Swiggy: 'from-orange-500/20 via-rose-500/10 to-transparent',
-  Myntra: 'from-fuchsia-500/20 via-pink-500/10 to-transparent',
-  Zomato: 'from-rose-500/20 via-red-500/10 to-transparent',
-  Dominos: 'from-sky-500/20 via-blue-500/10 to-transparent',
-};
-
-export default function DashboardVaultPage() {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'used'>('all');
-  const [userPhone, setUserPhone] = useState<string>('');
-  const [vouchers, setVouchers] = useState<ClaimedVoucher[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [totalSaved, setTotalSaved] = useState<number>(0);
+export default function UserVaultDashboard() {
+  const router = useRouter();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [userPhone, setUserPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadUserVault() {
       try {
-        const storedPhone = localStorage.getItem('bachat_user_phone') || '';
-        setUserPhone(storedPhone);
+        if (!supabase) return;
+        
+        // 1. Check logged in user session or local phone
+        const { data: { session } } = await supabase.auth.getSession();
+        const storedPhone = localStorage.getItem('user_phone') || session?.user?.phone;
 
-        if (!storedPhone) {
-          setLoading(false);
+        if (!storedPhone && !session?.user) {
+          // Agar login nahi hai, homepage ya auth modal par bhejenge
+          router.push('/?auth=open');
           return;
         }
 
-        // Fetch User's Orders from Supabase
-        if (supabase) {
-          const { data: orders, error } = await supabase
-            .from('customer_orders')
-            .select('*')
-            .eq('user_phone', storedPhone.replace(/\s+/g, ''))
-            .order('created_at', { ascending: false });
+        setUserPhone(storedPhone || 'Member');
 
-          if (orders && orders.length > 0) {
-            let runningSavings = 0;
+        // 2. Fetch customer's purchased vouchers
+        const { data, error } = await supabase
+          .from('customer_orders')
+          .select('*')
+          .or(`user_phone.eq.${storedPhone}`)
+          .order('created_at', { ascending: false });
 
-            const mappedVouchers: ClaimedVoucher[] = orders.map((ord: any, idx: number) => {
-              const estFace = Math.round(Number(ord.amount_paid) * 1.08); // nominal estimation
-              const estSaved = estFace - Number(ord.amount_paid);
-              runningSavings += estSaved;
-
-              const brandKey = Object.keys(BRAND_GRADIENTS).find(k => 
-                ord.brand_name.toLowerCase().includes(k.toLowerCase())
-              ) || 'Amazon';
-
-              return {
-                id: ord.id || `v-${idx}`,
-                brand: ord.brand_name,
-                code: ord.voucher_code_delivered,
-                value: estFace,
-                savedAmount: estSaved > 0 ? estSaved : 50,
-                discountPct: Math.round(((estSaved || 50) / estFace) * 100),
-                expiresOn: '30 Dec 2026',
-                status: 'ACTIVE',
-                gradient: BRAND_GRADIENTS[brandKey] || 'from-emerald-500/20 to-transparent',
-              };
-            });
-
-            setVouchers(mappedVouchers);
-            setTransactions(orders);
-            setTotalSaved(runningSavings > 0 ? runningSavings : 240);
-          } else {
-            // Fallback sample data if new user
-            setVouchers([
-              {
-                id: 'demo-1',
-                brand: 'Amazon Pay Gift Card',
-                code: 'AMZN-9824-SAVE',
-                value: 2000,
-                savedAmount: 140,
-                discountPct: 7,
-                expiresOn: '30 Dec 2026',
-                status: 'ACTIVE',
-                gradient: BRAND_GRADIENTS.Amazon,
-              }
-            ]);
-            setTotalSaved(140);
-          }
-        }
+        if (data) setOrders(data);
       } catch (err) {
-        console.warn('Dashboard sync issue:', err);
+        console.error('Vault error:', err);
       } finally {
         setLoading(false);
       }
     }
 
     loadUserVault();
-  }, []);
+  }, [router]);
 
-  const handleCopyCode = (id: string, code: string) => {
+  const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem('bachat_user_phone');
-      localStorage.removeItem('bachat_auth_token');
-    } catch (e) {}
-    window.location.href = '/';
-  };
+  const totalSaved = orders.reduce((sum, o) => sum + (Number(o.profit_earned) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#07070B] text-zinc-100 selection:bg-emerald-500 selection:text-black font-sans pb-24">
-      {/* Background Soft Glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[25%] right-[5%] w-[500px] h-[450px] bg-indigo-500/10 rounded-full blur-[160px]" />
-      </div>
+    <div className="min-h-screen bg-[#F4F6F9] text-slate-900 font-sans p-4 sm:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        
+        {/* Top Header */}
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-sm transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Store</span>
+          </button>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0A0A10]/80 border-b border-white/[0.06]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-300 p-[1.5px] shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full bg-[#09090E] rounded-2xl flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-emerald-400" />
-                </div>
-              </div>
-              <div>
-                <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                  Bachat<span className="text-emerald-400">Vault</span>
-                </span>
-                <span className="text-[10px] text-zinc-500 font-medium block uppercase tracking-widest -mt-1">
-                  Secure Locker
-                </span>
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs text-zinc-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{userPhone ? `+91 ${userPhone}` : 'Guest Member'}</span>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/20 transition-all text-xs font-semibold"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span>Logged in:</span>
+            <span className="font-mono text-slate-900 bg-slate-200/70 px-2 py-0.5 rounded-md">{userPhone}</span>
           </div>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        
-        {/* Metric Cards Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] shadow-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5" /> Total Money Saved
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                Verified
-              </span>
-            </div>
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                ₹{totalSaved}<span className="text-emerald-400 text-2xl font-bold">.00</span>
-              </div>
-              <p className="text-xs text-zinc-400">Total cash retained via 3-layer stacking</p>
-            </div>
+        {/* User Lifetime Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Total Savings Pocketed</span>
+            <span className="text-3xl font-black text-emerald-600">₹{totalSaved.toLocaleString()}</span>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] shadow-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-                <Gift className="w-3.5 h-3.5" /> Active Vouchers
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                Locker Ready
-              </span>
-            </div>
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                {vouchers.length}<span className="text-indigo-400 text-2xl font-bold"> Codes</span>
-              </div>
-              <p className="text-xs text-zinc-400">Instant gift codes available to copy & paste</p>
-            </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Unlocked Vouchers</span>
+            <span className="text-3xl font-black text-slate-900">{orders.length}</span>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] shadow-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <CreditCard className="w-3.5 h-3.5" /> Card Multiplier
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                5% Live
-              </span>
-            </div>
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                SBI Card<span className="text-amber-400 text-2xl font-bold"> Linked</span>
-              </div>
-              <p className="text-xs text-zinc-400">Direct credit card statement rebate active</p>
-            </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Security Status</span>
+            <span className="text-xs font-black text-slate-900 flex items-center gap-1.5 mt-2 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 w-fit">
+              <ShieldCheck className="w-3.5 h-3.5" /> Verified Member Vault
+            </span>
           </div>
-        </section>
+        </div>
 
-        {/* Quick Calculator Callout */}
-        <section className="rounded-3xl p-6 bg-gradient-to-r from-emerald-950/40 via-teal-950/20 to-transparent border border-emerald-500/20 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-400 text-black flex items-center justify-center font-bold shadow-lg shadow-emerald-500/30 shrink-0">
-              <Flame className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Need another discounted gift card?</h3>
-              <p className="text-xs text-zinc-400">Run the live calculator before paying on Amazon, Swiggy, or Myntra to lock in arbitrage.</p>
-            </div>
+        {/* Voucher Cards Vault */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-[#E51B24]" /> My Unlocked Vouchers
+            </h2>
+            <span className="text-xs text-slate-400 font-bold">{orders.length} Items</span>
           </div>
-          <Link
-            href="/"
-            className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-wide uppercase transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 shrink-0"
-          >
-            <span>Open Stacking Calculator</span>
-            <ArrowUpRight className="w-4 h-4" />
-          </Link>
-        </section>
 
-        {/* Vouchers & Order History */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left: Your Secret Vouchers */}
-          <div className="lg:col-span-7 space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-emerald-400" />
-                  Your Unlocked Codes Locker
-                </h2>
-                <p className="text-xs text-zinc-400">Click copy and paste during checkout in merchant app</p>
-              </div>
+          {loading ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-bold">Opening Secure Vault...</div>
+          ) : orders.length === 0 ? (
+            <div className="py-16 text-center space-y-3">
+              <p className="text-xs text-slate-400 font-medium">You haven't bought any vouchers yet.</p>
+              <button 
+                onClick={() => router.push('/#vouchers')}
+                className="px-5 py-2.5 rounded-xl bg-[#E51B24] text-white text-xs font-black uppercase tracking-wider shadow-md hover:bg-[#CC141D] transition"
+              >
+                Explore Deals
+              </button>
             </div>
-
-            <div className="space-y-3.5">
-              {vouchers.map((voucher) => (
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {orders.map((order) => (
                 <div 
-                  key={voucher.id}
-                  className="relative overflow-hidden rounded-2xl p-5 bg-[#0D0D14] border border-white/[0.08] hover:border-emerald-500/30 transition-all shadow-lg group"
+                  key={order.id} 
+                  className="rounded-2xl border border-slate-200 p-5 bg-slate-50 space-y-3 relative hover:border-red-200 transition"
                 >
-                  <div className={`absolute top-0 right-0 w-64 h-32 bg-gradient-to-l ${voucher.gradient} pointer-events-none`} />
-
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
-                          {voucher.brand}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          {voucher.discountPct}% OFF
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-zinc-400">
-                        <span>Face: <strong className="text-white">₹{voucher.value}</strong></span>
-                        <span>•</span>
-                        <span>Saved: <strong className="text-emerald-400">₹{voucher.savedAmount}</strong></span>
-                        <span>•</span>
-                        <span>Valid till: {voucher.expiresOn}</span>
-                      </div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-black text-slate-900 text-sm">{order.brand_name}</h4>
+                      <span className="text-[10px] text-slate-400">Order #{order.id.slice(0, 8)}</span>
                     </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {order.payment_status}
+                    </span>
+                  </div>
 
-                    {/* Copy Box */}
-                    <div className="flex items-center gap-2">
-                      <div className="px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.1] font-mono text-xs font-bold text-emerald-400 tracking-wider select-all">
-                        {voucher.code}
-                      </div>
-                      <button
-                        onClick={() => handleCopyCode(voucher.id, voucher.code)}
-                        className="px-3 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
-                      >
-                        {copiedId === voucher.id ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
+                  {/* Secret Unlocked Credentials */}
+                  <div className="p-3 bg-white rounded-xl border border-dashed border-slate-300 space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">16-Digit Voucher Code</span>
+                    <div className="flex items-center justify-between font-mono font-black text-sm text-slate-900">
+                      <span>{order.voucher_code_delivered || 'Processing Issuance'}</span>
+                      {order.voucher_code_delivered && (
+                        <button 
+                          onClick={() => handleCopy(order.voucher_code_delivered)}
+                          className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition"
+                        >
+                          {copiedCode === order.voucher_code_delivered ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
                             <Copy className="w-3.5 h-3.5" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
+                          )}
+                        </button>
+                      )}
                     </div>
+                  </div>
+
+                  <div className="flex justify-between text-[11px] font-bold text-slate-500 pt-1">
+                    <span>Paid: ₹{order.amount_paid}</span>
+                    <span className="text-emerald-600 font-black">Saved: ₹{order.profit_earned}</span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Right: Payment Ledger */}
-          <div className="lg:col-span-5 space-y-5">
-            <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                Live Payment Ledger
-              </h2>
-              <p className="text-xs text-zinc-400">Timestamped transaction history</p>
-            </div>
-
-            <div className="rounded-2xl p-4 bg-[#0D0D14] border border-white/[0.08] space-y-3 shadow-xl">
-              {transactions.length > 0 ? (
-                transactions.map((tx, idx) => (
-                  <div 
-                    key={tx.id || idx}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]"
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">{tx.brand_name}</span>
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
-                          {tx.payment_method || 'UPI'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-zinc-500 block">
-                        {tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-IN') : 'Recent'}
-                      </span>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-white">Paid ₹{tx.amount_paid}</div>
-                      <div className="text-[10px] text-emerald-400 font-semibold">Success</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-xs text-zinc-500">
-                  No orders yet. Buy your first voucher to populate your ledger!
-                </div>
-              )}
-            </div>
-          </div>
-
+          )}
         </div>
 
-      </main>
+      </div>
     </div>
   );
 }
