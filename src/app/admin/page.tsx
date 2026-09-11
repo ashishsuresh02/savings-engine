@@ -39,8 +39,10 @@ function BrandManager({
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [discount, setDiscount] = useState('10');
-  const [faceValue, setFaceValue] = useState('1000');
+  const [resaleDiscount, setResaleDiscount] = useState('10');
+  const [wholesaleDiscount, setWholesaleDiscount] = useState('12');
+  const [minDenom, setMinDenom] = useState('100');
+  const [maxDenom, setMaxDenom] = useState('10000');
   const [logoUrl, setLogoUrl] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
 
@@ -52,38 +54,65 @@ function BrandManager({
     try {
       const cleanSlug = slug.trim().toLowerCase().replace(/\s+/g, '-');
 
+      // 1. Upsert Brand
       const { data: newBrand, error: bErr } = await supabase
         .from('brands')
-        .insert([{
+        .upsert([{
           name: name.trim(),
           slug: cleanSlug,
           logo_url: logoUrl.trim() || '/logo.png',
           website_url: websiteUrl.trim() || 'https://google.com',
           is_active: true,
-        }])
+          supports_voucher_redemption: true,
+        }], { onConflict: 'slug' })
         .select()
         .single();
 
       if (bErr) throw bErr;
 
-      const { error: vErr } = await supabase
+      // 2. Insert or update voucher rules matching exact schema
+      const { data: existingVoucher } = await supabase
         .from('brand_vouchers')
-        .insert([{
-          brand_id: newBrand.id,
-          resale_discount_pct: Number(discount) || 10,
-          face_value: Number(faceValue) || 1000,
-        }]);
+        .select('id')
+        .eq('brand_id', newBrand.id)
+        .maybeSingle();
 
-      if (vErr) throw vErr;
+      if (existingVoucher) {
+        const { error: vErr } = await supabase
+          .from('brand_vouchers')
+          .update({
+            resale_discount_pct: Number(resaleDiscount) || 10,
+            wholesale_discount_pct: Number(wholesaleDiscount) || 12,
+            min_denomination: Number(minDenom) || 100,
+            max_denomination: Number(maxDenom) || 10000,
+            step_value: 100,
+          })
+          .eq('id', existingVoucher.id);
 
-      showStatus(`Brand "${name}" published live!`, 'success');
+        if (vErr) throw vErr;
+      } else {
+        const { error: vErr } = await supabase
+          .from('brand_vouchers')
+          .insert([{
+            brand_id: newBrand.id,
+            resale_discount_pct: Number(resaleDiscount) || 10,
+            wholesale_discount_pct: Number(wholesaleDiscount) || 12,
+            min_denomination: Number(minDenom) || 100,
+            max_denomination: Number(maxDenom) || 10000,
+            step_value: 100,
+          }]);
+
+        if (vErr) throw vErr;
+      }
+
+      showStatus(`Store "${name}" saved and live!`, 'success');
       setName('');
       setSlug('');
       setLogoUrl('');
       setWebsiteUrl('');
       onRefresh();
     } catch (err: any) {
-      showStatus(err.message || 'Failed to create brand', 'error');
+      showStatus(err.message || 'Failed to save store', 'error');
     } finally {
       setLoading(false);
     }
@@ -107,7 +136,8 @@ function BrandManager({
           .from('brand_vouchers')
           .update({
             resale_discount_pct: Number(b.editDiscount) || 10,
-            face_value: Number(b.editFaceValue) || 1000,
+            wholesale_discount_pct: Number(b.editWholesale) || 12,
+            max_denomination: Number(b.editMaxDenom) || 10000,
           })
           .eq('id', voucherId);
 
@@ -125,10 +155,11 @@ function BrandManager({
   };
 
   const handleDelete = async (id: string, brandName: string) => {
-    if (!confirm(`Are you sure you want to delete ${brandName}? This will remove its vouchers too.`)) return;
+    if (!confirm(`Delete ${brandName}? This will remove all linked vouchers too.`)) return;
     if (!supabase) return;
 
     try {
+      await supabase.from('brand_vouchers').delete().eq('brand_id', id);
       const { error } = await supabase.from('brands').delete().eq('id', id);
       if (error) throw error;
       showStatus(`Deleted ${brandName}`, 'success');
@@ -154,9 +185,10 @@ function BrandManager({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Create / Upsert Brand Form */}
       <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-          <Plus className="w-4 h-4 text-[#E51B24]" /> Add New Brand & Deal
+          <Plus className="w-4 h-4 text-[#E51B24]" /> Add / Update Store & Voucher
         </h3>
 
         <form onSubmit={handleCreate} className="space-y-3.5 text-xs">
@@ -165,7 +197,7 @@ function BrandManager({
             <input
               type="text"
               required
-              placeholder="e.g. Swiggy Instamart"
+              placeholder="e.g. Swiggy"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -180,7 +212,7 @@ function BrandManager({
             <input
               type="text"
               required
-              placeholder="swiggy-instamart"
+              placeholder="swiggy"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-mono"
@@ -189,23 +221,44 @@ function BrandManager({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Discount % *</label>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Customer Cut (%) *</label>
               <input
                 type="number"
                 required
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
+                value={resaleDiscount}
+                onChange={(e) => setResaleDiscount(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-black text-sm"
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Face Value (₹) *</label>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Wholesale Cut (%) *</label>
               <input
                 type="number"
                 required
-                value={faceValue}
-                onChange={(e) => setFaceValue(e.target.value)}
+                value={wholesaleDiscount}
+                onChange={(e) => setWholesaleDiscount(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-black text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Min Value (₹)</label>
+              <input
+                type="number"
+                value={minDenom}
+                onChange={(e) => setMinDenom(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Max Cap (₹)</label>
+              <input
+                type="number"
+                value={maxDenom}
+                onChange={(e) => setMaxDenom(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24]"
               />
             </div>
           </div>
@@ -214,7 +267,7 @@ function BrandManager({
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Logo Image URL</label>
             <input
               type="url"
-              placeholder="https://.../logo.png"
+              placeholder="https://.../logo.svg"
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24]"
@@ -222,10 +275,10 @@ function BrandManager({
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Store / Affiliate Link</label>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Website / Affiliate Link</label>
             <input
               type="url"
-              placeholder="https://brand.com/?ref=..."
+              placeholder="https://brand.com"
               value={websiteUrl}
               onChange={(e) => setWebsiteUrl(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24]"
@@ -237,11 +290,12 @@ function BrandManager({
             disabled={loading}
             className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95"
           >
-            {loading ? 'Publishing...' : 'Publish Brand to Engine'}
+            {loading ? 'Processing...' : 'Save & Publish Store'}
           </button>
         </form>
       </div>
 
+      {/* Brand List */}
       <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
         <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
           <span>Active Stores Directory</span>
@@ -251,19 +305,20 @@ function BrandManager({
         <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
           {brands.map((b) => {
             const isEditing = editingId === b.id;
-            const curDiscount = b.brand_vouchers?.[0]?.resale_discount_pct || 10;
-            const curFace = b.brand_vouchers?.[0]?.face_value || 1000;
+            const curResale = b.brand_vouchers?.[0]?.resale_discount_pct || 10;
+            const curWholesale = b.brand_vouchers?.[0]?.wholesale_discount_pct || 12;
+            const curMax = b.brand_vouchers?.[0]?.max_denomination || 10000;
 
             return (
               <div
                 key={b.id}
                 className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shrink-0">
                     <img src={b.logo_url} alt={b.name} className="max-h-7 max-w-7 object-contain" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     {isEditing ? (
                       <input
                         type="text"
@@ -272,7 +327,7 @@ function BrandManager({
                         className="bg-white border border-slate-300 rounded px-2 py-1 font-bold mb-1"
                       />
                     ) : (
-                      <h4 className="font-black text-slate-900 text-sm">{b.name}</h4>
+                      <h4 className="font-black text-slate-900 text-sm truncate">{b.name}</h4>
                     )}
                     <span className="font-mono text-[11px] text-slate-500 block">/{b.slug}</span>
                   </div>
@@ -283,16 +338,23 @@ function BrandManager({
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
-                        placeholder="Discount %"
-                        defaultValue={curDiscount}
+                        placeholder="Cut %"
+                        defaultValue={curResale}
                         onChange={(e) => (b.editDiscount = e.target.value)}
-                        className="w-16 bg-white border border-slate-300 rounded px-2 py-1 font-bold text-center"
+                        className="w-14 bg-white border border-slate-300 rounded px-2 py-1 font-bold text-center"
                       />
                       <input
                         type="number"
-                        placeholder="Face Val"
-                        defaultValue={curFace}
-                        onChange={(e) => (b.editFaceValue = e.target.value)}
+                        placeholder="Whole %"
+                        defaultValue={curWholesale}
+                        onChange={(e) => (b.editWholesale = e.target.value)}
+                        className="w-14 bg-white border border-slate-300 rounded px-2 py-1 font-bold text-center"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max ₹"
+                        defaultValue={curMax}
+                        onChange={(e) => (b.editMaxDenom = e.target.value)}
                         className="w-20 bg-white border border-slate-300 rounded px-2 py-1 font-bold text-center"
                       />
                       <button
@@ -311,8 +373,8 @@ function BrandManager({
                   ) : (
                     <>
                       <div className="text-right">
-                        <span className="font-black text-[#E51B24] block">{curDiscount}% OFF</span>
-                        <span className="text-[10px] text-slate-400 font-bold">₹{curFace} MRP</span>
+                        <span className="font-black text-[#E51B24] block">{curResale}% Cut</span>
+                        <span className="text-[10px] text-slate-400 font-bold">Max ₹{curMax}</span>
                       </div>
 
                       <button
@@ -328,8 +390,9 @@ function BrandManager({
 
                       <button
                         onClick={() => {
-                          b.editDiscount = curDiscount;
-                          b.editFaceValue = curFace;
+                          b.editDiscount = curResale;
+                          b.editWholesale = curWholesale;
+                          b.editMaxDenom = curMax;
                           setEditingId(b.id);
                         }}
                         className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700"
@@ -369,9 +432,12 @@ function InventoryManager({
   onRefresh: () => void; 
   showStatus: (msg: string, type: 'success' | 'error') => void; 
 }) {
-  const [selectedBrand, setSelectedBrand] = useState(brands[0]?.name || 'Swiggy');
+  const [selectedBrand, setSelectedBrand] = useState(brands[0]?.name || 'Amazon Shopping');
   const [code, setCode] = useState('');
   const [pin, setPin] = useState('4821');
+  const [faceValue, setFaceValue] = useState('1000');
+  const [buyingPrice, setBuyingPrice] = useState('900');
+  const [sellingPrice, setSellingPrice] = useState('950');
   const [loading, setLoading] = useState(false);
 
   const handleAddCode = async (e: React.FormEvent) => {
@@ -386,6 +452,9 @@ function InventoryManager({
           brand_name: selectedBrand,
           voucher_code: code.trim().toUpperCase(),
           voucher_pin: pin.trim(),
+          face_value: Number(faceValue) || 1000,
+          buying_price: Number(buyingPrice) || 900,
+          selling_price: Number(sellingPrice) || 950,
           status: 'AVAILABLE',
         }]);
 
@@ -401,14 +470,14 @@ function InventoryManager({
     }
   };
 
-  const handleDeleteCode = async (id: number) => {
+  const handleDeleteCode = async (id: string) => {
     if (!confirm('Remove this code from the inventory?')) return;
     if (!supabase) return;
 
     try {
       const { error } = await supabase.from('voucher_inventory').delete().eq('id', id);
       if (error) throw error;
-      showStatus('Code removed from database', 'success');
+      showStatus('Code removed from vault', 'success');
       onRefresh();
     } catch (err: any) {
       showStatus(err.message, 'error');
@@ -441,7 +510,7 @@ function InventoryManager({
             <input
               type="text"
               required
-              placeholder="e.g. SWIG482910482918"
+              placeholder="e.g. AMZN482910482918"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-mono font-black text-sm tracking-wider uppercase outline-none focus:border-[#E51B24]"
@@ -458,6 +527,36 @@ function InventoryManager({
               onChange={(e) => setPin(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-mono font-bold text-sm outline-none focus:border-[#E51B24]"
             />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Face (₹)</label>
+              <input
+                type="number"
+                value={faceValue}
+                onChange={(e) => setFaceValue(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 font-black text-center"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Buy (₹)</label>
+              <input
+                type="number"
+                value={buyingPrice}
+                onChange={(e) => setBuyingPrice(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 font-black text-center"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Sell (₹)</label>
+              <input
+                type="number"
+                value={sellingPrice}
+                onChange={(e) => setSellingPrice(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 font-black text-center"
+              />
+            </div>
           </div>
 
           <button
@@ -487,7 +586,9 @@ function InventoryManager({
               <div>
                 <span className="font-black text-slate-900 block">{item.brand_name}</span>
                 <span className="font-mono text-slate-700 font-black tracking-wider text-sm">{item.voucher_code}</span>
-                <span className="text-[11px] text-slate-500 font-semibold block">PIN: {item.voucher_pin}</span>
+                <span className="text-[11px] text-slate-500 font-semibold block">
+                  PIN: {item.voucher_pin} | ₹{item.face_value} Face Value
+                </span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -528,7 +629,7 @@ function OrderManager({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleUpdateStatus = async (orderId: number, currentStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
     if (!supabase) return;
     const nextStatus = currentStatus === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
 
@@ -539,21 +640,21 @@ function OrderManager({
         .eq('id', orderId);
 
       if (error) throw error;
-      showStatus(`Order #${orderId} marked as ${nextStatus}`, 'success');
+      showStatus(`Order marked as ${nextStatus}`, 'success');
       onRefresh();
     } catch (err: any) {
       showStatus(err.message, 'error');
     }
   };
 
-  const handleDeleteOrder = async (orderId: number) => {
-    if (!confirm(`Delete order #${orderId}?`)) return;
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Delete order record permanently?')) return;
     if (!supabase) return;
 
     try {
       const { error } = await supabase.from('customer_orders').delete().eq('id', orderId);
       if (error) throw error;
-      showStatus(`Order #${orderId} deleted`, 'success');
+      showStatus('Order deleted', 'success');
       onRefresh();
     } catch (err: any) {
       showStatus(err.message, 'error');
@@ -574,7 +675,7 @@ function OrderManager({
           <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#E51B24]" /> Orders & 12-Digit UTR Transaction Ledger
           </h3>
-          <p className="text-xs text-slate-500 font-medium">Verify incoming 12-digit UPI UTR reference codes against your bank statement.</p>
+          <p className="text-xs text-slate-500 font-medium">Verify incoming 12-digit UPI UTR reference codes against your statement.</p>
         </div>
 
         <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs w-full sm:w-64">
@@ -593,28 +694,26 @@ function OrderManager({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
-              <th className="pb-3">Order ID</th>
               <th className="pb-3">Store</th>
               <th className="pb-3">Customer Phone</th>
-              <th className="pb-3">Paid (₹)</th>
-              <th className="pb-3">Savings (₹)</th>
+              <th className="pb-3">Amount Paid</th>
+              <th className="pb-3">Profit/Savings</th>
               <th className="pb-3">12-Digit UTR Ref</th>
-              <th className="pb-3">Code Delivered</th>
+              <th className="pb-3">Delivered Code</th>
               <th className="pb-3">Status</th>
-              <th className="pb-3 text-right">Actions</th>
+              <th className="pb-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-slate-400">
+                <td colSpan={8} className="py-8 text-center text-slate-400">
                   No orders recorded yet.
                 </td>
               </tr>
             ) : (
               filteredOrders.map((ord) => (
                 <tr key={ord.id} className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-mono font-bold text-slate-500">#{ord.id}</td>
                   <td className="py-3 font-black text-slate-900">{ord.brand_name}</td>
                   <td className="py-3 font-mono text-slate-700 font-bold">{ord.user_phone}</td>
                   <td className="py-3 font-black text-slate-900">₹{ord.amount_paid}</td>
@@ -693,7 +792,7 @@ function CouponManager({
 
       if (error) throw error;
 
-      showStatus(`Coupon ${code.toUpperCase()} added & verified!`, 'success');
+      showStatus(`Coupon ${code.toUpperCase()} published!`, 'success');
       setCode('');
       setTitle('');
       onRefresh();
@@ -859,7 +958,7 @@ function CouponManager({
 }
 
 // ==========================================
-// 5. MASTER ADMIN CONTROLLER PAGE WITH AUTH
+// 5. MASTER CONTROLLER (WITH SECURE AUTH GATE)
 // ==========================================
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'BRANDS' | 'INVENTORY' | 'ORDERS' | 'COUPONS'>('BRANDS');
@@ -899,7 +998,7 @@ export default function AdminDashboard() {
     try {
       if (!supabase) throw new Error('Database connection unavailable');
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: authEmail.trim(),
         password: authPassword.trim(),
       });
@@ -925,28 +1024,35 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
+      // 1. Brands with exact voucher schema columns
       const { data: bData } = await supabase
         .from('brands')
-        .select('id, name, slug, logo_url, website_url, is_active, brand_vouchers(id, resale_discount_pct, face_value)')
+        .select(`
+          id, name, slug, logo_url, website_url, is_active,
+          brand_vouchers(id, resale_discount_pct, wholesale_discount_pct, min_denomination, max_denomination)
+        `)
         .order('name', { ascending: true });
       if (bData) setBrands(bData);
 
+      // 2. Inventory matching exact columns
       const { data: invData } = await supabase
         .from('voucher_inventory')
-        .select('*')
-        .order('id', { ascending: false });
+        .select('id, brand_name, voucher_code, voucher_pin, face_value, buying_price, selling_price, status')
+        .order('created_at', { ascending: false });
       if (invData) setInventory(invData);
 
+      // 3. Orders matching exact columns
       const { data: ordData } = await supabase
         .from('customer_orders')
-        .select('*')
-        .order('id', { ascending: false });
+        .select('id, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered')
+        .order('created_at', { ascending: false });
       if (ordData) setOrders(ordData);
 
+      // 4. Coupons matching exact columns
       const { data: cData } = await supabase
         .from('brand_coupons')
         .select('id, coupon_code, title, discount_value, stackable_with_voucher, is_verified, brands(name)')
-        .order('id', { ascending: false });
+        .order('created_at', { ascending: false });
       if (cData) setCoupons(cData);
 
     } catch (err) {
@@ -1029,12 +1135,12 @@ export default function AdminDashboard() {
     );
   }
 
-  // AUTHENTICATED -> RENDER FULL ADMIN PLATFORM
+  // AUTHENTICATED -> RENDER MASTER PLATFORM
   return (
     <div className="min-h-screen bg-[#F4F6F9] text-slate-900 font-sans antialiased p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* Header Bar */}
+        {/* Top Action Header */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-[#E51B24] text-[11px] font-black uppercase tracking-wider mb-1.5 border border-red-200">
@@ -1077,7 +1183,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Global Alert */}
+        {/* Global Status Message */}
         {statusMessage.text && (
           <div className={`p-4 rounded-2xl text-xs font-bold transition ${
             statusMessage.type === 'success' 
@@ -1088,7 +1194,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Tab Switcher */}
+        {/* Tab Navigation */}
         <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto">
           <button
             onClick={() => setActiveTab('BRANDS')}
@@ -1128,7 +1234,7 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Tab Panels */}
+        {/* Modular Panels */}
         {activeTab === 'BRANDS' && (
           <BrandManager brands={brands} onRefresh={fetchData} showStatus={showStatus} />
         )}
