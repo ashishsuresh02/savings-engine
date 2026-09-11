@@ -72,8 +72,8 @@ function AnimatedRupee({ value, className }: { value: number; className?: string
   return <span className={className}>{text}</span>;
 }
 
-// 4-LAYER INTERACTIVE LIVE 3D HERO
-function TrulyLive3DHero() {
+// 4-LAYER INTERACTIVE LIVE 3D HERO WITH PREMIUM FINTECH BG
+function TrulyLive3DHero({ brands }: { brands: any[] }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -110,7 +110,7 @@ function TrulyLive3DHero() {
         <span className="text-[#E51B24] text-lg font-black -rotate-45 leading-none">⤵</span>
       </div>
 
-      <div className="absolute bottom-6 sm:bottom-8 w-[72%] h-20 bg-black/15 blur-2xl rounded-full pointer-events-none" />
+      <div className="absolute bottom-6 sm:bottom-8 w-[72%] h-20 bg-red-500/10 blur-3xl rounded-full pointer-events-none" />
 
       <motion.div
         style={{ rotateX, rotateY, transformPerspective: 1100 }}
@@ -128,7 +128,7 @@ function TrulyLive3DHero() {
             width={780}
             height={780}
             quality={100}
-            className="w-full h-auto object-contain pointer-events-none drop-shadow-[0_20px_45px_rgba(0,0,0,0.18)]"
+            className="w-full h-auto object-contain pointer-events-none drop-shadow-[0_20px_45px_rgba(229,27,36,0.15)]"
             priority
           />
         </motion.div>
@@ -145,7 +145,7 @@ function TrulyLive3DHero() {
             width={340}
             height={380}
             quality={100}
-            className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.2)]"
+            className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.15)]"
           />
         </motion.div>
 
@@ -161,7 +161,7 @@ function TrulyLive3DHero() {
             width={350}
             height={400}
             quality={100}
-            className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.2)]"
+            className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.15)]"
           />
         </motion.div>
 
@@ -181,6 +181,45 @@ function TrulyLive3DHero() {
           />
         </motion.div>
       </motion.div>
+    </div>
+  );
+}
+
+// INFINITE LOOPING BRAND MARQUEE (Award Website Style Reel Strip)
+function InfiniteBrandMarquee({ brands }: { brands: any[] }) {
+  if (!brands || brands.length === 0) return null;
+
+  // Double the array for seamless infinite looping effect
+  const duplicatedBrands = [...brands, ...brands, ...brands];
+
+  return (
+    <div className="w-full bg-[#0A0D14] border-y border-slate-800 py-4 overflow-hidden relative select-none">
+      <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-[#0A0D14] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-[#0A0D14] to-transparent z-10 pointer-events-none" />
+
+      <div className="flex w-max animate-marquee items-center gap-10">
+        {duplicatedBrands.map((b, idx) => (
+          <div 
+            key={`${b.id}-${idx}`}
+            className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-sm shrink-0 hover:border-red-500/50 transition"
+          >
+            <div className="w-6 h-6 relative flex items-center justify-center shrink-0">
+              <img 
+                src={b.logoUrl} 
+                alt={b.name} 
+                className="w-full h-full object-contain filter brightness-125"
+                onError={(e: any) => {
+                  e.currentTarget.src = "https://placehold.co/30x30/png?text=" + b.name[0];
+                }}
+              />
+            </div>
+            <div className="text-left">
+              <span className="text-xs font-black text-white block tracking-wide">{b.name}</span>
+              <span className="text-[10px] font-bold text-[#E51B24]">{b.discount}% Wholesale Cut</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -410,7 +449,7 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-5 relative flex items-center justify-center">
-            <TrulyLive3DHero />
+            <TrulyLive3DHero brands={brands} />
           </div>
 
         </div>
