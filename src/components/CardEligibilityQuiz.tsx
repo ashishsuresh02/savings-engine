@@ -30,31 +30,31 @@ const RESULTS_MAP: Record<string, QuizResult> = {
     bank: 'HDFC Bank',
     rewardRate: '10% Cashback on Swiggy Dining & Orders',
     estAnnualSaving: '₹9,600',
-    perks: ['10% on Swiggy & Dineout', '5% on Amazon & Flipkart', 'Direct Statement Credit'],
+    perks: ['10% cashback on Swiggy & Dineout', '5% cashback on Amazon & Flipkart', 'Direct statement cash credit'],
     applyUrl: 'https://gromo.in',
   },
   shopping: {
     cardName: 'SBI Cashback Credit Card',
     bank: 'SBI Card',
-    rewardRate: '5% Flat Cashback on Online Spends',
+    rewardRate: '5% Flat Cashback on All Online Spends',
     estAnnualSaving: '₹14,200',
-    perks: ['5% on all online merchants', 'Zero merchant restrictions', 'Automated monthly rebate'],
+    perks: ['5% rebate across all online merchants', 'No restriction on partner stores', 'Automated monthly statement rebate'],
     applyUrl: 'https://gromo.in',
   },
   travel: {
     cardName: 'Axis Bank Atlas Credit Card',
     bank: 'Axis Bank',
-    rewardRate: 'Up to 10% Value in Travel Miles',
+    rewardRate: 'Up to 10% Value Back in Travel Miles',
     estAnnualSaving: '₹22,000',
-    perks: ['Complimentary airport lounge access', 'Tier upgrades', 'Edge miles on flight spends'],
+    perks: ['Complimentary domestic & international airport lounge access', 'Milestone tier upgrades', 'Edge miles on all flight & hotel bookings'],
     applyUrl: 'https://gromo.in',
   },
   bills: {
     cardName: 'Airtel Axis Bank Credit Card',
     bank: 'Axis Bank',
-    rewardRate: '25% on Utilities & Bill Payments',
+    rewardRate: '25% Cashback on Utilities & Bill Payments',
     estAnnualSaving: '₹7,800',
-    perks: ['25% on Airtel mobile & Wi-Fi', '10% on BigBasket & Zomato', 'Flat 10% on power/gas'],
+    perks: ['25% cashback on Airtel mobile, broadband & Wi-Fi', '10% on utility bill payments (electricity, gas)', '10% cashback on Zomato, Swiggy & BigBasket'],
     applyUrl: 'https://gromo.in',
   }
 };
@@ -80,13 +80,13 @@ export default function CardEligibilityQuiz() {
       <div className="bg-[#090A0F] border border-white/10 rounded-[32px] p-6 sm:p-10 shadow-2xl">
         <div className="text-center space-y-2 mb-10">
           <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-            Card Recommendation Engine
+            Card Finder Wizard
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Find the card that yields the highest cashback for your spending.
+            Discover the credit card that gives you maximum cashback.
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto font-medium">
-            Select your primary spend category and monthly volume to evaluate the highest-return financial rail.
+            Tell us where you spend the most and your monthly budget to find your most profitable card match.
           </p>
         </div>
 
@@ -102,14 +102,14 @@ export default function CardEligibilityQuiz() {
               {/* Question 1: Spend Category */}
               <div className="space-y-3">
                 <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
-                  1. Primary Online Spend Category
+                  1. Where do you spend your money the most?
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { id: 'food', label: 'Food & Dining', icon: Utensils, desc: 'Swiggy, Zomato, Blinkit' },
-                    { id: 'shopping', label: 'Online Retail', icon: ShoppingBag, desc: 'Amazon, Myntra, Flipkart' },
-                    { id: 'travel', label: 'Travel & Mobility', icon: Plane, desc: 'MakeMyTrip, Uber, Flights' },
-                    { id: 'bills', label: 'Utility Bills', icon: Zap, desc: 'Electricity, Wi-Fi, Mobile' },
+                    { id: 'shopping', label: 'Online Shopping', icon: ShoppingBag, desc: 'Amazon, Myntra, Flipkart' },
+                    { id: 'travel', label: 'Travel & Cabs', icon: Plane, desc: 'MakeMyTrip, Uber, Flights' },
+                    { id: 'bills', label: 'Bills & Utilities', icon: Zap, desc: 'Electricity, Wi-Fi, Mobile' },
                   ].map((item) => {
                     const Icon = item.icon;
                     const isSelected = selectedSpend === item.id;
@@ -120,7 +120,7 @@ export default function CardEligibilityQuiz() {
                         onClick={() => setSelectedSpend(item.id)}
                         className={`p-4 rounded-2xl border text-left transition-all ${
                           isSelected
-                            ? 'bg-white/10 border-white text-white shadow-lg'
+                            ? 'bg-white/15 border-white text-white shadow-lg ring-1 ring-white'
                             : 'bg-white/[0.02] border-white/10 text-zinc-400 hover:border-white/20'
                         }`}
                       >
@@ -137,10 +137,10 @@ export default function CardEligibilityQuiz() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
-                    2. Estimated Monthly Online Spend
+                    2. Estimated Monthly Spend
                   </label>
-                  <span className="text-sm font-black text-emerald-400">
-                    ₹{monthlySpend.toLocaleString('en-IN')}/month
+                  <span className="text-sm font-black text-emerald-400 font-mono">
+                    ₹{monthlySpend.toLocaleString('en-IN')} / month
                   </span>
                 </div>
                 <input
@@ -153,9 +153,9 @@ export default function CardEligibilityQuiz() {
                   className="w-full accent-white cursor-pointer h-2 bg-zinc-800 rounded-lg"
                 />
                 <div className="flex justify-between text-[10px] text-zinc-500 font-medium">
-                  <span>₹5,000/mo</span>
-                  <span>₹40,000/mo</span>
-                  <span>₹80,000+/mo</span>
+                  <span>₹5,000</span>
+                  <span>₹40,000</span>
+                  <span>₹80,000+</span>
                 </div>
               </div>
 
@@ -167,7 +167,7 @@ export default function CardEligibilityQuiz() {
                 className="w-full py-4 rounded-2xl bg-white hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black text-xs uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
               >
                 <Sparkles className="w-4 h-4 text-black" />
-                <span>Evaluate Optimal Card Match</span>
+                <span>Find My Best Card Match</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>
@@ -183,7 +183,7 @@ export default function CardEligibilityQuiz() {
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Recommended Financial Instrument</span>
+                  <span>Best Matched Credit Card For You</span>
                 </div>
                 <button
                   type="button"
@@ -191,7 +191,7 @@ export default function CardEligibilityQuiz() {
                   className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition font-medium"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Re-calculate Spend</span>
+                  <span>Calculate Again</span>
                 </button>
               </div>
 
@@ -202,13 +202,13 @@ export default function CardEligibilityQuiz() {
                     {result.bank}
                   </span>
                   <h3 className="text-xl sm:text-2xl font-black text-white">{result.cardName}</h3>
-                  <p className="text-xs text-zinc-300 font-medium">{result.rewardRate}</p>
+                  <p className="text-xs text-emerald-400 font-bold">{result.rewardRate}</p>
                 </div>
 
                 <div className="text-left md:text-right">
-                  <span className="text-[10px] text-zinc-400 uppercase font-bold block">Annual Net Statement Return</span>
-                  <span className="text-3xl font-black text-emerald-400">{result.estAnnualSaving}</span>
-                  <span className="text-[10px] text-zinc-500 block font-medium">Estimated cashback per year</span>
+                  <span className="text-[10px] text-zinc-400 uppercase font-bold block">Estimated Annual Savings</span>
+                  <span className="text-3xl font-black text-emerald-400 font-mono">{result.estAnnualSaving}</span>
+                  <span className="text-[10px] text-zinc-500 block font-medium">Extra cash back in your pocket</span>
                 </div>
               </div>
 
@@ -229,7 +229,7 @@ export default function CardEligibilityQuiz() {
                 rel="noreferrer"
                 className="w-full py-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg active:scale-[0.99]"
               >
-                <span>Apply Online for Pre-Approved Card</span>
+                <span>Apply Securely Online</span>
                 <ArrowUpRight className="w-4 h-4" />
               </a>
             </motion.div>
