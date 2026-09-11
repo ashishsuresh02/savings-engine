@@ -97,7 +97,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Google Structured Data (JSON-LD) for Rich Results & Sitelinks Searchbox
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
