@@ -167,36 +167,38 @@ function TrulyLive3DHero({ brands }: { brands: any[] }) {
   );
 }
 
-// INFINITE LOOPING BRAND MARQUEE (Award Website Style Reel Strip)
-function InfiniteBrandMarquee({ brands }: { brands: any[] }) {
-  if (!brands || brands.length === 0) return null;
+// STATIC INSTANT-LOADING RED THEME BRAND MARQUEE (Smooth & Fast)
+function InfiniteBrandMarquee() {
+  // Static high-speed brand list with direct clean assets
+  const staticBrands = [
+    { name: "Amazon", discount: "12%", logo: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=100&auto=format&fit=crop&q=60" },
+    { name: "Swiggy", discount: "15%", logo: "https://images.unsplash.com/photo-1526367460886-3cde3b1fd072?w=100&auto=format&fit=crop&q=60" },
+    { name: "Zomato", discount: "10%", logo: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&auto=format&fit=crop&q=60" },
+    { name: "Myntra", discount: "18%", logo: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=100&auto=format&fit=crop&q=60" },
+    { name: "Domino's", discount: "13%", logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100&auto=format&fit=crop&q=60" },
+    { name: "Flipkart", discount: "10%", logo: "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=100&auto=format&fit=crop&q=60" },
+    { name: "MakeMyTrip", discount: "20%", logo: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=100&auto=format&fit=crop&q=60" }
+  ];
 
-  const duplicatedBrands = [...brands, ...brands, ...brands];
+  const duplicatedBrands = [...staticBrands, ...staticBrands, ...staticBrands];
 
   return (
-    <div className="w-full bg-[#0A0D14] border-y border-slate-800 py-4 overflow-hidden relative select-none shadow-inner">
-      <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-[#0A0D14] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-[#0A0D14] to-transparent z-10 pointer-events-none" />
+    <div className="w-full bg-[#E51B24] border-y border-red-600 py-4 overflow-hidden relative select-none shadow-lg">
+      <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-[#E51B24] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-[#E51B24] to-transparent z-10 pointer-events-none" />
 
-      <div className="flex w-max animate-marquee items-center gap-10">
+      <div className="flex w-max animate-marquee items-center gap-8">
         {duplicatedBrands.map((b, idx) => (
           <div 
-            key={`${b.id}-${idx}`}
-            className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-sm shrink-0 hover:border-red-500/50 transition"
+            key={idx}
+            className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md shadow-sm shrink-0 hover:bg-white/20 transition"
           >
-            <div className="w-6 h-6 relative flex items-center justify-center shrink-0">
-              <img 
-                src={b.logoUrl} 
-                alt={b.name} 
-                className="w-full h-full object-contain filter brightness-125"
-                onError={(e: any) => {
-                  e.currentTarget.src = "https://placehold.co/30x30/png?text=" + b.name[0];
-                }}
-              />
+            <div className="w-7 h-7 relative flex items-center justify-center shrink-0 rounded-full bg-white p-1 shadow-sm">
+              <span className="text-xs font-black text-[#E51B24]">{b.name[0]}</span>
             </div>
             <div className="text-left">
               <span className="text-xs font-black text-white block tracking-wide">{b.name}</span>
-              <span className="text-[10px] font-bold text-[#E51B24]">{b.discount}% Wholesale Cut</span>
+              <span className="text-[10px] font-extrabold text-red-100">{b.discount} Wholesale Cut</span>
             </div>
           </div>
         ))}
@@ -411,7 +413,7 @@ export default function Home() {
       </section>
 
       {/* 3. INFINITE AWARD-STYLE BRAND REEL STRIP */}
-      <InfiniteBrandMarquee brands={brands} />
+      <InfiniteBrandMarquee />
 
       {/* 4. DYNAMIC BRANDS CAROUSEL */}
       <section id="brands" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-b border-slate-200">
@@ -867,27 +869,33 @@ export default function Home() {
       <LiveArbitrageTicker />
 
       {/* PROFESSIONAL FINTECH FOOTER */}
-      <footer className="bg-[#0A0D14] text-slate-400 pt-16 pb-12 border-t border-slate-800 text-xs font-sans">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
+      <footer className="bg-[#0A0D14] text-slate-400 pt-16 pb-12 border-t border-slate-800 text-xs font-sans relative overflow-hidden">
+        {/* Subtle background ambient glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-32 bg-red-600/5 blur-[120px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12 relative z-10">
           
           {/* Top Grid Sections */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             
-            {/* Col 1: Brand & Bio */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#E51B24] flex items-center justify-center text-white font-black">
-                  A
+            {/* Col 1: Brand Logo & Bio */}
+            <div className="lg:col-span-2 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="relative h-10 w-48 flex items-center">
+                  <Image 
+                    src="/logo1.png" 
+                    alt="AllInOneVouchers Logo" 
+                    width={180} 
+                    height={40} 
+                    className="w-full h-full object-contain filter brightness-125"
+                  />
                 </div>
-                <span className="text-base font-black text-white tracking-tight">
-                  AllInOneVouchers
-                </span>
               </div>
               <p className="text-slate-400 text-xs leading-relaxed max-w-sm font-medium">
                 India's premier financial arbitrage engine. We stack wholesale discounted brand gift cards, verified promo codes, and credit card cashbacks to uncover the lowest true net price.
               </p>
-              <div className="flex items-center gap-3 pt-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-[11px] font-bold">
+              <div className="flex items-center gap-3 pt-1">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 text-emerald-400 text-[11px] font-bold shadow-sm">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span>Secure UTR & Vault Pipeline Active</span>
                 </span>
@@ -895,21 +903,21 @@ export default function Home() {
             </div>
 
             {/* Col 2: Quick Links */}
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Platform Hub</h4>
-              <ul className="space-y-2 font-medium">
-                <li><a href="#vouchers" className="hover:text-white transition">Active Vouchers</a></li>
-                <li><a href="#calculator" className="hover:text-white transition">Arbitrage Calculator</a></li>
-                <li><a href="#coupons" className="hover:text-white transition">Verified Coupons</a></li>
-                <li><a href="#cards" className="hover:text-white transition">Card Finder Wizard</a></li>
-                <li><a href="/dashboard" className="hover:text-white transition">User Vault</a></li>
+              <ul className="space-y-2.5 font-medium text-slate-400">
+                <li><a href="#vouchers" className="hover:text-white transition flex items-center gap-1.5"><span>Active Vouchers</span></a></li>
+                <li><a href="#calculator" className="hover:text-white transition flex items-center gap-1.5"><span>Arbitrage Calculator</span></a></li>
+                <li><a href="#coupons" className="hover:text-white transition flex items-center gap-1.5"><span>Verified Coupons</span></a></li>
+                <li><a href="#cards" className="hover:text-white transition flex items-center gap-1.5"><span>Card Finder Wizard</span></a></li>
+                <li><a href="/dashboard" className="hover:text-white transition flex items-center gap-1.5"><span>User Vault</span></a></li>
               </ul>
             </div>
 
             {/* Col 3: Popular Stores */}
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Partner Stores</h4>
-              <ul className="space-y-2 font-medium">
+              <ul className="space-y-2.5 font-medium text-slate-400">
                 <li><a href="#calculator" className="hover:text-white transition">Amazon Shopping</a></li>
                 <li><a href="#calculator" className="hover:text-white transition">Swiggy Gourmet</a></li>
                 <li><a href="#calculator" className="hover:text-white transition">Zomato Dining</a></li>
@@ -919,11 +927,11 @@ export default function Home() {
             </div>
 
             {/* Col 4: Community & Support */}
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Connect & Help</h4>
-              <ul className="space-y-2 font-medium">
-                <li><a href="https://t.me/allinonevouchers" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-1">Telegram Loot Channel</a></li>
-                <li><a href="https://t.me/AIOVouchersBot" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-1">Automated Deal Bot</a></li>
+              <ul className="space-y-2.5 font-medium text-slate-400">
+                <li><a href="https://t.me/allinonevouchers" target="_blank" rel="noreferrer" className="hover:text-white transition">Telegram Loot Channel</a></li>
+                <li><a href="https://t.me/AIOVouchersBot" target="_blank" rel="noreferrer" className="hover:text-white transition">Automated Deal Bot</a></li>
                 <li><a href="#faq" className="hover:text-white transition">Frequently Asked Questions</a></li>
                 <li><a href="mailto:support@allinonevouchers.com" className="hover:text-white transition">Customer Support Desk</a></li>
               </ul>
@@ -933,7 +941,7 @@ export default function Home() {
 
           {/* Bottom Divider & Copyright */}
           <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px] font-medium">
-            <p>© 2026 AllInOneVouchers.com. All rights reserved. Made By AKSBit Systems.</p>
+            <p>© 2026 AllInOneVouchers.com. All rights reserved. Built for secure retail savings.</p>
             <div className="flex items-center gap-6">
               <span className="hover:text-slate-300 transition cursor-pointer">Privacy Policy</span>
               <span className="hover:text-slate-300 transition cursor-pointer">Terms of Service</span>
