@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -17,6 +18,7 @@ import {
   Percent,
   CreditCard
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface NavbarProps {
   onOpenAuth: () => void;
@@ -24,9 +26,11 @@ interface NavbarProps {
 }
 
 export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: NavbarProps) {
+  const router = useRouter();
   const { scrollY } = useScroll();
   const [showNavbar, setShowNavbar] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
 
   // 80px scroll hone par hi floating navbar screen par smoothly slide down hoga
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -37,6 +41,30 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
       setMobileMenuOpen(false);
     }
   });
+
+  useEffect(() => {
+    async function checkUserIdentity() {
+      const localPhone = typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null;
+      if (localPhone) {
+        setHasSession(true);
+        return;
+      }
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) setHasSession(true);
+      }
+    }
+    checkUserIdentity();
+  }, []);
+
+  const handleVaultNavigation = () => {
+    const localPhone = typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null;
+    if (localPhone || hasSession) {
+      router.push('/dashboard');
+    } else {
+      onOpenAuth();
+    }
+  };
 
   return (
     <>
@@ -51,21 +79,21 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
           >
             <nav className="pointer-events-auto w-full max-w-5xl py-2 px-4 sm:px-6 rounded-full bg-white/95 border border-slate-200/90 backdrop-blur-xl shadow-[0_12px_35px_rgba(11,43,92,0.12),0_4px_12px_rgba(229,27,36,0.06)] flex items-center justify-between transition-all duration-300">
               
-              {/* 1. Brand Horizontal Logo (logo1.png) */}
+              {/* 1. Brand Horizontal Logo (Bada & Clear Size) */}
               <div className="flex items-center gap-3">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                  <div className="relative h-8 sm:h-9 w-36 sm:w-44 flex items-center">
+                  <div className="relative h-10 sm:h-12 w-48 sm:w-56 flex items-center">
                     <Image 
                       src="/logo1.png" 
                       alt="AllInOneVouchers Logo" 
-                      width={180} 
-                      height={40} 
+                      width={220} 
+                      height={48} 
                       className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-200"
                       priority
                     />
                   </div>
 
-                  <span className="hidden xl:inline-flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  <span className="hidden xl:inline-flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] animate-pulse" />
                     <span>{brandCount} Live Stores</span>
                   </span>
@@ -100,11 +128,11 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
                 </a>
 
                 <button
-                  onClick={onOpenAuth}
+                  onClick={handleVaultNavigation}
                   className="px-4 sm:px-5 py-2 rounded-full bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs transition-all shadow-[0_4px_14px_rgba(229,27,36,0.3)] flex items-center gap-2 active:scale-95"
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>Vault</span>
+                  <span>{hasSession ? 'My Vault' : 'Vault'}</span>
                   <ArrowRight className="w-3 h-3 stroke-[2.5]" />
                 </button>
 
@@ -200,12 +228,12 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenAuth();
+                handleVaultNavigation();
               }}
               className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(229,27,36,0.3)]"
             >
               <User className="w-4 h-4" />
-              <span>Open Member Vault</span>
+              <span>{hasSession ? 'Open My Vault' : 'Open Member Vault'}</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </motion.div>
