@@ -77,15 +77,15 @@ export default function CardEligibilityQuiz() {
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-14">
-      <div className="bg-[#090A0F] border border-white/10 rounded-[32px] p-6 sm:p-10 shadow-2xl">
+      <div className="bg-white border-2 border-red-100 rounded-[32px] p-6 sm:p-10 shadow-xl">
         <div className="text-center space-y-2 mb-10">
-          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+          <span className="text-[11px] font-black uppercase tracking-wider text-[#E51B24] bg-red-50 px-3 py-1 rounded-full border border-red-200">
             Card Finder Wizard
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             Discover the credit card that gives you maximum cashback.
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto font-medium">
+          <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto font-medium">
             Tell us where you spend the most and your monthly budget to find your most profitable card match.
           </p>
         </div>
@@ -101,7 +101,7 @@ export default function CardEligibilityQuiz() {
             >
               {/* Question 1: Spend Category */}
               <div className="space-y-3">
-                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                   1. Where do you spend your money the most?
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -120,13 +120,13 @@ export default function CardEligibilityQuiz() {
                         onClick={() => setSelectedSpend(item.id)}
                         className={`p-4 rounded-2xl border text-left transition-all ${
                           isSelected
-                            ? 'bg-white/15 border-white text-white shadow-lg ring-1 ring-white'
-                            : 'bg-white/[0.02] border-white/10 text-zinc-400 hover:border-white/20'
+                            ? 'bg-red-50 border-[#E51B24] text-slate-900 shadow-md ring-2 ring-[#E51B24]'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 mb-2.5 ${isSelected ? 'text-white' : 'text-zinc-500'}`} />
-                        <h4 className="text-xs font-bold text-white block">{item.label}</h4>
-                        <span className="text-[10px] text-zinc-400 block mt-0.5">{item.desc}</span>
+                        <Icon className={`w-5 h-5 mb-2.5 ${isSelected ? 'text-[#E51B24]' : 'text-slate-400'}`} />
+                        <h4 className="text-xs font-bold text-slate-900 block">{item.label}</h4>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">{item.desc}</span>
                       </button>
                     );
                   })}
@@ -136,10 +136,10 @@ export default function CardEligibilityQuiz() {
               {/* Question 2: Monthly Volume Slider */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     2. Estimated Monthly Spend
                   </label>
-                  <span className="text-sm font-black text-emerald-400 font-mono">
+                  <span className="text-sm font-black text-[#E51B24] font-mono">
                     ₹{monthlySpend.toLocaleString('en-IN')} / month
                   </span>
                 </div>
@@ -150,9 +150,9 @@ export default function CardEligibilityQuiz() {
                   step={2500}
                   value={monthlySpend}
                   onChange={(e) => setMonthlySpend(Number(e.target.value))}
-                  className="w-full accent-white cursor-pointer h-2 bg-zinc-800 rounded-lg"
+                  className="w-full accent-[#E51B24] cursor-pointer h-2 bg-slate-200 rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] text-zinc-500 font-medium">
+                <div className="flex justify-between text-[10px] text-slate-400 font-medium">
                   <span>₹5,000</span>
                   <span>₹40,000</span>
                   <span>₹80,000+</span>
@@ -164,9 +164,9 @@ export default function CardEligibilityQuiz() {
                 type="button"
                 disabled={!selectedSpend}
                 onClick={handleEvaluate}
-                className="w-full py-4 rounded-2xl bg-white hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black text-xs uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2 active:scale-[0.99]"
+                className="w-full py-4 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/20 flex items-center justify-center gap-2 active:scale-[0.99]"
               >
-                <Sparkles className="w-4 h-4 text-black" />
+                <Sparkles className="w-4 h-4 text-white" />
                 <span>Find My Best Card Match</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -180,15 +180,15 @@ export default function CardEligibilityQuiz() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="space-y-6 max-w-4xl mx-auto"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Best Matched Credit Card For You</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition font-medium"
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition font-medium"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Calculate Again</span>
@@ -196,27 +196,27 @@ export default function CardEligibilityQuiz() {
               </div>
 
               {/* High-Contrast Match Summary */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-[#12131A] border border-white/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+              <div className="p-6 sm:p-8 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#E51B24] bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">
                     {result.bank}
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-black text-white">{result.cardName}</h3>
-                  <p className="text-xs text-emerald-400 font-bold">{result.rewardRate}</p>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900">{result.cardName}</h3>
+                  <p className="text-xs text-[#E51B24] font-bold">{result.rewardRate}</p>
                 </div>
 
                 <div className="text-left md:text-right">
-                  <span className="text-[10px] text-zinc-400 uppercase font-bold block">Estimated Annual Savings</span>
-                  <span className="text-3xl font-black text-emerald-400 font-mono">{result.estAnnualSaving}</span>
-                  <span className="text-[10px] text-zinc-500 block font-medium">Extra cash back in your pocket</span>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Estimated Annual Savings</span>
+                  <span className="text-3xl font-black text-emerald-600 font-mono">{result.estAnnualSaving}</span>
+                  <span className="text-[10px] text-slate-500 block font-medium">Extra cash back in your pocket</span>
                 </div>
               </div>
 
               {/* Key Features */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {result.perks.map((p, idx) => (
-                  <div key={idx} className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-zinc-300 flex items-center gap-2.5 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-center gap-2.5 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] shrink-0" />
                     <span>{p}</span>
                   </div>
                 ))}
@@ -227,7 +227,7 @@ export default function CardEligibilityQuiz() {
                 href={result.applyUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg active:scale-[0.99]"
+                className="w-full py-4 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-[0.99]"
               >
                 <span>Apply Securely Online</span>
                 <ArrowUpRight className="w-4 h-4" />
