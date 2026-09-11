@@ -54,24 +54,6 @@ const FAQS = [
   }
 ];
 
-function AnimatedRupee({ value, className }: { value: number; className?: string }) {
-  const motionVal = useMotionValue(value);
-  const spring = useSpring(motionVal, { stiffness: 140, damping: 22 });
-  const display = useTransform(spring, (v: number) => `₹${Math.round(v).toLocaleString('en-IN')}`);
-  const [text, setText] = useState(`₹${value.toLocaleString('en-IN')}`);
-
-  useEffect(() => {
-    motionVal.set(value);
-  }, [value, motionVal]);
-
-  useEffect(() => {
-    const unsub = display.on('change', (v) => setText(v));
-    return () => unsub();
-  }, [display]);
-
-  return <span className={className}>{text}</span>;
-}
-
 // 4-LAYER INTERACTIVE LIVE 3D HERO WITH PREMIUM FINTECH BG
 function TrulyLive3DHero({ brands }: { brands: any[] }) {
   const x = useMotionValue(0);
@@ -189,11 +171,10 @@ function TrulyLive3DHero({ brands }: { brands: any[] }) {
 function InfiniteBrandMarquee({ brands }: { brands: any[] }) {
   if (!brands || brands.length === 0) return null;
 
-  // Double the array for seamless infinite looping effect
   const duplicatedBrands = [...brands, ...brands, ...brands];
 
   return (
-    <div className="w-full bg-[#0A0D14] border-y border-slate-800 py-4 overflow-hidden relative select-none">
+    <div className="w-full bg-[#0A0D14] border-y border-slate-800 py-4 overflow-hidden relative select-none shadow-inner">
       <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-[#0A0D14] to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-[#0A0D14] to-transparent z-10 pointer-events-none" />
 
@@ -231,7 +212,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // CALCULATOR STATES - Capped strictly at ₹10,000 max
   const [selectedBrand, setSelectedBrand] = useState('');
   const [cartAmount, setCartAmount] = useState('2000');
   const [hasSbiCard, setHasSbiCard] = useState(true);
@@ -245,26 +225,18 @@ export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSubmitCouponOpen, setIsSubmitCouponOpen] = useState(false);
 
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-
-  // 1. DIRECT & CLEAN SUPABASE FETCH (Matches exact database tables)
   useEffect(() => {
     async function loadRealDatabaseData() {
       try {
         setLoading(true);
         if (!supabase) return;
 
-        // Fetch brands
         const { data: bData } = await supabase
           .from('brands')
           .select('*')
           .eq('is_active', true)
           .order('name', { ascending: true });
 
-        // Fetch voucher discounts
         const { data: vData } = await supabase
           .from('brand_vouchers')
           .select('*');
@@ -297,7 +269,6 @@ export default function Home() {
           }
         }
 
-        // Fetch Verified Coupons
         const { data: cData } = await supabase
           .from('brand_coupons')
           .select('*, brands(name, slug)')
@@ -314,23 +285,6 @@ export default function Home() {
             discountValue: Number(c.discount_value) || 100,
           })));
         }
-
-        // Fetch Payment Instruments
-        const { data: cardData } = await supabase
-          .from('payment_instruments')
-          .select('*')
-          .eq('is_active', true);
-
-        if (cardData && cardData.length > 0) {
-          setCards(cardData.map((cd: any) => ({
-            id: cd.id,
-            name: cd.name,
-            issuer_bank: cd.issuer_bank,
-            base_cashback: Number(cd.base_online_cashback_pct) || 5.0,
-            joining_fee: Number(cd.joining_fee) || 0,
-            url: cd.apply_referral_url || 'https://gromo.in',
-          })));
-        }
       } catch (err) {
         console.error("Supabase live load error:", err);
       } finally {
@@ -341,7 +295,6 @@ export default function Home() {
     loadRealDatabaseData();
   }, []);
 
-  // 2. DETAILED TRIPLE-ARBITRAGE CALCULATOR LOGIC
   const calculateArbitrage = (
     amt: string, 
     brandSlug: string, 
@@ -411,13 +364,15 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 2. 3D HERO SECTION */}
-      <section className="relative bg-[#FFFFFF] border-b border-slate-200 pt-8 sm:pt-14 pb-14 sm:pb-20 overflow-hidden">
+      {/* 2. 3D HERO SECTION WITH RICH FINTECH BG */}
+      <section className="relative bg-gradient-to-b from-white via-slate-50 to-[#F4F6F9] border-b border-slate-200 pt-10 sm:pt-16 pb-16 sm:pb-24 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#E51B24_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03] pointer-events-none" />
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
           
           <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#E51B24] animate-ping" />
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50 border border-red-200 px-3.5 py-1.5 rounded-full shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping" />
               <span>{brands.length} Real Live Stores Connected</span>
             </div>
 
@@ -455,7 +410,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. DYNAMIC BRANDS CAROUSEL */}
+      {/* 3. INFINITE AWARD-STYLE BRAND REEL STRIP */}
+      <InfiniteBrandMarquee brands={brands} />
+
+      {/* 4. DYNAMIC BRANDS CAROUSEL */}
       <section id="brands" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-b border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -513,7 +471,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* 4. TODAY'S BEST SAVINGS (VOUCHERS GRID/CAROUSEL) */}
+      {/* 5. TODAY'S BEST SAVINGS (VOUCHERS GRID/CAROUSEL) */}
       <section id="vouchers" className="max-w-7xl mx-auto px-4 sm:px-6 py-10 border-b border-slate-200">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -613,7 +571,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* 5. CALCULATOR SECTION */}
+      {/* 6. CALCULATOR SECTION */}
       <section id="calculator" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
         <div className="bg-white border-2 border-red-100 rounded-[36px] p-6 sm:p-10 shadow-xl">
           
@@ -779,7 +737,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. VERIFIED COUPONS DIRECTORY */}
+      {/* 7. VERIFIED COUPONS DIRECTORY */}
       <section id="coupons" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -846,7 +804,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. OTHER INTEGRATED COMPONENTS */}
+      {/* 8. REELS FEED & CREDIT CARD ELIGIBILITY WIZARD */}
       <SponsoredReelsFeed
         onSelectBrand={(slug) => {
           setSelectedBrand(slug);
@@ -854,10 +812,12 @@ export default function Home() {
           document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
-      <CardEligibilityQuiz />
+      <div id="cards">
+        <CardEligibilityQuiz />
+      </div>
       <WhatsAppAlerts />
 
-      {/* 8. FAQS */}
+      {/* 9. FAQS */}
       <section id="faq" className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-6">
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-black text-slate-900">Frequently Asked Questions</h2>
@@ -906,13 +866,83 @@ export default function Home() {
 
       <LiveArbitrageTicker />
 
-      {/* FOOTER */}
-      <footer className="bg-[#0A0D14] text-white pt-16 pb-10 border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-slate-500">
-          © 2026 AllInOneVouchers.com. All rights reserved.
+      {/* PROFESSIONAL FINTECH FOOTER */}
+      <footer className="bg-[#0A0D14] text-slate-400 pt-16 pb-12 border-t border-slate-800 text-xs font-sans">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
+          
+          {/* Top Grid Sections */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            
+            {/* Col 1: Brand & Bio */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#E51B24] flex items-center justify-center text-white font-black">
+                  A
+                </div>
+                <span className="text-base font-black text-white tracking-tight">
+                  AllInOneVouchers
+                </span>
+              </div>
+              <p className="text-slate-400 text-xs leading-relaxed max-w-sm font-medium">
+                India's premier financial arbitrage engine. We stack wholesale discounted brand gift cards, verified promo codes, and credit card cashbacks to uncover the lowest true net price.
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-[11px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Secure UTR & Vault Pipeline Active</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Col 2: Quick Links */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Platform Hub</h4>
+              <ul className="space-y-2 font-medium">
+                <li><a href="#vouchers" className="hover:text-white transition">Active Vouchers</a></li>
+                <li><a href="#calculator" className="hover:text-white transition">Arbitrage Calculator</a></li>
+                <li><a href="#coupons" className="hover:text-white transition">Verified Coupons</a></li>
+                <li><a href="#cards" className="hover:text-white transition">Card Finder Wizard</a></li>
+                <li><a href="/dashboard" className="hover:text-white transition">User Vault</a></li>
+              </ul>
+            </div>
+
+            {/* Col 3: Popular Stores */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Partner Stores</h4>
+              <ul className="space-y-2 font-medium">
+                <li><a href="#calculator" className="hover:text-white transition">Amazon Shopping</a></li>
+                <li><a href="#calculator" className="hover:text-white transition">Swiggy Gourmet</a></li>
+                <li><a href="#calculator" className="hover:text-white transition">Zomato Dining</a></li>
+                <li><a href="#calculator" className="hover:text-white transition">Myntra Fashion</a></li>
+                <li><a href="#calculator" className="hover:text-white transition">Domino's Pizza</a></li>
+              </ul>
+            </div>
+
+            {/* Col 4: Community & Support */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Connect & Help</h4>
+              <ul className="space-y-2 font-medium">
+                <li><a href="https://t.me/allinonevouchers" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-1">Telegram Loot Channel</a></li>
+                <li><a href="https://t.me/AIOVouchersBot" target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-1">Automated Deal Bot</a></li>
+                <li><a href="#faq" className="hover:text-white transition">Frequently Asked Questions</a></li>
+                <li><a href="mailto:support@allinonevouchers.com" className="hover:text-white transition">Customer Support Desk</a></li>
+              </ul>
+            </div>
+
+          </div>
+
+          {/* Bottom Divider & Copyright */}
+          <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px] font-medium">
+            <p>© 2026 AllInOneVouchers.com. All rights reserved. Made By AKSBit Systems.</p>
+            <div className="flex items-center gap-6">
+              <span className="hover:text-slate-300 transition cursor-pointer">Privacy Policy</span>
+              <span className="hover:text-slate-300 transition cursor-pointer">Terms of Service</span>
+              <span className="hover:text-slate-300 transition cursor-pointer">Security Audits</span>
+            </div>
+          </div>
+
         </div>
       </footer>
-
     </div>
   );
 }
