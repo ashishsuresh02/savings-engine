@@ -54,7 +54,6 @@ function BrandManager({
     try {
       const cleanSlug = slug.trim().toLowerCase().replace(/\s+/g, '-');
 
-      // 1. Upsert Brand
       const { data: newBrand, error: bErr } = await supabase
         .from('brands')
         .upsert([{
@@ -70,7 +69,6 @@ function BrandManager({
 
       if (bErr) throw bErr;
 
-      // 2. Insert or update voucher rules matching exact schema
       const { data: existingVoucher } = await supabase
         .from('brand_vouchers')
         .select('id')
@@ -185,7 +183,6 @@ function BrandManager({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Create / Upsert Brand Form */}
       <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
           <Plus className="w-4 h-4 text-[#E51B24]" /> Add / Update Store & Voucher
@@ -295,7 +292,6 @@ function BrandManager({
         </form>
       </div>
 
-      {/* Brand List */}
       <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
         <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
           <span>Active Stores Directory</span>
@@ -1024,7 +1020,6 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
-      // 1. Brands with exact voucher schema columns
       const { data: bData } = await supabase
         .from('brands')
         .select(`
@@ -1034,21 +1029,18 @@ export default function AdminDashboard() {
         .order('name', { ascending: true });
       if (bData) setBrands(bData);
 
-      // 2. Inventory matching exact columns
       const { data: invData } = await supabase
         .from('voucher_inventory')
         .select('id, brand_name, voucher_code, voucher_pin, face_value, buying_price, selling_price, status')
         .order('created_at', { ascending: false });
       if (invData) setInventory(invData);
 
-      // 3. Orders matching exact columns
       const { data: ordData } = await supabase
         .from('customer_orders')
         .select('id, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered')
         .order('created_at', { ascending: false });
       if (ordData) setOrders(ordData);
 
-      // 4. Coupons matching exact columns
       const { data: cData } = await supabase
         .from('brand_coupons')
         .select('id, coupon_code, title, discount_value, stackable_with_voucher, is_verified, brands(name)')
@@ -1067,7 +1059,6 @@ export default function AdminDashboard() {
     setTimeout(() => setStatusMessage({ text: '', type: '' }), 4000);
   };
 
-  // IF NOT LOGGED IN -> RENDER SECURE AUTH GATE
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#F4F6F9] flex items-center justify-center p-4">
@@ -1135,12 +1126,10 @@ export default function AdminDashboard() {
     );
   }
 
-  // AUTHENTICATED -> RENDER MASTER PLATFORM
   return (
     <div className="min-h-screen bg-[#F4F6F9] text-slate-900 font-sans antialiased p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* Top Action Header */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-[#E51B24] text-[11px] font-black uppercase tracking-wider mb-1.5 border border-red-200">
@@ -1183,7 +1172,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Global Status Message */}
         {statusMessage.text && (
           <div className={`p-4 rounded-2xl text-xs font-bold transition ${
             statusMessage.type === 'success' 
@@ -1194,7 +1182,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Tab Navigation */}
         <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto">
           <button
             onClick={() => setActiveTab('BRANDS')}
@@ -1234,7 +1221,6 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Modular Panels */}
         {activeTab === 'BRANDS' && (
           <BrandManager brands={brands} onRefresh={fetchData} showStatus={showStatus} />
         )}
