@@ -13,11 +13,11 @@ import {
   X, 
   Send, 
   Bot, 
-  Sparkles,
-  Ticket,
-  Percent,
-  CreditCard,
-  Wallet
+  Sparkles, 
+  Ticket, 
+  Percent, 
+  CreditCard, 
+  Wallet 
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -33,7 +33,6 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  // Scroll threshold kam kar diya hai taaki mobile par thoda sa scroll karte hi navbar turant mil jaye
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (latest > 40) {
       setShowNavbar(true);
@@ -45,11 +44,13 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
 
   useEffect(() => {
     async function checkUserIdentity() {
-      const localPhone = typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null;
-      if (localPhone) {
+      // 1. Check local email session
+      const localEmail = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
+      if (localEmail) {
         setHasSession(true);
         return;
       }
+      // 2. Check Supabase OAuth Session
       if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) setHasSession(true);
@@ -58,12 +59,20 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
     checkUserIdentity();
   }, []);
 
-  const handleVaultNavigation = () => {
-    const localPhone = typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null;
-    if (localPhone || hasSession) {
+  const handleVaultNavigation = async () => {
+    if (supabase) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        router.push('/dashboard');
+        return;
+      }
+    }
+
+    const localEmail = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
+    if (localEmail || hasSession) {
       router.push('/dashboard');
     } else {
-      onOpenAuth(); // Triggers login modal properly on mobile & desktop
+      onOpenAuth();
     }
   };
 
@@ -80,7 +89,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
           >
             <nav className="pointer-events-auto w-full max-w-5xl py-2 px-4 sm:px-6 rounded-full bg-white/95 border border-slate-200/90 backdrop-blur-xl shadow-[0_12px_35px_rgba(11,43,92,0.12),0_4px_12px_rgba(229,27,36,0.06)] flex items-center justify-between transition-all duration-300">
               
-              {/* 1. Brand Horizontal Logo */}
+              {/* Brand Logo */}
               <div className="flex items-center gap-3">
                 <Link href="/" className="flex items-center gap-2.5 group">
                   <div className="relative h-10 sm:h-12 w-44 sm:w-52 flex items-center">
@@ -101,7 +110,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
                 </Link>
               </div>
 
-              {/* 2. Desktop Navigation Links */}
+              {/* Desktop Nav Links */}
               <div className="hidden md:flex items-center gap-5 lg:gap-6 text-xs font-extrabold text-[#0B2B5C]">
                 <a 
                   href="#calculator" 
@@ -117,7 +126,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
                 <a href="#cards" className="hover:text-[#E51B24] transition-colors">Cards</a>
               </div>
 
-              {/* 3. Action Buttons & Mobile Toggle */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 <a
                   href="#calculator"
@@ -151,7 +160,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
         )}
       </AnimatePresence>
 
-      {/* 4. Mobile Drawer Menu */}
+      {/* Mobile Drawer Menu */}
       <AnimatePresence>
         {showNavbar && mobileMenuOpen && (
           <motion.div
