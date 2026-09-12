@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   X, 
@@ -12,8 +12,7 @@ import {
   Mail, 
   ShieldCheck,
   CheckCircle2,
-  ExternalLink,
-  QrCode
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -46,6 +45,37 @@ export default function CheckoutModal({
   const [unlockedPin, setUnlockedPin] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // 1. AUTO-DETECT LOGGED IN GOOGLE USER
+  useEffect(() => {
+    async function loadUserSession() {
+      if (typeof window !== 'undefined') {
+        const localEmail = localStorage.getItem('user_email');
+        const localPhone = localStorage.getItem('user_phone');
+        if (localEmail) setEmail(localEmail);
+        if (localPhone) setPhone(localPhone);
+      }
+
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setCurrentUser(session.user);
+          if (session.user.email) {
+            setEmail(session.user.email);
+            setDeliveryMode('EMAIL');
+          }
+        }
+      }
+    }
+
+    if (isOpen) {
+      loadUserSession();
+      setStep('DETAILS');
+      setErrorMessage('');
+      setUtrNumber('');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -61,6 +91,7 @@ export default function CheckoutModal({
         alert('Please enter a valid email address.');
         return;
       }
+      localStorage.setItem('user_email', email.trim());
     } else {
       if (phone.replace(/\D/g, '').length !== 10) {
         alert('Please enter a valid 10-digit mobile number.');
@@ -71,7 +102,7 @@ export default function CheckoutModal({
     setStep('PAYMENT');
   };
 
-  // VERIFY WITH UTR & ALLOCATE CODE
+  // 2. VERIFY UTR, PREVENT FRAUD & ALLOCATE CODE
   const handleVerifyAndAllocate = async () => {
     if (!utrNumber || utrNumber.trim().length < 8) {
       setErrorMessage('Please enter a valid 12-digit UPI / UTR Reference Number.');
@@ -84,7 +115,7 @@ export default function CheckoutModal({
     try {
       if (!supabase) throw new Error('Database connection unavailable');
 
-      // 1. Check if UTR was already used to prevent duplicate fraud
+      // Check if UTR was already used to prevent duplicate fraud
       const { data: existingOrder } = await supabase
         .from('customer_orders')
         .select('id')
@@ -95,8 +126,8 @@ export default function CheckoutModal({
         throw new Error('This UTR transaction number has already been used.');
       }
 
-      // 2. Inventory check for AVAILABLE code
-      const { data: voucher, error: fetchErr } = await supabase
+      // Inventory check for AVAILABLE code
+      const { data: voucher } = await supabase
         .from('voucher_inventory')
         .select('*')
         .ilike('brand_name', `%${brandName}%`)
@@ -111,21 +142,21 @@ export default function CheckoutModal({
         assignedCode = voucher.voucher_code;
         assignedPin = voucher.voucher_pin || '4821';
 
-        // Mark code as SOLD
+        // Mark code as SOLD in database
         await supabase
           .from('voucher_inventory')
           .update({ status: 'SOLD' })
           .eq('id', voucher.id);
       }
 
-      const activePhone = phone.replace(/\D/g, '') || (typeof window !== 'undefined' ? localStorage.getItem('user_phone') : '9999999999') || '9999999999';
-      if (activePhone !== '9999999999') {
-        localStorage.setItem('user_phone', activePhone);
-      }
+      const activeEmail = email || currentUser?.email || (typeof window !== 'undefined' ? localStorage.getItem('user_email') : null) || 'member@allinonevouchers.com';
+      const activePhone = phone.replace(/\D/g, '') || (typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null) || '9999999999';
 
-      // 3. Record customer order with UTR reference
-      await supabase.from('customer_orders').insert([
+      // Record customer order with customer's Google Email and UTR
+      const { error: orderError } = await supabase.from('customer_orders').insert([
         {
+          user_id: currentUser?.id || null,
+          user_email: activeEmail,
           user_phone: activePhone,
           brand_name: brandName,
           amount_paid: dealPrice,
@@ -133,17 +164,20 @@ export default function CheckoutModal({
           payment_method: utrNumber.trim(),
           payment_status: 'COMPLETED',
           voucher_code_delivered: assignedCode,
+          created_at: new Date().toISOString()
         }
       ]);
 
-      // 4. Trigger Notification Dispatch
+      if (orderError) throw orderError;
+
+      // Trigger Notification Dispatch
       try {
         await fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             deliveryMode,
-            email,
+            email: activeEmail,
             phone: activePhone,
             brandName,
             voucherCode: assignedCode,
