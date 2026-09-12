@@ -27,6 +27,7 @@ import {
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import DynamicFintechNavbar from '@/components/Navbar';
+import AuthModal from '@/components/AuthModal';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import CardEligibilityQuiz from '@/components/CardEligibilityQuiz';

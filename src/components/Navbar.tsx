@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { 
-  User, 
   ArrowRight, 
   Zap, 
   Menu, 
@@ -33,8 +32,9 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
+  // Thoda sa bhi scroll karne par navbar smoothly slide hoga
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 40) {
+    if (latest > 30) {
       setShowNavbar(true);
     } else {
       setShowNavbar(false);
@@ -44,13 +44,14 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
 
   useEffect(() => {
     async function checkUserIdentity() {
-      // 1. Check local email session
-      const localEmail = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
-      if (localEmail) {
-        setHasSession(true);
-        return;
+      if (typeof window !== 'undefined') {
+        const localEmail = localStorage.getItem('user_email');
+        const localPhone = localStorage.getItem('user_phone');
+        if (localEmail || localPhone) {
+          setHasSession(true);
+          return;
+        }
       }
-      // 2. Check Supabase OAuth Session
       if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) setHasSession(true);
@@ -59,7 +60,12 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
     checkUserIdentity();
   }, []);
 
-  const handleVaultNavigation = async () => {
+  const handleVaultNavigation = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (supabase) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -69,10 +75,12 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
     }
 
     const localEmail = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
-    if (localEmail || hasSession) {
+    const localPhone = typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null;
+
+    if (localEmail || localPhone || hasSession) {
       router.push('/dashboard');
     } else {
-      onOpenAuth();
+      onOpenAuth(); // Modal khulega
     }
   };
 
@@ -85,14 +93,14 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 240, damping: 24 }}
-            className="fixed top-0 left-0 right-0 z-50 flex justify-center px-3 sm:px-6 pt-3 pointer-events-none"
+            className="fixed top-0 left-0 right-0 z-[60] flex justify-center px-3 sm:px-6 pt-3"
           >
-            <nav className="pointer-events-auto w-full max-w-5xl py-2 px-4 sm:px-6 rounded-full bg-white/95 border border-slate-200/90 backdrop-blur-xl shadow-[0_12px_35px_rgba(11,43,92,0.12),0_4px_12px_rgba(229,27,36,0.06)] flex items-center justify-between transition-all duration-300">
+            <nav className="w-full max-w-5xl py-2.5 px-4 sm:px-6 rounded-full bg-white/95 border border-slate-200/90 backdrop-blur-xl shadow-[0_12px_35px_rgba(11,43,92,0.12),0_4px_12px_rgba(229,27,36,0.06)] flex items-center justify-between transition-all duration-300">
               
               {/* Brand Logo */}
               <div className="flex items-center gap-3">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                  <div className="relative h-10 sm:h-12 w-44 sm:w-52 flex items-center">
+                  <div className="relative h-9 sm:h-11 w-44 sm:w-52 flex items-center">
                     <Image 
                       src="/logo1.png" 
                       alt="AllInOneVouchers Logo" 
@@ -102,20 +110,12 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
                       priority
                     />
                   </div>
-
-                  <span className="hidden xl:inline-flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] animate-pulse" />
-                    <span>{brandCount} Active Stores</span>
-                  </span>
                 </Link>
               </div>
 
               {/* Desktop Nav Links */}
               <div className="hidden md:flex items-center gap-5 lg:gap-6 text-xs font-extrabold text-[#0B2B5C]">
-                <a 
-                  href="#calculator" 
-                  className="hover:text-[#E51B24] transition-colors flex items-center gap-1.5 group"
-                >
+                <a href="#calculator" className="hover:text-[#E51B24] transition-colors flex items-center gap-1.5">
                   <span>Stack Engine</span>
                   <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-50 text-[#E51B24] border border-red-200 font-black">
                     3X
@@ -128,17 +128,10 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                <a
-                  href="#calculator"
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] font-black text-[#0B2B5C] hover:text-[#E51B24] transition"
-                >
-                  <Zap className="w-3.5 h-3.5 text-[#E51B24] fill-[#E51B24]" />
-                  <span>Calculator</span>
-                </a>
-
                 <button
+                  type="button"
                   onClick={handleVaultNavigation}
-                  className="px-4 sm:px-5 py-2 rounded-full bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs transition-all shadow-[0_4px_14px_rgba(229,27,36,0.3)] flex items-center gap-2 active:scale-95"
+                  className="px-4 sm:px-5 py-2.5 rounded-full bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs transition-all shadow-[0_4px_14px_rgba(229,27,36,0.3)] flex items-center gap-2 active:scale-95 cursor-pointer z-10"
                 >
                   <Wallet className="w-3.5 h-3.5" />
                   <span>{hasSession ? 'My Vault' : 'Member Vault'}</span>
@@ -146,14 +139,14 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
                 </button>
 
                 {/* Mobile Menu Button */}
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                <button
+                  type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B2B5C]"
+                  className="md:hidden w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B2B5C] cursor-pointer"
                   aria-label="Toggle Menu"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5 text-slate-700" /> : <Menu className="w-5 h-5 text-slate-700" />}
-                </motion.button>
+                </button>
               </div>
             </nav>
           </motion.div>
@@ -168,7 +161,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.97 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed inset-x-4 top-20 z-40 md:hidden bg-white/98 border border-slate-200 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_20px_50px_rgba(11,43,92,0.18)] flex flex-col gap-3 text-[#0B2B5C]"
+            className="fixed inset-x-4 top-20 z-[70] md:hidden bg-white/98 border border-slate-200 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_20px_50px_rgba(11,43,92,0.18)] flex flex-col gap-3 text-[#0B2B5C]"
           >
             <div className="flex flex-col gap-2">
               <a
@@ -212,34 +205,13 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
               </a>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-              <a
-                href="https://t.me/allinonevouchers"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-2xl bg-sky-50 border border-sky-200 text-sky-600 text-xs font-black"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Loot Channel</span>
-              </a>
-
-              <a
-                href="https://t.me/AIOVouchersBot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-2xl bg-red-50 border border-red-200 text-[#E51B24] text-xs font-black"
-              >
-                <Bot className="w-3.5 h-3.5" />
-                <span>Deal Bot</span>
-              </a>
-            </div>
-
             <button
-              onClick={() => {
+              type="button"
+              onClick={(e) => {
                 setMobileMenuOpen(false);
-                handleVaultNavigation();
+                handleVaultNavigation(e);
               }}
-              className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(229,27,36,0.3)] active:scale-95"
+              className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(229,27,36,0.3)] active:scale-95 cursor-pointer mt-2"
             >
               <Wallet className="w-4 h-4 text-white" />
               <span>{hasSession ? 'Open My Vault' : 'Open Member Vault'}</span>
