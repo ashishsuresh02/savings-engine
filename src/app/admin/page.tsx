@@ -19,7 +19,9 @@ import {
   Mail,
   Phone,
   ArrowRight,
-  LogOut
+  LogOut,
+  Flame,
+  ShoppingBag
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -416,7 +418,287 @@ function BrandManager({
 }
 
 // ==========================================
-// 2. INVENTORY VAULT MANAGER (FULL CRUD)
+// 2. LOOT DEALS & PRODUCTS MANAGER (EARNKARO STYLE)
+// ==========================================
+function DealManager({ 
+  brands, 
+  deals, 
+  onRefresh, 
+  showStatus 
+}: { 
+  brands: any[]; 
+  deals: any[]; 
+  onRefresh: () => void; 
+  showStatus: (msg: string, type: 'success' | 'error') => void; 
+}) {
+  const [selectedBrand, setSelectedBrand] = useState(brands[0]?.name || 'Amazon');
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Electronics');
+  const [imageUrl, setImageUrl] = useState('');
+  const [mrpPrice, setMrpPrice] = useState('');
+  const [dealPrice, setDealPrice] = useState('');
+  const [affiliateUrl, setAffiliateUrl] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [isFeatured, setIsFeatured] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const handleCreateDeal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.from('curated_deals').insert([
+        {
+          brand_name: selectedBrand,
+          title: title.trim(),
+          category: category.trim(),
+          image_url: imageUrl.trim(),
+          mrp_price: Number(mrpPrice),
+          deal_price: Number(dealPrice),
+          affiliate_url: affiliateUrl.trim(),
+          coupon_code: couponCode.trim() || null,
+          is_featured: isFeatured,
+        },
+      ]);
+
+      if (error) throw error;
+
+      showStatus(`Loot deal published!`, 'success');
+      setTitle('');
+      setImageUrl('');
+      setMrpPrice('');
+      setDealPrice('');
+      setAffiliateUrl('');
+      setCouponCode('');
+      onRefresh();
+    } catch (err: any) {
+      showStatus(err.message || 'Failed to add deal', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDeal = async (id: string, dealTitle: string) => {
+    if (!confirm(`Delete "${dealTitle}"?`)) return;
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase.from('curated_deals').delete().eq('id', id);
+      if (error) throw error;
+      showStatus('Deal deleted successfully', 'success');
+      onRefresh();
+    } catch (err: any) {
+      showStatus(err.message, 'error');
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <Plus className="w-4 h-4 text-[#E51B24]" /> Add Curated Product Deal
+        </h3>
+
+        <form onSubmit={handleCreateDeal} className="space-y-3.5 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Target Store</label>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none cursor-pointer"
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.name}>{b.name}</option>
+              ))}
+              <option value="Amazon">Amazon</option>
+              <option value="Flipkart">Flipkart</option>
+              <option value="Myntra">Myntra</option>
+              <option value="Ajio">Ajio</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Product Title *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. boAt Airdopes 141 Wireless Earbuds"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-bold"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">MRP Price (₹) *</label>
+              <input
+                type="number"
+                required
+                placeholder="4490"
+                value={mrpPrice}
+                onChange={(e) => setMrpPrice(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none font-bold"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Loot Price (₹) *</label>
+              <input
+                type="number"
+                required
+                placeholder="1299"
+                value={dealPrice}
+                onChange={(e) => setDealPrice(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none font-black text-sm text-[#E51B24]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none cursor-pointer"
+            >
+              <option value="Electronics">Electronics & Audio</option>
+              <option value="Fashion">Fashion & Clothing</option>
+              <option value="Footwear">Footwear & Shoes</option>
+              <option value="Beauty">Beauty & Grooming</option>
+              <option value="Loot">Under ₹499 Loot Deals</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Image URL *</label>
+            <input
+              type="url"
+              required
+              placeholder="https://images.unsplash.com/..."
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Affiliate Destination Link *</label>
+            <input
+              type="url"
+              required
+              placeholder="https://amzn.to/... or EarnKaro link"
+              value={affiliateUrl}
+              onChange={(e) => setAffiliateUrl(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-mono text-[11px]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Promo Coupon (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. FLAT50"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none uppercase font-mono"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="featCheck"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+              className="w-4 h-4 accent-[#E51B24] cursor-pointer"
+            />
+            <label htmlFor="featCheck" className="font-bold text-slate-700 cursor-pointer">
+              Show on Homepage Flash Loot
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
+          >
+            {loading ? 'Publishing...' : 'Publish Product Deal'}
+          </button>
+        </form>
+      </div>
+
+      <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
+          <span>Curated Product Deals</span>
+          <span className="text-xs font-bold text-slate-400">{deals.length} Active Deals</span>
+        </h3>
+
+        <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
+          {deals.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs font-medium">
+              No product deals added yet. Add your first deal on the left.
+            </div>
+          ) : (
+            deals.map((d) => {
+              const discountPct = Math.round(((d.mrp_price - d.deal_price) / d.mrp_price) * 100);
+
+              return (
+                <div
+                  key={d.id}
+                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4 text-xs"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                      <img src={d.image_url} alt={d.title} className="max-h-full max-w-full object-contain" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                          {d.brand_name}
+                        </span>
+                        <span className="text-emerald-700 font-black text-[10px]">
+                          {discountPct}% OFF
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-slate-900 truncate max-w-xs">{d.title}</h4>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="font-black text-[#E51B24] text-sm">₹{d.deal_price}</span>
+                        <span className="text-slate-400 line-through text-[11px]">₹{d.mrp_price}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href={d.affiliate_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
+                      title="Test Affiliate Link"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      onClick={() => handleDeleteDeal(d.id, d.title)}
+                      className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] transition cursor-pointer"
+                      title="Delete Deal"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 3. INVENTORY VAULT MANAGER (FULL CRUD)
 // ==========================================
 function InventoryManager({ 
   brands, 
@@ -613,7 +895,7 @@ function InventoryManager({
 }
 
 // ==========================================
-// 3. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
+// 4. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
 // ==========================================
 function OrderManager({ 
   orders, 
@@ -712,7 +994,6 @@ function OrderManager({
             ) : (
               filteredOrders.map((ord) => (
                 <tr key={ord.id} className="hover:bg-slate-50/80 transition">
-                  {/* Customer Gmail & Mobile */}
                   <td className="py-3">
                     <div className="font-bold text-slate-900 flex items-center gap-1.5">
                       <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -766,7 +1047,7 @@ function OrderManager({
 }
 
 // ==========================================
-// 4. COUPONS & PROMO MANAGER (FULL CRUD)
+// 5. COUPONS & PROMO MANAGER (FULL CRUD)
 // ==========================================
 function CouponManager({ 
   brands, 
@@ -969,10 +1250,10 @@ function CouponManager({
 }
 
 // ==========================================
-// 5. MASTER CONTROLLER (WITH SECURE AUTH GATE)
+// 6. MASTER CONTROLLER (WITH SECURE AUTH GATE)
 // ==========================================
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'BRANDS' | 'INVENTORY' | 'ORDERS' | 'COUPONS'>('BRANDS');
+  const [activeTab, setActiveTab] = useState<'DEALS' | 'BRANDS' | 'INVENTORY' | 'ORDERS' | 'COUPONS'>('DEALS');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
 
@@ -984,6 +1265,7 @@ export default function AdminDashboard() {
 
   // Master Data
   const [brands, setBrands] = useState<any[]>([]);
+  const [deals, setDeals] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -1035,6 +1317,7 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
+      // 1. Brands
       const { data: bData } = await supabase
         .from('brands')
         .select(`
@@ -1044,19 +1327,28 @@ export default function AdminDashboard() {
         .order('name', { ascending: true });
       if (bData) setBrands(bData);
 
+      // 2. Curated Product Deals (EarnKaro Style)
+      const { data: dData } = await supabase
+        .from('curated_deals')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (dData) setDeals(dData);
+
+      // 3. Vault Inventory Codes
       const { data: invData } = await supabase
         .from('voucher_inventory')
         .select('id, brand_name, voucher_code, voucher_pin, face_value, buying_price, selling_price, status')
         .order('created_at', { ascending: false });
       if (invData) setInventory(invData);
 
-      // CUSTOMER ORDERS: INCLUDES user_email & user_phone
+      // 4. Customer Orders (Now Includes user_email & user_phone)
       const { data: ordData } = await supabase
         .from('customer_orders')
         .select('id, user_email, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered, created_at')
         .order('created_at', { ascending: false });
       if (ordData) setOrders(ordData);
 
+      // 5. Coupons
       const { data: cData } = await supabase
         .from('brand_coupons')
         .select('id, coupon_code, title, discount_value, stackable_with_voucher, is_verified, brands(name)')
@@ -1146,17 +1438,18 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[#F4F6F9] text-slate-900 font-sans antialiased p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
+        {/* Top Control Header */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-[#E51B24] text-[11px] font-black uppercase tracking-wider mb-1.5 border border-red-200">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Full CRUD Master Console</span>
+              <span>Fintech & Affiliate Master Console</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              AllInOneVouchers Administration
+              AllInOneVouchers Control
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Create, read, update and delete brands, vouchers, promo codes, and UTR ledger entries.
+              Manage live product deals, brands, vouchers, promo codes, and UTR ledger entries.
             </p>
           </div>
 
@@ -1188,6 +1481,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Status Message Notification */}
         {statusMessage.text && (
           <div className={`p-4 rounded-2xl text-xs font-bold transition ${
             statusMessage.type === 'success' 
@@ -1198,7 +1492,18 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto">
+        {/* 5-Tab Navigation Bar */}
+        <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab('DEALS')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'DEALS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5" />
+            <span>Loot Deals & Products ({deals.length})</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('BRANDS')}
             className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
@@ -1208,6 +1513,7 @@ export default function AdminDashboard() {
             <Store className="w-3.5 h-3.5" />
             <span>Stores & Deals ({brands.length})</span>
           </button>
+
           <button
             onClick={() => setActiveTab('INVENTORY')}
             className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
@@ -1217,6 +1523,7 @@ export default function AdminDashboard() {
             <Ticket className="w-3.5 h-3.5" />
             <span>Vault Codes ({inventory.filter(i => i.status === 'AVAILABLE').length})</span>
           </button>
+
           <button
             onClick={() => setActiveTab('ORDERS')}
             className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
@@ -1226,6 +1533,7 @@ export default function AdminDashboard() {
             <Clock className="w-3.5 h-3.5" />
             <span>Orders & UTRs ({orders.length})</span>
           </button>
+
           <button
             onClick={() => setActiveTab('COUPONS')}
             className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
@@ -1237,6 +1545,10 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {/* Tab Content Display */}
+        {activeTab === 'DEALS' && (
+          <DealManager brands={brands} deals={deals} onRefresh={fetchData} showStatus={showStatus} />
+        )}
         {activeTab === 'BRANDS' && (
           <BrandManager brands={brands} onRefresh={fetchData} showStatus={showStatus} />
         )}
