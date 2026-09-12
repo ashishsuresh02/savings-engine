@@ -17,6 +17,7 @@ import {
   Search,
   Lock,
   Mail,
+  Phone,
   ArrowRight,
   LogOut
 } from 'lucide-react';
@@ -285,7 +286,7 @@ function BrandManager({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95"
+            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
           >
             {loading ? 'Processing...' : 'Save & Publish Store'}
           </button>
@@ -355,13 +356,13 @@ function BrandManager({
                       />
                       <button
                         onClick={() => handleUpdate(b)}
-                        className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600"
+                        className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
-                        className="p-1.5 rounded-lg bg-slate-300 text-slate-700"
+                        className="p-1.5 rounded-lg bg-slate-300 text-slate-700 cursor-pointer"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -375,7 +376,7 @@ function BrandManager({
 
                       <button
                         onClick={() => handleToggleActive(b.id, b.is_active)}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
+                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${
                           b.is_active 
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                             : 'bg-slate-200 text-slate-600'
@@ -391,14 +392,14 @@ function BrandManager({
                           b.editMaxDenom = curMax;
                           setEditingId(b.id);
                         }}
-                        className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700"
+                        className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         onClick={() => handleDelete(b.id, b.name)}
-                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24]"
+                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -558,7 +559,7 @@ function InventoryManager({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95"
+            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
           >
             {loading ? 'Adding to Vault...' : 'Add To Vault Inventory'}
           </button>
@@ -598,7 +599,7 @@ function InventoryManager({
 
                 <button
                   onClick={() => handleDeleteCode(item.id)}
-                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24]"
+                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -612,7 +613,7 @@ function InventoryManager({
 }
 
 // ==========================================
-// 3. ORDERS & UTR AUDIT MANAGER
+// 3. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
 // ==========================================
 function OrderManager({ 
   orders, 
@@ -659,6 +660,7 @@ function OrderManager({
 
   const filteredOrders = orders.filter(
     (o) =>
+      o.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       o.user_phone?.includes(searchTerm) ||
       o.payment_method?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       o.brand_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -669,16 +671,16 @@ function OrderManager({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[#E51B24]" /> Orders & 12-Digit UTR Transaction Ledger
+            <Clock className="w-4 h-4 text-[#E51B24]" /> Customer Orders & Google Email UTR Ledger
           </h3>
           <p className="text-xs text-slate-500 font-medium">Verify incoming 12-digit UPI UTR reference codes against your statement.</p>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs w-full sm:w-64">
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs w-full sm:w-72">
           <Search className="w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search phone, UTR, store..."
+            placeholder="Search Gmail, Phone, UTR, store..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="bg-transparent outline-none w-full font-medium"
@@ -690,8 +692,8 @@ function OrderManager({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+              <th className="pb-3">Customer Gmail / Phone</th>
               <th className="pb-3">Store</th>
-              <th className="pb-3">Customer Phone</th>
               <th className="pb-3">Amount Paid</th>
               <th className="pb-3">Profit/Savings</th>
               <th className="pb-3">12-Digit UTR Ref</th>
@@ -710,8 +712,21 @@ function OrderManager({
             ) : (
               filteredOrders.map((ord) => (
                 <tr key={ord.id} className="hover:bg-slate-50/80 transition">
+                  {/* Customer Gmail & Mobile */}
+                  <td className="py-3">
+                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="truncate max-w-[170px]">{ord.user_email || 'Direct Checkout'}</span>
+                    </div>
+                    {ord.user_phone && ord.user_phone !== '9999999999' && (
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>+91 {ord.user_phone}</span>
+                      </div>
+                    )}
+                  </td>
+
                   <td className="py-3 font-black text-slate-900">{ord.brand_name}</td>
-                  <td className="py-3 font-mono text-slate-700 font-bold">{ord.user_phone}</td>
                   <td className="py-3 font-black text-slate-900">₹{ord.amount_paid}</td>
                   <td className="py-3 font-black text-emerald-600">+₹{ord.profit_earned}</td>
                   <td className="py-3 font-mono font-black text-[#0B2B5C] bg-slate-100 px-2 py-1 rounded">
@@ -723,7 +738,7 @@ function OrderManager({
                   <td className="py-3">
                     <button
                       onClick={() => handleUpdateStatus(ord.id, ord.payment_status)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider cursor-pointer ${
                         ord.payment_status === 'COMPLETED'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -735,7 +750,7 @@ function OrderManager({
                   <td className="py-3 text-right">
                     <button
                       onClick={() => handleDeleteOrder(ord.id)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-[#E51B24] transition"
+                      className="p-1 rounded-lg text-slate-400 hover:text-[#E51B24] transition cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -841,7 +856,7 @@ function CouponManager({
             <select
               value={selectedBrandId}
               onChange={(e) => setSelectedBrandId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none cursor-pointer"
             >
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -898,7 +913,7 @@ function CouponManager({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95"
+            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
           >
             {loading ? 'Adding...' : 'Publish Verified Coupon'}
           </button>
@@ -929,7 +944,7 @@ function CouponManager({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleToggleVerify(c.id, c.is_verified)}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider cursor-pointer ${
                     c.is_verified
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -940,7 +955,7 @@ function CouponManager({
 
                 <button
                   onClick={() => handleDeleteCoupon(c.id, c.coupon_code)}
-                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24]"
+                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -1035,9 +1050,10 @@ export default function AdminDashboard() {
         .order('created_at', { ascending: false });
       if (invData) setInventory(invData);
 
+      // CUSTOMER ORDERS: INCLUDES user_email & user_phone
       const { data: ordData } = await supabase
         .from('customer_orders')
-        .select('id, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered')
+        .select('id, user_email, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered, created_at')
         .order('created_at', { ascending: false });
       if (ordData) setOrders(ordData);
 
@@ -1115,7 +1131,7 @@ export default function AdminDashboard() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/25 flex items-center justify-center gap-2 active:scale-95"
+              className="w-full py-3.5 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/25 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
             >
               <span>{loading ? 'Authenticating...' : 'Enter Admin Console'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1148,7 +1164,7 @@ export default function AdminDashboard() {
             <button
               onClick={fetchData}
               disabled={loading}
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Sync All</span>
@@ -1164,7 +1180,7 @@ export default function AdminDashboard() {
             </a>
             <button
               onClick={handleLogout}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-[#E51B24] text-slate-600 transition"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-[#E51B24] text-slate-600 transition cursor-pointer"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />
@@ -1185,7 +1201,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto">
           <button
             onClick={() => setActiveTab('BRANDS')}
-            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'BRANDS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -1194,7 +1210,7 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('INVENTORY')}
-            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'INVENTORY' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -1203,7 +1219,7 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('ORDERS')}
-            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'ORDERS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -1212,7 +1228,7 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('COUPONS')}
-            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'COUPONS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
