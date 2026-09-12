@@ -17,7 +17,6 @@ import {
   Ticket,
   Percent,
   CreditCard,
-  ShieldCheck,
   Wallet
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -34,9 +33,9 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
-  // 80px scroll hone par hi floating navbar screen par smoothly slide down hoga
+  // Scroll threshold kam kar diya hai taaki mobile par thoda sa scroll karte hi navbar turant mil jaye
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 80) {
+    if (latest > 40) {
       setShowNavbar(true);
     } else {
       setShowNavbar(false);
@@ -64,7 +63,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
     if (localPhone || hasSession) {
       router.push('/dashboard');
     } else {
-      onOpenAuth();
+      onOpenAuth(); // Triggers login modal properly on mobile & desktop
     }
   };
 
@@ -84,7 +83,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
               {/* 1. Brand Horizontal Logo */}
               <div className="flex items-center gap-3">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                  <div className="relative h-10 sm:h-12 w-48 sm:w-56 flex items-center">
+                  <div className="relative h-10 sm:h-12 w-44 sm:w-52 flex items-center">
                     <Image 
                       src="/logo1.png" 
                       alt="AllInOneVouchers Logo" 
@@ -231,7 +230,7 @@ export default function DynamicFintechNavbar({ onOpenAuth, brandCount = 7 }: Nav
                 setMobileMenuOpen(false);
                 handleVaultNavigation();
               }}
-              className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(229,27,36,0.3)]"
+              className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(229,27,36,0.3)] active:scale-95"
             >
               <Wallet className="w-4 h-4 text-white" />
               <span>{hasSession ? 'Open My Vault' : 'Open Member Vault'}</span>
