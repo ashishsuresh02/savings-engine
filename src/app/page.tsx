@@ -170,15 +170,14 @@ function TrulyLive3DHero({ brands }: { brands: any[] }) {
 
 // STATIC INSTANT-LOADING RED THEME BRAND MARQUEE (Smooth & Fast)
 function InfiniteBrandMarquee() {
-  // Static high-speed brand list with direct clean assets
   const staticBrands = [
-    { name: "Amazon", discount: "12%", logo: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=100&auto=format&fit=crop&q=60" },
-    { name: "Swiggy", discount: "15%", logo: "https://images.unsplash.com/photo-1526367460886-3cde3b1fd072?w=100&auto=format&fit=crop&q=60" },
-    { name: "Zomato", discount: "10%", logo: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&auto=format&fit=crop&q=60" },
-    { name: "Myntra", discount: "18%", logo: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=100&auto=format&fit=crop&q=60" },
-    { name: "Domino's", discount: "13%", logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100&auto=format&fit=crop&q=60" },
-    { name: "Flipkart", discount: "10%", logo: "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=100&auto=format&fit=crop&q=60" },
-    { name: "MakeMyTrip", discount: "20%", logo: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=100&auto=format&fit=crop&q=60" }
+    { name: "Amazon", discount: "12%" },
+    { name: "Swiggy", discount: "15%" },
+    { name: "Zomato", discount: "10%" },
+    { name: "Myntra", discount: "18%" },
+    { name: "Domino's", discount: "13%" },
+    { name: "Flipkart", discount: "10%" },
+    { name: "MakeMyTrip", discount: "20%" }
   ];
 
   const duplicatedBrands = [...staticBrands, ...staticBrands, ...staticBrands];
@@ -227,6 +226,37 @@ export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSubmitCouponOpen, setIsSubmitCouponOpen] = useState(false);
+
+  // User session state tracking
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Check login state
+  useEffect(() => {
+    async function checkAuthSession() {
+      if (typeof window !== 'undefined') {
+        const localEmail = localStorage.getItem('user_email');
+        const localPhone = localStorage.getItem('user_phone');
+        if (localEmail || localPhone) {
+          setCurrentUser({ email: localEmail, phone: localPhone });
+        }
+      }
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setCurrentUser(session.user);
+        }
+        supabase.auth.onAuthStateChange((_event, session) => {
+          if (session?.user) {
+            setCurrentUser(session.user);
+          } else {
+            const localEmail = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
+            if (!localEmail) setCurrentUser(null);
+          }
+        });
+      }
+    }
+    checkAuthSession();
+  }, []);
 
   useEffect(() => {
     async function loadRealDatabaseData() {
@@ -345,6 +375,18 @@ export default function Home() {
       calculateArbitrage(activeAmount, activeSlug);
       setCalcLoading(false);
     }, 120);
+  };
+
+  // SMART PURCHASE TRIGGER: Agar logged in hai to checkout, nahi to login modal
+  const handleInitiatePurchase = () => {
+    const isUserLoggedIn = currentUser || 
+      (typeof window !== 'undefined' && (localStorage.getItem('user_email') || localStorage.getItem('user_phone')));
+
+    if (isUserLoggedIn) {
+      setIsCheckoutOpen(true);
+    } else {
+      setIsAuthOpen(true);
+    }
   };
 
   const copyCoupon = (code: string) => {
@@ -549,13 +591,14 @@ export default function Home() {
                           setSelectedBrand(b.slug);
                           setCartAmount(String(faceVal));
                           handleCalculateClick(String(faceVal), b.slug);
-                          setIsCheckoutOpen(true);
+                          handleInitiatePurchase();
                         }}
                         className="py-2.5 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white text-xs font-black uppercase tracking-wider transition shadow-md shadow-red-500/20 active:scale-95"
                       >
                         Buy Voucher
                       </button>
 
+                      {/* Direct Affiliate Link - No Login Gate */}
                       <a
                         href={b.buy_url}
                         target="_blank"
@@ -717,13 +760,14 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <button
-                  onClick={() => setIsCheckoutOpen(true)}
+                  onClick={handleInitiatePurchase}
                   className="w-full py-3.5 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-1 active:scale-95"
                 >
                   <span>Buy Voucher</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
 
+                {/* Direct Affiliate Link - No Login Gate */}
                 <a
                   href={result?.buyUrl || 'https://google.com'}
                   target="_blank"
@@ -847,7 +891,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* MODALS */}
+      {/* ALL MODALS PROPERLY MOUNTED */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={() => {
+          setIsAuthOpen(false);
+          // Login hote hi purchase flow seamlessly continue hoga
+          setIsCheckoutOpen(true);
+        }}
+      />
+
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
@@ -871,15 +925,12 @@ export default function Home() {
 
       {/* PROFESSIONAL FINTECH FOOTER */}
       <footer className="bg-[#0A0D14] text-slate-400 pt-16 pb-12 border-t border-slate-800 text-xs font-sans relative overflow-hidden">
-        {/* Subtle background ambient glow */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-32 bg-red-600/5 blur-[120px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12 relative z-10">
           
-          {/* Top Grid Sections */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             
-            {/* Col 1: Brand Logo & Bio */}
             <div className="lg:col-span-2 space-y-5">
               <div className="flex items-center gap-3">
                 <div className="relative h-10 w-48 flex items-center">
@@ -903,7 +954,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Col 2: Quick Links */}
             <div className="space-y-3.5">
               <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Platform Hub</h4>
               <ul className="space-y-2.5 font-medium text-slate-400">
@@ -915,7 +965,6 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* Col 3: Popular Stores */}
             <div className="space-y-3.5">
               <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Partner Stores</h4>
               <ul className="space-y-2.5 font-medium text-slate-400">
@@ -927,7 +976,6 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* Col 4: Community & Support */}
             <div className="space-y-3.5">
               <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Connect & Help</h4>
               <ul className="space-y-2.5 font-medium text-slate-400">
@@ -940,7 +988,6 @@ export default function Home() {
 
           </div>
 
-          {/* Bottom Divider & Copyright */}
           <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px] font-medium">
             <p>© 2026 AllInOneVouchers.com. All rights reserved. Built for secure retail savings.</p>
             <div className="flex items-center gap-6">
