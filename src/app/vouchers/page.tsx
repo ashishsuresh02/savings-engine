@@ -12,8 +12,10 @@ import {
   Search, 
   Copy, 
   Percent, 
-  Wifi, 
-  ArrowUpRight 
+  ArrowUpRight,
+  ShieldCheck,
+  Tag,
+  Gift
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import DynamicFintechNavbar from '@/components/Navbar';
@@ -62,7 +64,7 @@ export default function VouchersHubPage() {
             const voucherRule = vData?.find((v: any) => v.brand_id === b.id);
             const discountPct = Number(voucherRule?.resale_discount_pct) || 10;
             
-            // Strictly from Admin Panel Database:
+            // Strictly from Admin Panel:
             const realFaceValue = Number(voucherRule?.min_denomination) || 1000;
             const realMaxCap = Number(voucherRule?.max_denomination) || 10000;
             const dealPay = Math.round(realFaceValue - (realFaceValue * discountPct) / 100);
@@ -72,7 +74,7 @@ export default function VouchersHubPage() {
               name: b.name,
               slug: b.slug,
               discount: discountPct,
-              faceValue: realFaceValue, // REAL DB VALUE ONLY
+              faceValue: realFaceValue,
               maxCap: realMaxCap,
               dealPrice: dealPay,
               buy_url: b.website_url || 'https://google.com',
@@ -116,7 +118,6 @@ export default function VouchersHubPage() {
     loadHubData();
   }, []);
 
-  // 3X Arbitrage Stacking Engine
   const calculateArbitrage = (
     amt: string, 
     slug: string, 
@@ -127,7 +128,6 @@ export default function VouchersHubPage() {
     let numCart = Number(amt) || 1000;
     const curr = brandList.find((b) => b.slug === slug) || brandList[0];
     
-    // Cap strictly at maximum allowed
     const maxAllowed = curr?.maxCap || 10000;
     if (numCart > maxAllowed) numCart = maxAllowed;
 
@@ -193,34 +193,33 @@ export default function VouchersHubPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#070B14] text-white font-sans antialiased selection:bg-[#E51B24] selection:text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-[#E51B24] selection:text-white relative">
       
-      {/* Background Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[580px] bg-gradient-to-b from-red-600/20 via-[#0B2B5C]/25 to-transparent blur-[140px] pointer-events-none" />
-      <div className="absolute top-[800px] -right-32 w-[650px] h-[650px] bg-red-600/10 rounded-full blur-[170px] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+      {/* Subtle Background Mesh for Light Theme */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-red-100/60 via-slate-100 to-transparent blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-50" />
 
       {/* Dynamic Navbar */}
       <DynamicFintechNavbar onOpenAuth={() => setIsAuthOpen(true)} brandCount={brands.length} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-28 sm:pt-32 pb-24 relative z-10 space-y-14">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 relative z-10 space-y-12">
         
-        {/* HERO TITLE */}
+        {/* HERO HEADER */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md text-[11px] font-black uppercase tracking-wider text-red-400">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-50 border border-red-200 text-[11px] font-black uppercase tracking-wider text-[#E51B24] shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-[#E51B24]" />
-            <span>Verified Wholesale Inventory</span>
+            <span>Official Wholesale Vouchers</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-[1.1]">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-[1.1]">
             Pay Less. Get Full Balance.<br />
-            <span className="bg-gradient-to-r from-[#E51B24] via-red-400 to-amber-300 bg-clip-text text-transparent">
+            <span className="text-[#E51B24]">
               Instant Brand Vouchers
             </span>
           </h1>
 
-          <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-xl mx-auto">
-            Direct codes available in real inventory. Unlock your 16-digit voucher number and secret PIN instantly upon UPI verification.
+          <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-xl mx-auto">
+            Directly unlock verified digital gift cards. Your 16-digit voucher number and secret PIN will be delivered instantly upon payment verification.
           </p>
         </div>
 
@@ -228,43 +227,43 @@ export default function VouchersHubPage() {
         {/* 1. VERIFIED PROMO CODES SLIDER                           */}
         {/* ======================================================== */}
         {coupons.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <Percent className="w-4 h-4 text-[#E51B24]" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-300">
-                  Active Store Promo Codes
+                <Tag className="w-4 h-4 text-[#E51B24]" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+                  Store Promo Codes
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500 font-semibold hidden sm:inline">
+              <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">
                 Click code to copy
               </span>
             </div>
 
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x">
+            <div className="flex gap-3.5 overflow-x-auto pb-2 scrollbar-none snap-x">
               {coupons.map((c) => (
                 <div
                   key={c.id}
-                  className="snap-start shrink-0 w-72 sm:w-80 bg-gradient-to-r from-white/[0.08] to-white/[0.03] border border-white/10 rounded-2xl p-3.5 flex items-center justify-between gap-3 backdrop-blur-md hover:border-red-500/40 transition"
+                  className="snap-start shrink-0 w-72 sm:w-80 bg-white border border-slate-200/80 shadow-sm rounded-2xl p-3 flex items-center justify-between gap-3 hover:border-red-300 transition"
                 >
                   <div className="min-w-0">
-                    <span className="text-[10px] font-black uppercase text-red-400 block">{c.brandName}</span>
-                    <span className="text-xs font-bold text-white block truncate">{c.title || `Save extra ₹${c.discountValue}`}</span>
+                    <span className="text-[10px] font-black uppercase text-[#E51B24] block">{c.brandName}</span>
+                    <span className="text-xs font-bold text-slate-800 block truncate">{c.title || `Flat ₹${c.discountValue} Off`}</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => copyCoupon(c.code)}
-                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-[#E51B24] text-white font-mono text-xs font-black transition flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#E51B24] hover:text-white text-slate-700 font-mono text-xs font-black transition flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
                   >
                     {copiedCode === c.code ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Copied</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Copied!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
                         <span>{c.code}</span>
                       </>
                     )}
@@ -276,23 +275,22 @@ export default function VouchersHubPage() {
         )}
 
         {/* ======================================================== */}
-        {/* 2. THE 3X SAVINGS STACKER (CALCULATOR)                  */}
+        {/* 2. THE 3X SAVINGS STACKER (LIGHT THEME CALCULATOR)       */}
         {/* ======================================================== */}
-        <div id="calculator" className="relative rounded-[32px] bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 backdrop-blur-2xl p-6 sm:p-9 shadow-2xl">
-          <div className="absolute top-0 left-10 w-48 h-[2px] bg-gradient-to-r from-transparent via-[#E51B24] to-transparent" />
+        <div id="calculator" className="relative rounded-[32px] bg-white border border-slate-200/90 shadow-[0_15px_40px_rgba(11,43,92,0.06)] p-6 sm:p-9">
           
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-white/10">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100">
             <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#E51B24] bg-red-500/10 px-2.5 py-0.5 rounded-md border border-red-500/20">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#E51B24] bg-red-50 px-2.5 py-0.5 rounded-md border border-red-100">
                 Live Savings Stacker
               </span>
-              <h2 className="text-xl font-black text-white tracking-tight">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
                 Simulate Your Net Purchase Price
               </h2>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-medium">Selected Store:</span>
+              <span className="text-xs text-slate-500 font-bold">Selected Store:</span>
               <select
                 value={selectedBrandSlug}
                 onChange={(e) => {
@@ -303,10 +301,10 @@ export default function VouchersHubPage() {
                     handleCalculateTrigger(String(b.faceValue), e.target.value);
                   }
                 }}
-                className="bg-white/10 border border-white/15 text-white rounded-xl px-3 py-1.5 text-xs font-black outline-none cursor-pointer hover:bg-white/15 transition"
+                className="bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-3 py-1.5 text-xs font-black outline-none cursor-pointer hover:border-slate-300 transition"
               >
                 {brands.map((b) => (
-                  <option key={b.id} value={b.slug} className="bg-slate-900 text-white">
+                  <option key={b.id} value={b.slug}>
                     {b.name} ({b.discount}% Off)
                   </option>
                 ))}
@@ -318,9 +316,9 @@ export default function VouchersHubPage() {
             
             <div className="lg:col-span-7 space-y-5">
               <div>
-                <div className="flex justify-between items-center mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <div className="flex justify-between items-center mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">
                   <span>Order Value to Calculate (₹)</span>
-                  <span className="text-slate-500">Based on Store Cap</span>
+                  <span className="text-slate-400">Based on Store Cap</span>
                 </div>
 
                 <div className="relative">
@@ -332,7 +330,7 @@ export default function VouchersHubPage() {
                       setCartAmount(e.target.value);
                       handleCalculateTrigger(e.target.value, selectedBrandSlug);
                     }}
-                    className="w-full bg-white/[0.05] border-2 border-white/10 focus:border-[#E51B24] rounded-2xl px-4 py-3.5 text-2xl font-black text-white outline-none transition shadow-inner font-mono"
+                    className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#E51B24] rounded-2xl px-4 py-3 text-2xl font-black text-slate-900 outline-none transition font-mono"
                   />
                 </div>
               </div>
@@ -345,20 +343,20 @@ export default function VouchersHubPage() {
                 }}
                 className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition-all ${
                   hasSbiCard 
-                    ? 'bg-red-500/10 border-[#E51B24]' 
-                    : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+                    ? 'bg-red-50/70 border-[#E51B24]' 
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${hasSbiCard ? 'bg-[#E51B24] text-white' : 'bg-white/10 text-slate-400'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${hasSbiCard ? 'bg-[#E51B24] text-white shadow-sm' : 'bg-slate-200 text-slate-600'}`}>
                     <CreditCard className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-white">SBI Cashback Credit Card</h4>
-                    <p className="text-[11px] text-slate-400">Gives an additional 5% statement credit</p>
+                    <h4 className="text-xs font-black text-slate-900">SBI Cashback Credit Card</h4>
+                    <p className="text-[11px] text-slate-500 font-medium">Gives an additional 5% statement credit</p>
                   </div>
                 </div>
-                <div className={`w-6 h-6 rounded-lg border flex items-center justify-center transition ${hasSbiCard ? 'bg-[#E51B24] border-[#E51B24] text-white' : 'border-white/20 bg-white/5'}`}>
+                <div className={`w-6 h-6 rounded-lg border flex items-center justify-center transition ${hasSbiCard ? 'bg-[#E51B24] border-[#E51B24] text-white' : 'border-slate-300 bg-white'}`}>
                   {hasSbiCard && <Check className="w-4 h-4 stroke-[3]" />}
                 </div>
               </div>
@@ -367,7 +365,7 @@ export default function VouchersHubPage() {
                 type="button"
                 onClick={() => handleCalculateTrigger()}
                 disabled={calcLoading}
-                className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                className="w-full py-3.5 rounded-2xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-red-500/20 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
               >
                 <Zap className="w-4 h-4 fill-white" />
                 <span>{calcLoading ? 'Calculating...' : 'Recalculate Savings'}</span>
@@ -375,47 +373,47 @@ export default function VouchersHubPage() {
             </div>
 
             {/* Receipt Summary */}
-            <div className="lg:col-span-5 bg-black/40 border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl backdrop-blur-md">
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <span className="text-xs font-black text-white uppercase tracking-wider">
+            <div className="lg:col-span-5 bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
                   Receipt: {result?.brandName || 'Store'}
                 </span>
-                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> 3X Verified
                 </span>
               </div>
 
               <div className="space-y-2 text-xs font-bold">
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-slate-500">
                   <span>Voucher Balance Value</span>
-                  <span className="text-white font-mono font-black">₹{result ? result.originalCart : cartAmount}</span>
+                  <span className="text-slate-900 font-mono font-black">₹{result ? result.originalCart : cartAmount}</span>
                 </div>
-                <div className="flex justify-between text-red-400">
-                  <span>Wholesale Discount ({result?.discountPct || 10}%)</span>
+                <div className="flex justify-between text-[#E51B24]">
+                  <span>Wholesale Cut ({result?.discountPct || 10}%)</span>
                   <span className="font-mono">-₹{result ? result.voucherCut : 0}</span>
                 </div>
-                <div className="flex justify-between text-red-400">
-                  <span>Merchant Promo Code ({result?.couponCode || 'SAVE150'})</span>
+                <div className="flex justify-between text-[#E51B24]">
+                  <span>Promo Code ({result?.couponCode || 'SAVE150'})</span>
                   <span className="font-mono">-₹{result ? result.couponCut : 0}</span>
                 </div>
-                <div className="flex justify-between text-red-400">
+                <div className="flex justify-between text-[#E51B24]">
                   <span>Card Cashback (5%)</span>
                   <span className="font-mono">-₹{result ? result.cardCashback : 0}</span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
+              <div className="pt-3 border-t border-slate-200 flex items-baseline justify-between">
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     You Pay Total
                   </span>
-                  <div className="text-3xl font-black text-white font-mono mt-0.5">
+                  <div className="text-3xl font-black text-slate-900 font-mono mt-0.5">
                     ₹{result ? result.bestEffectiveCost : cartAmount}
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase block">Total Saved</span>
-                  <span className="text-lg font-black text-emerald-400 font-mono">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase block">Total Saved</span>
+                  <span className="text-lg font-black text-emerald-600 font-mono">
                     ₹{result ? result.totalSavings : 0}
                   </span>
                 </div>
@@ -427,7 +425,7 @@ export default function VouchersHubPage() {
                   const targetBrand = brands.find((b) => b.slug === selectedBrandSlug) || brands[0];
                   if (targetBrand) triggerVoucherCheckout(targetBrand);
                 }}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E51B24] to-red-600 hover:from-red-600 hover:to-[#E51B24] text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 active:scale-95 cursor-pointer mt-1"
+                className="w-full py-3.5 rounded-2xl bg-[#0B2B5C] hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2 active:scale-95 cursor-pointer mt-1"
               >
                 <span>Instant Buy at ₹{result ? result.bestEffectiveCost : cartAmount}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -448,11 +446,11 @@ export default function VouchersHubPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer shrink-0 ${
                   selectedCategory === cat 
-                    ? 'bg-[#E51B24] text-white shadow-md shadow-red-500/20' 
-                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400'
+                    ? 'bg-[#E51B24] text-white shadow-sm' 
+                    : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-600'
                 }`}
               >
-                {cat === 'ALL' ? 'All Gift Cards' : cat}
+                {cat === 'ALL' ? 'All Vouchers' : cat}
               </button>
             ))}
           </div>
@@ -464,28 +462,27 @@ export default function VouchersHubPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search Amazon, Swiggy, Zomato..."
-              className="w-full bg-white/5 border border-white/10 focus:border-[#E51B24] rounded-xl pl-10 pr-4 py-2 text-xs font-medium text-white outline-none transition"
+              className="w-full bg-white border border-slate-200 focus:border-[#E51B24] rounded-xl pl-10 pr-4 py-2 text-xs font-medium text-slate-900 outline-none transition"
             />
           </div>
         </div>
 
         {/* ======================================================== */}
-        {/* 4. REAL ATM-STYLE VOUCHER CARDS (DATABASE-SYNCED ONLY)   */}
+        {/* 4. PREMIUM TICKET / VOUCHER PASS STYLE CARDS            */}
         {/* ======================================================== */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-72 rounded-[32px] bg-white/5 border border-white/10 animate-pulse" />
+              <div key={i} className="h-64 rounded-3xl bg-slate-200 animate-pulse" />
             ))}
           </div>
         ) : filteredBrands.length === 0 ? (
-          <div className="text-center py-16 bg-white/[0.02] rounded-3xl border border-white/10 text-slate-400 text-xs font-medium">
-            No vouchers matching your search.
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 text-xs font-medium">
+            No vouchers found matching your search.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBrands.map((b) => {
-              // REAL DATABASE VALUES ONLY - NO FAKE BUTTONS
               const faceVal = b.faceValue || 1000;
               const discount = b.discount || 10;
               const youPay = b.dealPrice || Math.round(faceVal - (faceVal * discount) / 100);
@@ -494,18 +491,15 @@ export default function VouchersHubPage() {
               return (
                 <motion.div 
                   key={b.id}
-                  whileHover={{ y: -6 }}
+                  whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
-                  className="relative rounded-[32px] p-6 flex flex-col justify-between overflow-hidden group shadow-[0_20px_45px_rgba(0,0,0,0.6)] border border-white/15 bg-gradient-to-br from-[#181D29] via-[#0E121B] to-[#0A0D14]"
+                  className="relative bg-white border border-slate-200 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:border-red-300 transition-all flex flex-col justify-between overflow-hidden group"
                 >
-                  <div className="absolute -right-20 -top-20 w-48 h-48 bg-red-500/15 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
-                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-
+                  {/* Top Store Details Bar */}
                   <div>
-                    {/* Top Row */}
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 p-2 flex items-center justify-center shrink-0 shadow-sm">
                           <img 
                             src={b.logoUrl} 
                             alt={b.name} 
@@ -514,54 +508,50 @@ export default function VouchersHubPage() {
                           />
                         </div>
                         <div>
-                          <h3 className="text-base font-black text-white leading-tight">{b.name}</h3>
-                          <span className="text-[11px] font-bold text-slate-400">Digital Gift Card</span>
+                          <h3 className="text-base font-black text-slate-900 group-hover:text-[#E51B24] transition">{b.name}</h3>
+                          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Instant Digital Gift Card</span>
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Wifi className="w-4 h-4 text-slate-500 rotate-90" />
-                        <span className="px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-black text-xs">
-                          {discount}% OFF
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Golden Smart EMV Chip Visual */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-11 h-8 rounded-lg bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-[1px] shadow-sm">
-                        <div className="w-full h-full rounded-[7px] bg-amber-400/90 border border-amber-300/60 flex items-center justify-center">
-                          <div className="w-7 h-4 border-y border-amber-800/40" />
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono tracking-widest text-emerald-400 font-bold uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                        INSTANT UNLOCK
+                      <span className="px-2.5 py-1 rounded-full bg-red-50 border border-red-200 text-[#E51B24] font-black text-xs shrink-0">
+                        {discount}% OFF
                       </span>
                     </div>
 
-                    {/* Real Value Info Box */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6 flex justify-between items-center">
+                    {/* Ticket Perforation Divider */}
+                    <div className="relative my-3">
+                      <div className="border-t-2 border-dashed border-slate-200 w-full" />
+                      {/* Left and Right Notches */}
+                      <div className="absolute -left-7 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#F8FAFC] rounded-full border border-slate-200" />
+                      <div className="absolute -right-7 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#F8FAFC] rounded-full border border-slate-200" />
+                    </div>
+
+                    {/* Voucher Face Value Breakdown */}
+                    <div className="py-2 flex items-center justify-between text-xs">
                       <div>
                         <span className="text-[10px] uppercase font-bold text-slate-400 block">Voucher Balance</span>
-                        <span className="text-lg font-black text-white font-mono">₹{faceVal}</span>
+                        <span className="text-base font-black text-slate-800 font-mono">₹{faceVal}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] uppercase font-bold text-emerald-400 block">Instant Benefit</span>
-                        <span className="text-xs font-black text-emerald-400 font-mono">Save ₹{saved}</span>
+                        <span className="text-[10px] uppercase font-bold text-emerald-600 block">Instant Savings</span>
+                        <span className="text-sm font-black text-emerald-600 font-mono">+₹{saved} Pocketed</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Bottom Action Area */}
-                  <div className="pt-3 border-t border-white/10 space-y-3">
+                  {/* Bottom Payable Row & Actions */}
+                  <div className="pt-3 border-t border-slate-100 space-y-3">
                     <div className="flex justify-between items-baseline">
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">You Pay Only</span>
-                        <span className="text-2xl font-black text-white font-mono leading-none">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Deal Price</span>
+                        <span className="text-2xl font-black text-slate-900 font-mono leading-none">
                           ₹{youPay}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500 line-through font-mono">
+                      <span className="text-xs text-slate-400 line-through font-mono">
                         ₹{faceVal}
                       </span>
                     </div>
@@ -570,7 +560,7 @@ export default function VouchersHubPage() {
                       <button
                         type="button"
                         onClick={() => triggerVoucherCheckout(b)}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#E51B24] to-[#CC141D] hover:brightness-110 text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/25 active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+                        className="w-full py-2.5 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-1"
                       >
                         <span>Buy Voucher</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -580,9 +570,9 @@ export default function VouchersHubPage() {
                         href={b.buy_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <span>Shop Now</span>
+                        <span>Visit Store</span>
                         <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
                       </a>
                     </div>
