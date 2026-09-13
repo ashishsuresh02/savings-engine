@@ -16,8 +16,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // 1. Supabase se Live Data Fetch karein
-    let liveInventoryText = "Stores: Amazon, Swiggy, Zomato, Myntra. Standard 10% wholesale voucher cut.";
+    // 1. Supabase se Live Platform Inventory Fetch karein
+    let liveInventoryText = "Stores: Amazon, Swiggy, Zomato, Myntra. Flat 10% wholesale gift voucher discount.";
     
     if (supabase) {
       try {
@@ -65,13 +65,13 @@ ${coupons || 'None'}
       }
     }
 
-    // 2. Personality & Rules (System Instruction)
-    const systemInstructionText = `
-You are "AIO Smart Saver", an intelligent, highly persuasive, and witty shopping & arbitrage assistant for AllInOneVouchers.com.
+    // 2. Personality & Rules Prompt
+    const systemPrompt = `
+You are "AIO Smart Saver", an intelligent, witty, and persuasive shopping buddy for AllInOneVouchers.com.
 
 YOUR PERSONALITY & TONE:
 - Talk like a smart Indian shopping companion in friendly Hinglish (Hindi + English blend).
-- Never give robotic or repetitive answers.
+- Never give dry, robotic, or repetitive answers.
 - Always explain how stacking 3 layers saves them money:
   1. Buying wholesale discounted brand gift card (from /vouchers).
   2. Applying verified store coupons.
@@ -85,77 +85,78 @@ INSTRUCTIONS:
 2. Keep answers concise, formatted in bullet points, and highlight prices/savings in bold.
 `;
 
-    // 3. Clean history: ensure only 'user' and 'model' roles exist
-    const contents = messages
+    // 3. Clean history: ensure only valid user & model turns
+    const cleanContents = messages
       .filter((m: any) => m && m.content && m.content.trim() !== '')
       .map((m: any) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
 
-    if (contents.length > 0 && contents[0].role === 'model') {
-      contents.shift();
+    if (cleanContents.length > 0 && cleanContents[0].role === 'model') {
+      cleanContents.shift();
     }
-    if (contents.length === 0) {
-      contents.push({ role: 'user', parts: [{ text: "Hello" }] });
+    if (cleanContents.length === 0) {
+      cleanContents.push({ role: 'user', parts: [{ text: "Hello" }] });
     }
 
-    // 4. Multi-Model Cascade (Ek fail hoga toh agla chalega)
-    const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash-latest'
+    // Prepend System Instructions inside conversation
+    const contentsWithSystem = [
+      {
+        role: 'user',
+        parts: [{ text: `INSTRUCTIONS FOR ASSISTANT (DO NOT REPEAT TO USER):\n${systemPrompt}\n\nUSER MESSAGE: ${cleanContents[cleanContents.length - 1]?.parts[0]?.text || 'Hello'}` }]
+      }
+    ];
+
+    // 4. Stable Target Models Matrix (Supports v1 and v1beta automatically)
+    const endpointsToTry = [
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`
     ];
 
     let replyText = '';
     let lastError: any = null;
 
-    for (const model of candidateModels) {
+    for (const url of endpointsToTry) {
       try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-        const apiBody = {
-          system_instruction: {
-            parts: [{ text: systemInstructionText }]
-          },
-          contents: contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 800
-          }
-        };
-
-        const res = await fetch(endpoint, {
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(apiBody)
+          body: JSON.stringify({
+            contents: contentsWithSystem,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 800
+            }
+          })
         });
 
         const data = await res.json();
 
         if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
           replyText = data.candidates[0].content.parts[0].text;
-          break; // Working model milte hi loop break
+          break; // First working model will immediately break and return
         } else {
-          lastError = data.error || data;
-          console.warn(`Model ${model} returned error:`, data.error?.message || data);
+          lastError = data.error?.message || JSON.stringify(data);
         }
       } catch (err: any) {
-        lastError = err;
+        lastError = err.message;
       }
     }
 
     if (!replyText) {
-      console.error('All models failed. Last error:', lastError);
+      console.error('All endpoint attempts failed:', lastError);
       return NextResponse.json({ 
-        reply: `API Error: ${lastError?.message || "Model connection issue, check console."}` 
+        reply: "Bhai live response ban nahi pa raha. Ek baar apna GEMINI_API_KEY check kar lo!" 
       });
     }
 
     return NextResponse.json({ reply: replyText });
 
   } catch (error: any) {
-    console.error('Bot route error:', error);
+    console.error('Bot route fatal error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
