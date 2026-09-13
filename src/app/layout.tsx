@@ -46,15 +46,17 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://www.allinonevouchers.com",
   },
+  // Google Search & Browser Tab Favicon Fix
   icons: {
     icon: [
-      { url: "/logo.png", sizes: "32x32", type: "image/png" },
-      { url: "/logo.png", sizes: "192x192", type: "image/png" }
+      { url: "/icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" }
     ],
     apple: [
-      { url: "/logo.png", sizes: "180x180", type: "image/png" }
+      { url: "/icon.png", sizes: "180x180", type: "image/png" }
     ],
-    shortcut: "/logo.png",
+    shortcut: "/icon.png",
   },
   openGraph: {
     title: "AllInOneVouchers • Save More. Shop Smarter.",
@@ -90,6 +92,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  verification: {
+    google: "aec02564210ae21f", // Aapki exact verification key clean format me
+  }
 };
 
 export default function RootLayout({
@@ -116,8 +121,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
     >
       <head>
-        <meta name="google-site-verification" content="googleaec02564210ae21f.html" />
+        {/* Dono methods backup me daal diye hain taaki verification fail na ho */}
+        <meta name="google-site-verification" content="aec02564210ae21f" />
         <link rel="icon" href="/icon.png" type="image/png" sizes="any" />
+        <link rel="apple-touch-icon" href="/icon.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
