@@ -7,13 +7,10 @@ import {
   X, 
   Send, 
   Sparkles, 
-  Zap, 
-  TrendingDown, 
-  ExternalLink,
+  RotateCcw,
   ShoppingBag,
-  RotateCcw
+  ExternalLink
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -25,7 +22,7 @@ export default function SmartAIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Namaste! Main AllInOneVouchers ka Smart AI Saver hu. Mujhe batao aaj kya order karna hai, main lowest rate nikaal kar dunga! 🔥"
+      content: "Bhai main AllInOneVouchers ka Smart AI hu! 🛒\n\nAaj kya order karna hai? Amazon, Swiggy, Zomato ya Myntra? Mujhe batao, main live vouchers aur coupons stack karke sabse sasta rate bana ke deta hu!"
     }
   ]);
   const [input, setInput] = useState('');
@@ -36,12 +33,13 @@ export default function SmartAIAssistant() {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  const handleSend = async (textToSend?: string) => {
-    const query = textToSend || input;
-    if (!query.trim() || loading) return;
+  const handleSend = async (queryText?: string) => {
+    const text = queryText || input;
+    if (!text.trim() || loading) return;
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: query }];
-    setMessages(newMessages);
+    const userMessage: Message = { role: 'user', content: text };
+    const newChat = [...messages, userMessage];
+    setMessages(newChat);
     setInput('');
     setLoading(true);
 
@@ -49,89 +47,88 @@ export default function SmartAIAssistant() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages })
+        body: JSON.stringify({ messages: newChat })
       });
 
       const data = await res.json();
       if (data.reply) {
-        setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+        setMessages([...newChat, { role: 'assistant', content: data.reply }]);
       } else {
-        setMessages([...newMessages, { role: 'assistant', content: "Oops! Kuch issue hua, please try again." }]);
+        setMessages([...newChat, { role: 'assistant', content: "Bhai abhi response nahi ban paya, dubara koshish karein." }]);
       }
     } catch {
-      setMessages([...newMessages, { role: 'assistant', content: "Server thoda slow hai. Ek baar dobara try karein!" }]);
+      setMessages([...newChat, { role: 'assistant', content: "Network issue lag raha hai bhai, ek baar refresh karke try karo!" }]);
     } finally {
       setLoading(false);
     }
   };
 
   const quickPrompts = [
-    "Swiggy par sabse sasta kaise padega?",
-    "Amazon balance voucher discount?",
-    "Aaj ki top loot deals dikhao",
-    "3X Savings Stacking kaise kaam karta hai?"
+    "Swiggy par ₹1500 ka khana sasta kaise hoga?",
+    "Amazon balance voucher par kitna discount hai?",
+    "Aaj ki sabse sasti loot deal dikhao"
   ];
 
   return (
     <>
-      {/* 1. FLOATING TRIGGER BUTTON */}
+      {/* Floating Action Button */}
       <div className="fixed bottom-5 right-5 z-50">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
-          className="relative px-4 py-3 rounded-full bg-gradient-to-r from-[#E51B24] via-red-600 to-[#0B2B5C] text-white font-black text-xs uppercase tracking-wider shadow-[0_10px_30px_rgba(229,27,36,0.4)] flex items-center gap-2 border border-white/20 cursor-pointer"
+          className="px-4 py-3 rounded-full bg-gradient-to-r from-[#E51B24] via-red-600 to-[#0B2B5C] text-white font-black text-xs uppercase tracking-wider shadow-[0_8px_25px_rgba(229,27,36,0.35)] flex items-center gap-2 border border-white/20 cursor-pointer"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           <Bot className="w-4 h-4" />
-          <span className="hidden sm:inline">Ask AI Saver</span>
+          <span>Ask AI Saver</span>
         </motion.button>
       </div>
 
-      {/* 2. SLIDE-IN CHAT WINDOW */}
+      {/* Interactive Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: 25, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="fixed bottom-20 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[420px] h-[550px] bg-white/98 backdrop-blur-2xl border border-slate-200 rounded-[32px] shadow-[0_25px_60px_rgba(11,43,92,0.25)] flex flex-col overflow-hidden text-slate-900"
+            exit={{ opacity: 0, y: 20, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-20 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[410px] h-[540px] bg-white/95 backdrop-blur-2xl border border-slate-200 rounded-[30px] shadow-[0_20px_50px_rgba(11,43,92,0.2)] flex flex-col overflow-hidden text-slate-900"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#0B2B5C] to-[#14428B] p-4 text-white flex items-center justify-between border-b border-white/10">
+            <div className="bg-[#0B2B5C] p-4 text-white flex items-center justify-between border-b border-white/10">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-[#E51B24]">
-                  <Bot className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-[#E51B24]">
+                  <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm text-white flex items-center gap-1.5 leading-none">
+                  <h3 className="font-black text-xs sm:text-sm text-white flex items-center gap-1.5 leading-none">
                     <span>AIO Smart Saver</span>
-                    <span className="text-[9px] bg-[#E51B24] px-1.5 py-0.5 rounded font-bold">24/7 AI</span>
+                    <span className="text-[9px] bg-[#E51B24] px-1.5 py-0.5 rounded font-bold">LIVE AI</span>
                   </h3>
-                  <span className="text-[10px] text-slate-300 font-medium">Real-time Arbitrage Stacker</span>
+                  <span className="text-[10px] text-slate-300">Live Inventory & Arbitrage Math</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setMessages([messages[0]])}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition"
-                  title="Reset Chat"
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition cursor-pointer"
+                  title="Clear Chat"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition"
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Chat Messages */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3.5 text-xs">
+            {/* Messages Scroll Area */}
+            <div className="flex-1 p-3.5 overflow-y-auto space-y-3 text-xs">
               {messages.map((m, idx) => (
                 <div
                   key={idx}
@@ -141,7 +138,7 @@ export default function SmartAIAssistant() {
                     className={`max-w-[85%] rounded-2xl p-3 leading-relaxed ${
                       m.role === 'user'
                         ? 'bg-[#E51B24] text-white font-semibold rounded-br-none shadow-sm'
-                        : 'bg-slate-50 border border-slate-200/90 text-slate-800 font-medium rounded-bl-none shadow-sm space-y-1'
+                        : 'bg-slate-100 border border-slate-200 text-slate-800 font-medium rounded-bl-none shadow-sm'
                     }`}
                   >
                     <div className="whitespace-pre-line">{m.content}</div>
@@ -151,40 +148,40 @@ export default function SmartAIAssistant() {
 
               {loading && (
                 <div className="flex justify-start">
-                  <div className="bg-slate-100 rounded-2xl px-4 py-2.5 flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
+                  <div className="bg-slate-100 rounded-2xl px-3.5 py-2 flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] animate-bounce" />
                     <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] animate-bounce [animation-delay:0.2s]" />
                     <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] animate-bounce [animation-delay:0.4s]" />
-                    <span>Finding best savings...</span>
+                    <span>Live data calculate ho raha hai...</span>
                   </div>
                 </div>
               )}
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Quick Suggestions Chips */}
+            {/* Quick Suggestions */}
             {messages.length <= 2 && (
-              <div className="px-3 py-1.5 border-t border-slate-100 flex gap-1.5 overflow-x-auto scrollbar-none bg-slate-50/50">
-                {quickPrompts.map((prompt, i) => (
+              <div className="px-3 py-1.5 border-t border-slate-100 flex gap-1.5 overflow-x-auto scrollbar-none bg-slate-50">
+                {quickPrompts.map((p, i) => (
                   <button
                     key={i}
-                    onClick={() => handleSend(prompt)}
-                    className="px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[10px] font-bold text-slate-600 hover:border-[#E51B24] hover:text-[#E51B24] transition shrink-0 cursor-pointer"
+                    onClick={() => handleSend(p)}
+                    className="px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[10px] font-bold text-slate-700 hover:border-[#E51B24] transition shrink-0 cursor-pointer"
                   >
-                    {prompt}
+                    {p}
                   </button>
                 ))}
               </div>
             )}
 
             {/* Input Bar */}
-            <div className="p-3 border-t border-slate-200 bg-white flex items-center gap-2">
+            <div className="p-2.5 border-t border-slate-200 bg-white flex items-center gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask e.g. Amazon ₹2000 cart savings..."
+                placeholder="Pucho: Amazon ₹2000 cart sasta kaise karein?"
                 className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[#E51B24] transition"
               />
               <button
