@@ -130,6 +130,19 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+
+        {/* Google Analytics Script */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYY57JTNM6"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-PYY57JTNM6');
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col bg-[#F4F6F9] text-slate-900 selection:bg-[#E51B24] selection:text-white font-sans">
         {children}
