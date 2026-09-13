@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SmartAIAssistant from "@/components/SmartAIAssistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -132,6 +133,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-[#F4F6F9] text-slate-900 selection:bg-[#E51B24] selection:text-white font-sans">
         {children}
+        <SmartAIAssistant />
       </body>
     </html>
   );
