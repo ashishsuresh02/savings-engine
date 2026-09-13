@@ -77,7 +77,7 @@ function TrulyLive3DHero() {
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         x.set((e.clientX - rect.left) / rect.width - 0.5);
-        y.set((e.clientY - rect.height) / rect.height - 0.5);
+        y.set((e.clientY - rect.top) / rect.height - 0.5);
       }}
       onMouseLeave={() => { x.set(0); y.set(0); }}
       className="relative w-full max-w-[860px] h-[480px] sm:h-[580px] lg:h-[620px] flex items-center justify-center select-none py-2 overflow-visible"
@@ -162,51 +162,43 @@ function TrulyLive3DHero() {
   );
 }
 
-// DYNAMIC PROMINENT BRAND MARQUEE (Logos Only, Extra Large & Clean)
-function InfiniteBrandMarquee({ brands = [] }: { brands?: any[] }) {
-  // Reliable high-resolution brand logo fallbacks when loading or empty
-  const defaultFallbackBrands = [
-    { name: "Google", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
-    { name: "Amazon", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" },
-    { name: "Apple", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" },
-    { name: "Microsoft", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" },
-    { name: "Netflix", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" },
-    { name: "Flipkart", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Flipkart_logo.svg" },
-    { name: "Myntra", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/b/bc/Myntra_Logo.png" }
+// DYNAMIC RED INFINITE BRAND LOGO MARQUEE (PURE LOGOS ONLY)
+function InfiniteBrandMarquee({ brands = [] }: { brands: any[] }) {
+  // Fallback logos if DB loading or empty
+  const defaultLogos = [
+    { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg' },
+    { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Swiggy_logo.svg' },
+    { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Zomato_Logo.svg' },
+    { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Myntra_logo.png' },
+    { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/74/Dominos_pizza_logo.svg' },
+    { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Flipkart_logo.svg' }
   ];
 
-  const displayList = brands && brands.length > 0 ? brands : defaultFallbackBrands;
-  // Multiply set to ensure continuous infinite smooth animation loop
-  const duplicatedList = [...displayList, ...displayList, ...displayList];
+  const brandList = brands.length > 0 ? brands : defaultLogos;
+  const duplicated = [...brandList, ...brandList, ...brandList, ...brandList];
 
   return (
-    <div className="w-full bg-slate-950 border-y border-slate-800 py-6 overflow-hidden relative select-none shadow-xl group">
-      {/* Side Fading Edges for Visual Blend */}
-      <div className="absolute left-0 inset-y-0 w-24 sm:w-48 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 inset-y-0 w-24 sm:w-48 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
+    <div className="w-full bg-[#E51B24] border-y border-red-600 py-4 overflow-hidden relative select-none shadow-lg">
+      {/* Side Fade Gradients on Bright Red Strip */}
+      <div className="absolute left-0 inset-y-0 w-24 sm:w-36 bg-gradient-to-r from-[#E51B24] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 inset-y-0 w-24 sm:w-36 bg-gradient-to-l from-[#E51B24] to-transparent z-10 pointer-events-none" />
 
-      {/* Scrolling Container */}
-      <div className="flex w-max animate-marquee items-center gap-6 sm:gap-8 group-hover:[animation-play-state:paused]">
-        {duplicatedList.map((brand, idx) => {
-          const logoSrc = brand.logoUrl || brand.logo_url || '/logo.png';
-          const brandName = brand.name || 'Brand Logo';
-
-          return (
-            <div 
-              key={`${brand.id || idx}-${idx}`}
-              className="w-48 h-24 sm:w-60 sm:h-28 px-6 py-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-105 hover:bg-slate-800/80 hover:border-slate-700 hover:shadow-2xl hover:shadow-red-500/10"
-            >
-              <img
-                src={logoSrc}
-                alt={brandName}
-                className="max-h-14 sm:max-h-16 max-w-full w-auto object-contain filter brightness-110 drop-shadow-md transition-all duration-300"
-                onError={(e: any) => {
-                  e.currentTarget.src = "https://placehold.co/240x100/1e293b/ffffff?text=" + encodeURIComponent(brandName);
-                }}
-              />
-            </div>
-          );
-        })}
+      <div className="flex w-max animate-marquee items-center gap-6 sm:gap-8 hover:[animation-play-state:paused]">
+        {duplicated.map((b, idx) => (
+          <div 
+            key={idx}
+            className="w-44 sm:w-56 h-20 sm:h-24 bg-white/95 rounded-2xl border border-white/30 shadow-md p-4 flex items-center justify-center shrink-0 hover:scale-105 transition-all duration-300"
+          >
+            <img 
+              src={b.logoUrl || b.logo_url || '/logo.png'} 
+              alt={b.name || "Brand Logo"} 
+              className="max-h-full max-w-full object-contain filter drop-shadow-sm"
+              onError={(e: any) => {
+                e.currentTarget.src = "https://via.placeholder.com/180x80?text=Brand";
+              }}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
