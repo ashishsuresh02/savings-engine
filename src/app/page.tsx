@@ -77,7 +77,7 @@ function TrulyLive3DHero() {
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         x.set((e.clientX - rect.left) / rect.width - 0.5);
-        y.set((e.clientY - rect.top) / rect.height - 0.5);
+        y.set((e.clientY - rect.height) / rect.height - 0.5);
       }}
       onMouseLeave={() => { x.set(0); y.set(0); }}
       className="relative w-full max-w-[860px] h-[480px] sm:h-[580px] lg:h-[620px] flex items-center justify-center select-none py-2 overflow-visible"
@@ -162,40 +162,51 @@ function TrulyLive3DHero() {
   );
 }
 
-// STATIC BRAND MARQUEE
-function InfiniteBrandMarquee() {
-  const staticBrands = [
-    { name: "Amazon", discount: "12%" },
-    { name: "Swiggy", discount: "15%" },
-    { name: "Zomato", discount: "10%" },
-    { name: "Myntra", discount: "18%" },
-    { name: "Domino's", discount: "13%" },
-    { name: "Flipkart", discount: "10%" },
-    { name: "MakeMyTrip", discount: "20%" }
+// DYNAMIC PROMINENT BRAND MARQUEE (Logos Only, Extra Large & Clean)
+function InfiniteBrandMarquee({ brands = [] }: { brands?: any[] }) {
+  // Reliable high-resolution brand logo fallbacks when loading or empty
+  const defaultFallbackBrands = [
+    { name: "Google", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
+    { name: "Amazon", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" },
+    { name: "Apple", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" },
+    { name: "Microsoft", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" },
+    { name: "Netflix", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" },
+    { name: "Flipkart", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Flipkart_logo.svg" },
+    { name: "Myntra", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/b/bc/Myntra_Logo.png" }
   ];
 
-  const duplicated = [...staticBrands, ...staticBrands, ...staticBrands];
+  const displayList = brands && brands.length > 0 ? brands : defaultFallbackBrands;
+  // Multiply set to ensure continuous infinite smooth animation loop
+  const duplicatedList = [...displayList, ...displayList, ...displayList];
 
   return (
-    <div className="w-full bg-[#E51B24] border-y border-red-600 py-3.5 overflow-hidden relative select-none shadow-md">
-      <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-[#E51B24] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-[#E51B24] to-transparent z-10 pointer-events-none" />
+    <div className="w-full bg-slate-950 border-y border-slate-800 py-6 overflow-hidden relative select-none shadow-xl group">
+      {/* Side Fading Edges for Visual Blend */}
+      <div className="absolute left-0 inset-y-0 w-24 sm:w-48 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 inset-y-0 w-24 sm:w-48 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
 
-      <div className="flex w-max animate-marquee items-center gap-8">
-        {duplicated.map((b, idx) => (
-          <div 
-            key={idx}
-            className="flex items-center gap-3 px-5 py-2 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md shadow-sm shrink-0"
-          >
-            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shrink-0">
-              <span className="text-[11px] font-black text-[#E51B24]">{b.name[0]}</span>
+      {/* Scrolling Container */}
+      <div className="flex w-max animate-marquee items-center gap-6 sm:gap-8 group-hover:[animation-play-state:paused]">
+        {duplicatedList.map((brand, idx) => {
+          const logoSrc = brand.logoUrl || brand.logo_url || '/logo.png';
+          const brandName = brand.name || 'Brand Logo';
+
+          return (
+            <div 
+              key={`${brand.id || idx}-${idx}`}
+              className="w-48 h-24 sm:w-60 sm:h-28 px-6 py-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-105 hover:bg-slate-800/80 hover:border-slate-700 hover:shadow-2xl hover:shadow-red-500/10"
+            >
+              <img
+                src={logoSrc}
+                alt={brandName}
+                className="max-h-14 sm:max-h-16 max-w-full w-auto object-contain filter brightness-110 drop-shadow-md transition-all duration-300"
+                onError={(e: any) => {
+                  e.currentTarget.src = "https://placehold.co/240x100/1e293b/ffffff?text=" + encodeURIComponent(brandName);
+                }}
+              />
             </div>
-            <div className="text-left">
-              <span className="text-xs font-black text-white block tracking-wide">{b.name}</span>
-              <span className="text-[10px] font-extrabold text-red-100">{b.discount} Extra Cut</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -223,7 +234,7 @@ export default function Home() {
           .select('*')
           .eq('is_active', true)
           .order('name', { ascending: true })
-          .limit(8);
+          .limit(12);
 
         if (bData) {
           setBrands(bData.map((b: any) => ({
@@ -315,8 +326,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. INFINITE MARQUEE STRIP */}
-      <InfiniteBrandMarquee />
+      {/* 2. INFINITE MARQUEE STRIP (Pass Dynamic Brands) */}
+      <InfiniteBrandMarquee brands={brands} />
 
       {/* 3. NATIVE DISPLAY BANNER AD */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-4">

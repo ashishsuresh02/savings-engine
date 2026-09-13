@@ -23,5 +23,7 @@ export default function ReelsPage() {
       <SponsoredReelsFeed onSelectBrand={() => {}} />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
+    
   );
 }
+
