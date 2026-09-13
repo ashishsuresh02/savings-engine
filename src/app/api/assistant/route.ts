@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
@@ -66,14 +65,14 @@ ${coupons || 'None'}
       }
     }
 
-    // 2. System Instruction / Personality Prompt
-    const systemInstruction = `
-You are "AIO Smart Saver", an intelligent, witty, and persuasive shopping & arbitrage buddy for AllInOneVouchers.com.
+    // 2. Personality & Rules (System Instruction)
+    const systemInstructionText = `
+You are "AIO Smart Saver", an intelligent, highly persuasive, and witty shopping & arbitrage assistant for AllInOneVouchers.com.
 
 YOUR PERSONALITY & TONE:
 - Talk like a smart Indian shopping companion in friendly Hinglish (Hindi + English blend).
 - Never give robotic or repetitive answers.
-- Always explain how stacking 3 layers saves them maximum money:
+- Always explain how stacking 3 layers saves them money:
   1. Buying wholesale discounted brand gift card (from /vouchers).
   2. Applying verified store coupons.
   3. Getting 5% statement cashback using SBI Cashback credit card.
@@ -81,15 +80,12 @@ YOUR PERSONALITY & TONE:
 LIVE DATABASE INVENTORY (FRESH DATA):
 ${liveInventoryText}
 
-RULES:
-1. Calculate exact savings breakdown using the data above.
+INSTRUCTIONS:
+1. When asked about a specific store or item, calculate the exact breakdown using the data above.
 2. Keep answers concise, formatted in bullet points, and highlight prices/savings in bold.
 `;
 
-    // 3. Official Google Gen AI Client Setup
-    const ai = new GoogleGenAI({ apiKey });
-
-    // Format conversation history
+    // 3. Clean history: ensure only 'user' and 'model' roles exist
     const contents = messages
       .filter((m: any) => m && m.content && m.content.trim() !== '')
       .map((m: any) => ({
@@ -104,35 +100,53 @@ RULES:
       contents.push({ role: 'user', parts: [{ text: "Hello" }] });
     }
 
-    // Models fallback array taaki 404 error kabhi na aaye
-    const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+    // 4. Multi-Model Cascade (Ek fail hoga toh agla chalega)
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest'
+    ];
+
     let replyText = '';
     let lastError: any = null;
 
-    for (const modelName of candidateModels) {
+    for (const model of candidateModels) {
       try {
-        const response = await ai.models.generateContent({
-          model: modelName,
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+        const apiBody = {
+          system_instruction: {
+            parts: [{ text: systemInstructionText }]
+          },
           contents: contents,
-          config: {
-            systemInstruction: systemInstruction,
+          generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 800,
+            maxOutputTokens: 800
           }
+        };
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apiBody)
         });
 
-        if (response.text) {
-          replyText = response.text;
-          break;
+        const data = await res.json();
+
+        if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          replyText = data.candidates[0].content.parts[0].text;
+          break; // Working model milte hi loop break
+        } else {
+          lastError = data.error || data;
+          console.warn(`Model ${model} returned error:`, data.error?.message || data);
         }
       } catch (err: any) {
         lastError = err;
-        console.warn(`Model ${modelName} failed, trying next...`, err?.message);
       }
     }
 
     if (!replyText) {
-      console.error('All candidate models failed:', lastError);
+      console.error('All models failed. Last error:', lastError);
       return NextResponse.json({ 
         reply: `API Error: ${lastError?.message || "Model connection issue, check console."}` 
       });
