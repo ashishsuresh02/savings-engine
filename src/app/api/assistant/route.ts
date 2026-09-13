@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { GoogleGenAI } from '@google/genai';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ 
-        reply: "Bhai, Gemini API key missing hai. Vercel / .env.local me GEMINI_API_KEY check karo!" 
+        reply: "Bhai, Gemini API key missing hai. Vercel ya .env.local me GEMINI_API_KEY add karein!" 
       });
     }
 
@@ -65,27 +66,30 @@ ${coupons || 'None'}
       }
     }
 
-    // 2. Personality & Rules (System Instruction)
-    const systemInstructionText = `
-You are "AIO Smart Saver", an intelligent, highly persuasive, and witty shopping & arbitrage assistant for AllInOneVouchers.com.
+    // 2. System Instruction / Personality Prompt
+    const systemInstruction = `
+You are "AIO Smart Saver", an intelligent, witty, and persuasive shopping & arbitrage buddy for AllInOneVouchers.com.
 
 YOUR PERSONALITY & TONE:
 - Talk like a smart Indian shopping companion in friendly Hinglish (Hindi + English blend).
-- Never give robotic, dry, or repetitive answers.
-- Always explain how stacking 3 layers saves them money:
-  1. Buying our wholesale discounted brand gift card (from /vouchers).
+- Never give robotic or repetitive answers.
+- Always explain how stacking 3 layers saves them maximum money:
+  1. Buying wholesale discounted brand gift card (from /vouchers).
   2. Applying verified store coupons.
   3. Getting 5% statement cashback using SBI Cashback credit card.
 
-LIVE DATABASE INVENTORY (ACCURATE & FRESH):
+LIVE DATABASE INVENTORY (FRESH DATA):
 ${liveInventoryText}
 
-INSTRUCTIONS:
-1. When asked about a specific store or item, calculate the exact breakdown using the data above.
-2. Keep answers concise, formatted in bullet points, and highlight savings in bold.
+RULES:
+1. Calculate exact savings breakdown using the data above.
+2. Keep answers concise, formatted in bullet points, and highlight prices/savings in bold.
 `;
 
-    // 3. Clean history: ensure only 'user' and 'model' roles exist and alternate properly
+    // 3. Official Google Gen AI Client Setup
+    const ai = new GoogleGenAI({ apiKey });
+
+    // Format conversation history
     const contents = messages
       .filter((m: any) => m && m.content && m.content.trim() !== '')
       .map((m: any) => ({
@@ -93,54 +97,48 @@ INSTRUCTIONS:
         parts: [{ text: m.content }]
       }));
 
-    // If first message is from model, strip it (Gemini requires first message from user)
     if (contents.length > 0 && contents[0].role === 'model') {
       contents.shift();
     }
-
-    // Fallback if no user message left
     if (contents.length === 0) {
       contents.push({ role: 'user', parts: [{ text: "Hello" }] });
     }
 
-    // 4. Official Google Gemini 1.5 Flash API Payload (Using proper system_instruction)
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Models fallback array taaki 404 error kabhi na aaye
+    const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+    let replyText = '';
+    let lastError: any = null;
 
-    const apiBody = {
-      system_instruction: {
-        parts: [{ text: systemInstructionText }]
-      },
-      contents: contents,
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 800
+    for (const modelName of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: contents,
+          config: {
+            systemInstruction: systemInstruction,
+            temperature: 0.7,
+            maxOutputTokens: 800,
+          }
+        });
+
+        if (response.text) {
+          replyText = response.text;
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${modelName} failed, trying next...`, err?.message);
       }
-    };
+    }
 
-    const response = await fetch(geminiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(apiBody)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || data.error) {
-      console.error('Gemini API Error details:', JSON.stringify(data.error || data));
+    if (!replyText) {
+      console.error('All candidate models failed:', lastError);
       return NextResponse.json({ 
-        reply: `API Error: ${data.error?.message || "Server issue, check console"}` 
+        reply: `API Error: ${lastError?.message || "Model connection issue, check console."}` 
       });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!reply) {
-      return NextResponse.json({ 
-        reply: "Bhai baat toh samajh aa gayi par response generate nahi hua, ek baar dobara try karo!" 
-      });
-    }
-
-    return NextResponse.json({ reply });
+    return NextResponse.json({ reply: replyText });
 
   } catch (error: any) {
     console.error('Bot route error:', error);
