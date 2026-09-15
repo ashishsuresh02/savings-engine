@@ -32,21 +32,47 @@ import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import PromoSlider, { BannerSlide } from '@/components/PromoSlider';
 
 const FAQS = [
-  { 
-    q: "How does the savings stacking engine work?", 
-    a: "Unlike typical coupon directories where promo codes fail at checkout, our engine stacks wholesale discounted brand vouchers, verified merchant promo codes, and credit card cashbacks to uncover the lowest true net price." 
+  {
+    category: "3X Stacking",
+    theme: "red",
+    icon: "Layers",
+    q: "How does the 3X Savings Stacking Engine work?",
+    a: "Unlike typical coupon directories where promo codes fail at checkout, our 3X Stacking formula combines three independent discount layers: (1) Buy a wholesale discounted brand voucher (save 5% to 15% upfront). (2) Apply an active store promo code in the merchant app (cut another 20% to 40%). (3) Pay for the voucher using a high-reward credit card (e.g., SBI Cashback or HDFC Millennia) to pocket an extra 5% statement credit. All three stack together to achieve the lowest true net cost."
   },
-  { 
-    q: "How do the direct affiliate deals work?", 
-    a: "Every product deal listed under our Loot Deals directory points straight to the official verified merchant (Amazon, Flipkart, Myntra). You pay the discounted price directly on their platform with zero hidden fees." 
+  {
+    category: "Instant Delivery",
+    theme: "emerald",
+    icon: "Zap",
+    q: "How fast are the digital voucher code and secret PIN delivered?",
+    a: "Delivery is instantaneous (0-minute latency). The moment your payment is verified, your 16-digit alphanumeric voucher code and confidential PIN are unlocked directly on your screen and synced to your encrypted Member Vault. You will also receive an instant backup via WhatsApp and email."
   },
-  { 
-    q: "How do I redeem purchased vouchers?", 
-    a: "Upon purchasing any gift voucher from our Dedicated Vouchers page, your 16-digit voucher number and secret PIN are instantly synced to your Member Vault. Enter it in the merchant app's gift card balance section." 
+  {
+    category: "Redemption",
+    theme: "blue",
+    icon: "CreditCard",
+    q: "How do I redeem my vouchers on Amazon, Swiggy, or Zomato?",
+    a: "It takes under 30 seconds. Open your merchant app (e.g., Swiggy, Zomato, or Amazon), navigate to 'Payment Methods' or 'Gift Card Balance', tap 'Add Gift Card', and paste your 16-digit code alongside the secret PIN. The entire balance credits to your wallet instantly and can be applied during checkout."
   },
-  { 
-    q: "How can brands partner with AllInOneVouchers?", 
-    a: "Brands can get their products featured in our curated loot feed or sponsor brand reels by submitting a business collaboration request to support@allinonevouchers.com." 
+  {
+    category: "Flash Loot",
+    theme: "amber",
+    icon: "Flame",
+    q: "Are the Loot Deals authentic and where do I make the payment?",
+    a: "Every product deal listed in our Flash Loot feed is curated and tracked via live price monitoring across official platforms like Amazon, Flipkart, and Myntra. Clicking 'Grab Deal' routes you directly to the verified merchant page—you pay directly on their official platform with full warranty and zero hidden charges."
+  },
+  {
+    category: "Security",
+    theme: "purple",
+    icon: "ShieldCheck",
+    q: "Are purchased vouchers safe, and what if a code fails?",
+    a: "Every single voucher is bulk-sourced through authorized enterprise corporate channels and carries standard validity ranging from 6 to 12 months. In the rare event of a merchant-side validation glitch upon delivery, our automated verification desk issues an immediate replacement or full wallet refund within 24 hours."
+  },
+  {
+    category: "Partnerships",
+    theme: "rose",
+    icon: "Sparkles",
+    q: "How can brands, merchants, or creators partner with us?",
+    a: "D2C brands, retail merchants, and deal influencers looking to list high-conversion loot offers, sponsor Brand Deal Reels, or tap into our high-volume shopper base can reach out directly to our partnerships team at support@allinonevouchers.com."
   }
 ];
 
@@ -697,30 +723,172 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. FAQS */}
-      <section id="faq" className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-6">
-        <div className="text-center space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">Frequently Asked Questions</h2>
+      {/* 7. VIBRANT COLOR-CODED HOW-IT-WORKS & FAQS SECTION */}
+      <section id="faq" className="max-w-5xl mx-auto px-4 sm:px-6 py-20 space-y-12">
+        
+        {/* Header with Ambient Badge */}
+        <div className="text-center space-y-3 max-w-2xl mx-auto">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-500/10 via-rose-500/10 to-amber-500/10 border border-red-200 text-[#E51B24] text-xs font-black uppercase tracking-wider shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#E51B24] animate-spin" style={{ animationDuration: '6s' }} />
+            <span>Smart Savings Engine • Transparent Guide</span>
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            Frequently Asked <span className="bg-gradient-to-r from-[#E51B24] to-rose-600 bg-clip-text text-transparent">Questions</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+            Everything you need to know about wholesale gift cards, verified loot drops, and maximizing your 3X savings stack.
+          </p>
         </div>
 
-        <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <div
-              key={i}
-              onClick={() => setOpenFaq(openFaq === i ? null : i)}
-              className="p-5 rounded-2xl bg-white border border-slate-200 cursor-pointer shadow-sm"
-            >
-              <div className="flex justify-between items-center gap-4">
-                <h4 className="text-sm font-bold text-slate-900">{faq.q}</h4>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === i ? 'rotate-180 text-[#E51B24]' : ''}`} />
+        {/* 3-STEP VISUAL INFOGRAPHIC WITH VIBRANT COLOR GRADIENTS */}
+        <div className="rounded-[32px] bg-gradient-to-br from-[#070A10] via-[#0B1528] to-[#120B1C] p-6 sm:p-10 text-white shadow-2xl border border-white/10 relative overflow-hidden">
+          {/* Multi-Color Ambient Glow Spots */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/20 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
+          
+          <div className="space-y-2 mb-8 relative z-10 text-center sm:text-left">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+              The 3X Savings Formula
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              How You Save Up to 40% on Every Single Order
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
+              We never depend on single coupon codes that fail at checkout. Here is the verified 3-step stacking mechanism:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
+            {/* Step 1: Red Gradient */}
+            <div className="bg-gradient-to-b from-red-500/15 to-transparent border border-red-500/30 rounded-2xl p-5 space-y-3 backdrop-blur-xl hover:border-red-400/60 transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-red-500/30 group-hover:scale-110 transition-transform">
+                1
               </div>
-              {openFaq === i && (
-                <p className="text-xs text-slate-600 mt-2.5 pt-2.5 border-t border-slate-100 leading-relaxed font-medium">
-                  {faq.a}
-                </p>
-              )}
+              <div>
+                <h4 className="text-sm font-black text-white">Buy Wholesale Voucher</h4>
+                <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider">Step 1: Save 5% - 15%</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                Purchase digital brand cards for Amazon, Swiggy, or Zomato at instant wholesale discount rates.
+              </p>
             </div>
-          ))}
+
+            {/* Step 2: Sky Blue Gradient */}
+            <div className="bg-gradient-to-b from-blue-500/15 to-transparent border border-blue-500/30 rounded-2xl p-5 space-y-3 backdrop-blur-xl hover:border-blue-400/60 transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                2
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-white">Apply Merchant Coupon</h4>
+                <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wider">Step 2: Cut 20% - 40%</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                Apply active merchant coupons or restaurant offers directly on the merchant's checkout counter.
+              </p>
+            </div>
+
+            {/* Step 3: Emerald Green Gradient */}
+            <div className="bg-gradient-to-b from-emerald-500/15 to-transparent border border-emerald-500/30 rounded-2xl p-5 space-y-3 backdrop-blur-xl hover:border-emerald-400/60 transition-all duration-300 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                3
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-white">Cashback Credit Card</h4>
+                <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Step 3: Extra 5% Statement Credit</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                Use your reward card to buy the voucher, earning an additional 5% cashback straight into your bank statement.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ACCORDION FAQ ITEMS (Dynamic Category Color Themes) */}
+        <div className="space-y-3.5">
+          {FAQS.map((faq, i) => {
+            const isOpen = openFaq === i;
+
+            // Theme color configuration based on category
+            const themeStyles: Record<string, { badge: string; activeBorder: string; iconBg: string }> = {
+              red: {
+                badge: 'bg-red-50 text-red-700 border-red-200',
+                activeBorder: 'border-red-300 ring-2 ring-red-100',
+                iconBg: 'bg-red-50 text-[#E51B24]'
+              },
+              emerald: {
+                badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                activeBorder: 'border-emerald-300 ring-2 ring-emerald-100',
+                iconBg: 'bg-emerald-50 text-emerald-600'
+              },
+              blue: {
+                badge: 'bg-blue-50 text-blue-700 border-blue-200',
+                activeBorder: 'border-blue-300 ring-2 ring-blue-100',
+                iconBg: 'bg-blue-50 text-blue-600'
+              },
+              amber: {
+                badge: 'bg-amber-50 text-amber-800 border-amber-200',
+                activeBorder: 'border-amber-300 ring-2 ring-amber-100',
+                iconBg: 'bg-amber-50 text-amber-600'
+              },
+              purple: {
+                badge: 'bg-purple-50 text-purple-700 border-purple-200',
+                activeBorder: 'border-purple-300 ring-2 ring-purple-100',
+                iconBg: 'bg-purple-50 text-purple-600'
+              },
+              rose: {
+                badge: 'bg-rose-50 text-rose-700 border-rose-200',
+                activeBorder: 'border-rose-300 ring-2 ring-rose-100',
+                iconBg: 'bg-rose-50 text-rose-600'
+              }
+            };
+
+            const currentTheme = themeStyles[faq.theme] || themeStyles.red;
+
+            return (
+              <div
+                key={i}
+                onClick={() => setOpenFaq(isOpen ? null : i)}
+                className={`rounded-2xl bg-white border transition-all duration-200 cursor-pointer overflow-hidden ${
+                  isOpen 
+                    ? `${currentTheme.activeBorder} shadow-lg shadow-slate-200/50` 
+                    : 'border-slate-200/80 hover:border-slate-300 hover:shadow-sm'
+                }`}
+              >
+                <div className="p-5 sm:p-6 flex justify-between items-center gap-4 select-none">
+                  <div className="flex items-center gap-3.5">
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shrink-0 ${currentTheme.badge}`}>
+                      {faq.category}
+                    </span>
+                    <h4 className="text-sm sm:text-base font-black text-slate-900 leading-snug">
+                      {faq.q}
+                    </h4>
+                  </div>
+                  
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+                    isOpen ? currentTheme.iconBg : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+
+                {isOpen && (
+                  <div className="px-5 sm:px-6 pb-6 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium border-t border-slate-100/80 animate-fadeIn">
+                    <p>{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Support Footer Callout */}
+        <div className="text-center pt-2">
+          <p className="text-xs text-slate-500 font-medium">
+            Still have questions? Our support team is here to assist:{' '}
+            <a href="mailto:support@allinonevouchers.com" className="text-[#E51B24] font-bold underline hover:text-[#C4121A] transition">
+              support@allinonevouchers.com
+            </a>
+          </p>
         </div>
       </section>
 
