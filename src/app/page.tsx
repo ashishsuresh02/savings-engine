@@ -320,13 +320,12 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 1. HERO SECTION (100% FLUSH - ZERO GAPS ON TOP, BOTTOM, OR SIDES) */}
-      <section className="relative w-full min-h-[560px] sm:min-h-[640px] lg:min-h-[700px] border-b border-slate-200 pt-6 sm:pt-8 pb-12 sm:pb-16 overflow-hidden flex items-center">
+      {/* 1. HERO SECTION (POLISHED BRAND LOGO + MODERN SEARCH BAR) */}
+      <section className="relative w-full min-h-[580px] sm:min-h-[660px] lg:min-h-[720px] border-b border-slate-200 pt-6 sm:pt-10 pb-14 sm:pb-18 overflow-hidden flex items-center">
         
-        {/* Background Layer: Full edge-to-edge bleed without letterboxing/gaps */}
+        {/* Background Layer: 100% Flush, No Gaps */}
         <div className="absolute inset-0 w-full h-full z-0 pointer-events-none select-none overflow-hidden">
-          
-          {/* Mobile Image: Covers 100% of the screen flush */}
+          {/* Mobile Background */}
           <div className="block md:hidden relative w-full h-full">
             <Image
               src="/hero-bg-mobile.png"
@@ -339,7 +338,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-white/30 backdrop-blur-[0.5px]" />
           </div>
 
-          {/* Desktop Image: Stretches edge-to-edge covering full width & height */}
+          {/* Desktop Background */}
           <div className="hidden md:block relative w-full h-full">
             <Image
               src="/hero-bg.png"
@@ -349,50 +348,98 @@ export default function Home() {
               quality={100}
               className="w-full h-full object-cover object-top opacity-100"
             />
-            {/* Subtle soft gradient on the left so heading text is sharp and readable */}
-            <div className="absolute inset-y-0 left-0 w-[45%] bg-gradient-to-r from-white/90 via-white/40 to-transparent" />
+            {/* Subtle soft gradient on left for crystal clear readability */}
+            <div className="absolute inset-y-0 left-0 w-[50%] bg-gradient-to-r from-white/95 via-white/50 to-transparent" />
           </div>
 
-          {/* Bottom subtle edge blend */}
           <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-[#F4F6F9] to-transparent opacity-40" />
         </div>
 
         {/* Content Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping" />
-              <span>India's 1st Curated Arbitrage & Loot Engine</span>
+            
+            {/* BRAND LOGO + PILL BADGE COMBO */}
+            <div className="space-y-3">
+              <div className="relative h-8 sm:h-9 w-44 sm:w-52 drop-shadow-sm">
+                <Image
+                  src="/logo1.png"
+                  alt="AllInOneVouchers Logo"
+                  fill
+                  priority
+                  className="object-contain object-left"
+                />
+              </div>
+
+              <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping shrink-0" />
+                <span>India's 1st Curated Arbitrage & Loot Engine</span>
+              </div>
             </div>
 
+            {/* MAIN HEADLINE */}
             <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.08] drop-shadow-sm">
               Save More.<br />
               <span className="text-[#E51B24]">Shop Smarter.</span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-800 max-w-lg font-semibold leading-relaxed drop-shadow-xs">
+            <p className="text-sm sm:text-base text-slate-700 max-w-lg font-medium leading-relaxed">
               Explore handpicked price drops, verified promo codes, and wholesale gift cards that give you maximum real cashback on your daily orders.
             </p>
 
-            {/* Instant Search Bar */}
-            <div className="max-w-xl flex items-center rounded-2xl bg-white/95 border-2 border-slate-200/90 focus-within:border-[#E51B24] shadow-xl backdrop-blur-md p-1.5 transition">
-              <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search deals on Earbuds, Shoes, Jackets, Amazon, Myntra..."
-                className="w-full px-3 py-2 text-sm text-slate-800 font-medium outline-none placeholder:text-slate-400 bg-transparent"
-              />
-              <button
-                onClick={() => document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 sm:px-8 py-3 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-red-500/25 shrink-0 active:scale-95 cursor-pointer"
-              >
-                Find Deals
-              </button>
+            {/* HIGH-CONVERTING MODERN SEARCH ENGINE BAR */}
+            <div className="max-w-xl space-y-2.5">
+              <div className="relative flex items-center rounded-2xl bg-white/95 border-2 border-slate-200 hover:border-slate-300 focus-within:border-[#E51B24] focus-within:shadow-[0_8px_30px_rgb(229,27,36,0.14)] shadow-lg backdrop-blur-md p-1.5 transition-all duration-200">
+                <div className="pl-3.5 pr-2 flex items-center justify-center shrink-0">
+                  <Search className="w-5 h-5 text-slate-400 group-focus-within:text-[#E51B24] transition-colors" />
+                </div>
+
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  placeholder="Search Amazon, Swiggy, Myntra, Earbuds..."
+                  className="w-full py-2.5 text-sm text-slate-800 font-semibold outline-none placeholder:text-slate-400 placeholder:font-normal bg-transparent"
+                />
+
+                {/* Styled Glow Button */}
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="px-5 sm:px-7 py-3 rounded-xl bg-gradient-to-r from-[#E51B24] to-[#C4121A] hover:from-[#C4121A] hover:to-[#E51B24] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40 shrink-0 flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-white/90" />
+                  <span>Find Deals</span>
+                </button>
+              </div>
+
+              {/* Quick Click Search Tags */}
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium pl-1 overflow-x-auto scrollbar-none">
+                <span className="shrink-0 text-slate-400">Popular:</span>
+                {['Swiggy 50% OFF', 'Amazon Pay', 'Myntra BOGO', 'Zomato'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery(tag.split(' ')[0]);
+                      document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-2.5 py-0.5 rounded-lg bg-slate-100/80 hover:bg-red-50 hover:text-[#E51B24] border border-slate-200/80 transition-colors shrink-0 cursor-pointer"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
+
           </div>
 
+          {/* 3D INTERACTIVE HERO STAGE */}
           <div className="lg:col-span-5 relative flex items-center justify-center">
             <TrulyLive3DHero />
           </div>
