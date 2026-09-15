@@ -320,13 +320,13 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 1. HERO SECTION (PINNED TO TOP - ZERO TOP GAP/LINE) */}
-      <section className="relative min-h-[560px] sm:min-h-[640px] lg:min-h-[700px] border-b border-slate-200 pt-4 sm:pt-6 pb-12 sm:pb-16 overflow-hidden flex items-center">
+      {/* 1. HERO SECTION (100% FLUSH - ZERO GAPS ON TOP, BOTTOM, OR SIDES) */}
+      <section className="relative w-full min-h-[560px] sm:min-h-[640px] lg:min-h-[700px] border-b border-slate-200 pt-6 sm:pt-8 pb-12 sm:pb-16 overflow-hidden flex items-center">
         
-        {/* Background Image Layer - Forced flush to the top edge */}
-        <div className="absolute inset-0 top-0 left-0 right-0 z-0 pointer-events-none select-none">
+        {/* Background Layer: Full edge-to-edge bleed without letterboxing/gaps */}
+        <div className="absolute inset-0 w-full h-full z-0 pointer-events-none select-none overflow-hidden">
           
-          {/* Mobile Image: Flush with top edge */}
+          {/* Mobile Image: Covers 100% of the screen flush */}
           <div className="block md:hidden relative w-full h-full">
             <Image
               src="/hero-bg-mobile.png"
@@ -334,12 +334,12 @@ export default function Home() {
               fill
               priority
               quality={100}
-              className="object-cover object-top opacity-95"
+              className="w-full h-full object-cover object-top opacity-95"
             />
-            <div className="absolute inset-0 bg-white/35 backdrop-blur-[0.5px]" />
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-[0.5px]" />
           </div>
 
-          {/* Desktop Image: Anchored strictly to top-right to remove top whitespace */}
+          {/* Desktop Image: Stretches edge-to-edge covering full width & height */}
           <div className="hidden md:block relative w-full h-full">
             <Image
               src="/hero-bg.png"
@@ -347,18 +347,18 @@ export default function Home() {
               fill
               priority
               quality={100}
-              className="object-cover lg:object-contain object-top lg:object-right-top opacity-100"
+              className="w-full h-full object-cover object-top opacity-100"
             />
-            {/* Left text readability soft gradient wash */}
-            <div className="absolute inset-y-0 left-0 w-[55%] bg-gradient-to-r from-white/90 via-white/55 to-transparent" />
+            {/* Subtle soft gradient on the left so heading text is sharp and readable */}
+            <div className="absolute inset-y-0 left-0 w-[45%] bg-gradient-to-r from-white/90 via-white/40 to-transparent" />
           </div>
 
-          {/* Bottom subtle blend into next section */}
-          <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-[#F4F6F9] to-transparent opacity-50" />
+          {/* Bottom subtle edge blend */}
+          <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-[#F4F6F9] to-transparent opacity-40" />
         </div>
 
         {/* Content Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10 w-full mt-2 sm:mt-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
             <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping" />
