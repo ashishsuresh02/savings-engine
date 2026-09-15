@@ -320,13 +320,13 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 1. HERO SECTION WITH VIBRANT DESKTOP & MOBILE BACKGROUND */}
-      <section className="relative min-h-[580px] sm:min-h-[660px] lg:min-h-[720px] border-b border-slate-200 pt-8 sm:pt-14 pb-14 sm:pb-20 overflow-hidden flex items-center">
+      {/* 1. HERO SECTION (PINNED TO TOP - ZERO TOP GAP/LINE) */}
+      <section className="relative min-h-[560px] sm:min-h-[640px] lg:min-h-[700px] border-b border-slate-200 pt-4 sm:pt-6 pb-12 sm:pb-16 overflow-hidden flex items-center">
         
-        {/* Background Image Layer */}
-        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+        {/* Background Image Layer - Forced flush to the top edge */}
+        <div className="absolute inset-0 top-0 left-0 right-0 z-0 pointer-events-none select-none">
           
-          {/* Mobile Image: Only visible on screens smaller than md */}
+          {/* Mobile Image: Flush with top edge */}
           <div className="block md:hidden relative w-full h-full">
             <Image
               src="/hero-bg-mobile.png"
@@ -334,13 +334,12 @@ export default function Home() {
               fill
               priority
               quality={100}
-              className="object-cover object-center opacity-95"
+              className="object-cover object-top opacity-95"
             />
-            {/* Minimal subtle wash for mobile text */}
-            <div className="absolute inset-0 bg-white/40 backdrop-blur-[0.5px]" />
+            <div className="absolute inset-0 bg-white/35 backdrop-blur-[0.5px]" />
           </div>
 
-          {/* Desktop Image: Only visible on md screens and above */}
+          {/* Desktop Image: Anchored strictly to top-right to remove top whitespace */}
           <div className="hidden md:block relative w-full h-full">
             <Image
               src="/hero-bg.png"
@@ -348,19 +347,19 @@ export default function Home() {
               fill
               priority
               quality={100}
-              className="object-contain object-right opacity-100"
+              className="object-cover lg:object-contain object-top lg:object-right-top opacity-100"
             />
-            {/* Soft left-only fade: Text area remains readable while right festive art stays 100% vibrant */}
-            <div className="absolute inset-y-0 left-0 w-[55%] bg-gradient-to-r from-white/90 via-white/60 to-transparent" />
+            {/* Left text readability soft gradient wash */}
+            <div className="absolute inset-y-0 left-0 w-[55%] bg-gradient-to-r from-white/90 via-white/55 to-transparent" />
           </div>
 
-          {/* Bottom ground blend */}
-          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#F4F6F9] to-transparent opacity-60" />
+          {/* Bottom subtle blend into next section */}
+          <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-[#F4F6F9] to-transparent opacity-50" />
         </div>
 
         {/* Content Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10 w-full">
-          <div className="lg:col-span-7 space-y-6 text-left">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10 w-full mt-2 sm:mt-0">
+          <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
             <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping" />
               <span>India's 1st Curated Arbitrage & Loot Engine</span>
