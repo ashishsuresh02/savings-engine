@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   motion, 
   useMotionValue, 
   useSpring, 
-  useTransform 
+  useTransform,
+  AnimatePresence
 } from 'framer-motion';
 import { 
   ArrowUpRight, 
@@ -277,6 +278,117 @@ function InfiniteBrandMarquee({ brands = [] }: { brands: any[] }) {
   );
 }
 
+// 3D INTERACTIVE TILT FAQ CARD COMPONENT
+interface TiltFaqProps {
+  faq: typeof FAQS[0];
+  index: number;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+function InteractiveTiltFaqCard({ faq, index, isOpen, onToggle }: TiltFaqProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const springX = useSpring(mouseX, { stiffness: 160, damping: 18 });
+  const springY = useSpring(mouseY, { stiffness: 160, damping: 18 });
+
+  const rotateX = useTransform(springY, [-0.5, 0.5], ['5deg', '-5deg']);
+  const rotateY = useTransform(springX, [-0.5, 0.5], ['-5deg', '5deg']);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const xPct = (e.clientX - rect.left) / rect.width - 0.5;
+    const yPct = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(xPct);
+    mouseY.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  const themeColors: Record<string, { badge: string; border: string; glow: string }> = {
+    red: { badge: 'bg-red-50 text-red-600 border-red-200', border: 'border-red-500', glow: 'from-red-500/10' },
+    emerald: { badge: 'bg-emerald-50 text-emerald-600 border-emerald-200', border: 'border-emerald-500', glow: 'from-emerald-500/10' },
+    blue: { badge: 'bg-blue-50 text-blue-600 border-blue-200', border: 'border-blue-500', glow: 'from-blue-500/10' },
+    amber: { badge: 'bg-amber-50 text-amber-600 border-amber-200', border: 'border-amber-500', glow: 'from-amber-500/10' },
+    purple: { badge: 'bg-purple-50 text-purple-600 border-purple-200', border: 'border-purple-500', glow: 'from-purple-500/10' },
+    rose: { badge: 'bg-rose-50 text-rose-600 border-rose-200', border: 'border-rose-500', glow: 'from-rose-500/10' }
+  };
+
+  const color = themeColors[faq.theme] || themeColors.red;
+
+  return (
+    <div style={{ perspective: 1000 }} className="w-full">
+      <motion.div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          rotateX,
+          rotateY,
+          transformStyle: 'preserve-3d'
+        }}
+        whileHover={{ scale: 1.015 }}
+        transition={{ duration: 0.2 }}
+        onClick={onToggle}
+        className={`relative group rounded-3xl transition-all duration-300 overflow-hidden cursor-pointer ${
+          isOpen
+            ? `bg-white border-2 ${color.border} shadow-[0_20px_45px_rgba(229,27,36,0.12)]`
+            : 'bg-white hover:bg-slate-50/70 border border-slate-200/90 hover:border-slate-300 shadow-sm hover:shadow-xl'
+        }`}
+      >
+        <div className={`absolute inset-0 bg-gradient-to-r ${color.glow} to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none duration-500`} />
+
+        <div className="p-6 sm:p-7 flex justify-between items-center gap-4 relative z-10 select-none">
+          <div className="space-y-2 pr-2">
+            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${color.badge}`}>
+              0{index + 1} • {faq.category}
+            </span>
+            <h3 className={`text-base sm:text-lg font-black tracking-tight transition-colors duration-200 ${
+              isOpen ? 'text-[#E51B24]' : 'text-slate-900 group-hover:text-[#E51B24]'
+            }`}>
+              {faq.q}
+            </h3>
+          </div>
+
+          <motion.div
+            animate={{ rotate: isOpen ? 45 : 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border transition-all duration-300 ${
+              isOpen
+                ? 'bg-[#E51B24] border-[#E51B24] text-white shadow-lg shadow-red-500/30'
+                : 'bg-slate-50 border-slate-200 text-slate-500 group-hover:bg-[#E51B24] group-hover:text-white group-hover:border-[#E51B24]'
+            }`}
+          >
+            <span className="text-2xl font-bold leading-none select-none">+</span>
+          </motion.div>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              <div className="px-6 sm:px-7 pb-6 pt-0 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed border-t border-slate-100">
+                <p className="pt-4 text-slate-700 leading-relaxed">{faq.a}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [brands, setBrands] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
@@ -284,7 +396,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
@@ -374,7 +486,6 @@ export default function Home() {
               quality={100}
               className="w-full h-full object-cover object-top opacity-100"
             />
-            {/* Subtle soft gradient on left for crystal clear readability */}
             <div className="absolute inset-y-0 left-0 w-[50%] bg-gradient-to-r from-white/95 via-white/50 to-transparent" />
           </div>
 
@@ -433,7 +544,6 @@ export default function Home() {
                   className="w-full py-2.5 text-sm text-slate-800 font-semibold outline-none placeholder:text-slate-400 placeholder:font-normal bg-transparent"
                 />
 
-                {/* Styled Glow Button */}
                 <button
                   type="button"
                   onClick={() => document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' })}
@@ -723,181 +833,68 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. VIBRANT COLOR-CODED HOW-IT-WORKS & FAQS SECTION */}
-      <section id="faq" className="max-w-5xl mx-auto px-4 sm:px-6 py-20 space-y-12">
-        
-        {/* Header with Ambient Badge */}
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-500/10 via-rose-500/10 to-amber-500/10 border border-red-200 text-[#E51B24] text-xs font-black uppercase tracking-wider shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#E51B24] animate-spin" style={{ animationDuration: '6s' }} />
-            <span>Smart Savings Engine • Transparent Guide</span>
-          </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-            Frequently Asked <span className="bg-gradient-to-r from-[#E51B24] to-rose-600 bg-clip-text text-transparent">Questions</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
-            Everything you need to know about wholesale gift cards, verified loot drops, and maximizing your 3X savings stack.
-          </p>
-        </div>
+      {/* WHATSAPP ALERTS */}
+      <WhatsAppAlerts />
 
-        {/* 3-STEP VISUAL INFOGRAPHIC WITH VIBRANT COLOR GRADIENTS */}
-        <div className="rounded-[32px] bg-gradient-to-br from-[#070A10] via-[#0B1528] to-[#120B1C] p-6 sm:p-10 text-white shadow-2xl border border-white/10 relative overflow-hidden">
-          {/* Multi-Color Ambient Glow Spots */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/20 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
+      {/* 7. DRIBBBLE-STYLE 3D TILT FAQS (LAST SECTION BEFORE FOOTER) */}
+      <section id="faq" className="max-w-7xl mx-auto px-4 sm:px-6 py-20 border-t border-slate-200/80">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
-          <div className="space-y-2 mb-8 relative z-10 text-center sm:text-left">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
-              The 3X Savings Formula
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              How You Save Up to 40% on Every Single Order
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl">
-              We never depend on single coupon codes that fail at checkout. Here is the verified 3-step stacking mechanism:
+          {/* Left Sticky Guide & Support Column */}
+          <div className="lg:col-span-5 lg:sticky lg:top-28 space-y-6 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200/80 text-[#E51B24] text-[11px] font-black uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Smart Savings Desk</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-[1.08]">
+              Frequently Asked <br />
+              <span className="text-[#E51B24]">Questions.</span>
+            </h2>
+
+            <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-md">
+              Hover over any question to explore our automated 3X stacking architecture, instant PIN delivery, and verified loot sources.
             </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
-            {/* Step 1: Red Gradient */}
-            <div className="bg-gradient-to-b from-red-500/15 to-transparent border border-red-500/30 rounded-2xl p-5 space-y-3 backdrop-blur-xl hover:border-red-400/60 transition-all duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-red-500/30 group-hover:scale-110 transition-transform">
-                1
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-white">Buy Wholesale Voucher</h4>
-                <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider">Step 1: Save 5% - 15%</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Purchase digital brand cards for Amazon, Swiggy, or Zomato at instant wholesale discount rates.
+            {/* Support Callout Box */}
+            <div className="p-6 sm:p-7 rounded-3xl bg-slate-900 text-white space-y-3.5 shadow-2xl relative overflow-hidden border border-slate-800">
+              <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/20 rounded-full blur-3xl pointer-events-none" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-red-400">24/7 Verified Desk</span>
+              <h4 className="text-base font-black">Still have doubts or need bulk codes?</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Connect with our concierge support team for instant order tracking and merchant queries.
               </p>
-            </div>
-
-            {/* Step 2: Sky Blue Gradient */}
-            <div className="bg-gradient-to-b from-blue-500/15 to-transparent border border-blue-500/30 rounded-2xl p-5 space-y-3 backdrop-blur-xl hover:border-blue-400/60 transition-all duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
-                2
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-white">Apply Merchant Coupon</h4>
-                <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wider">Step 2: Cut 20% - 40%</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Apply active merchant coupons or restaurant offers directly on the merchant's checkout counter.
-              </p>
-            </div>
-
-            {/* Step 3: Emerald Green Gradient */}
-            <div className="bg-gradient-to-b from-emerald-500/15 to-transparent border border-emerald-500/30 rounded-2xl p-5 space-y-3 backdrop-blur-xl hover:border-emerald-400/60 transition-all duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                3
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-white">Cashback Credit Card</h4>
-                <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Step 3: Extra 5% Statement Credit</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Use your reward card to buy the voucher, earning an additional 5% cashback straight into your bank statement.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ACCORDION FAQ ITEMS (Dynamic Category Color Themes) */}
-        <div className="space-y-3.5">
-          {FAQS.map((faq, i) => {
-            const isOpen = openFaq === i;
-
-            // Theme color configuration based on category
-            const themeStyles: Record<string, { badge: string; activeBorder: string; iconBg: string }> = {
-              red: {
-                badge: 'bg-red-50 text-red-700 border-red-200',
-                activeBorder: 'border-red-300 ring-2 ring-red-100',
-                iconBg: 'bg-red-50 text-[#E51B24]'
-              },
-              emerald: {
-                badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                activeBorder: 'border-emerald-300 ring-2 ring-emerald-100',
-                iconBg: 'bg-emerald-50 text-emerald-600'
-              },
-              blue: {
-                badge: 'bg-blue-50 text-blue-700 border-blue-200',
-                activeBorder: 'border-blue-300 ring-2 ring-blue-100',
-                iconBg: 'bg-blue-50 text-blue-600'
-              },
-              amber: {
-                badge: 'bg-amber-50 text-amber-800 border-amber-200',
-                activeBorder: 'border-amber-300 ring-2 ring-amber-100',
-                iconBg: 'bg-amber-50 text-amber-600'
-              },
-              purple: {
-                badge: 'bg-purple-50 text-purple-700 border-purple-200',
-                activeBorder: 'border-purple-300 ring-2 ring-purple-100',
-                iconBg: 'bg-purple-50 text-purple-600'
-              },
-              rose: {
-                badge: 'bg-rose-50 text-rose-700 border-rose-200',
-                activeBorder: 'border-rose-300 ring-2 ring-rose-100',
-                iconBg: 'bg-rose-50 text-rose-600'
-              }
-            };
-
-            const currentTheme = themeStyles[faq.theme] || themeStyles.red;
-
-            return (
-              <div
-                key={i}
-                onClick={() => setOpenFaq(isOpen ? null : i)}
-                className={`rounded-2xl bg-white border transition-all duration-200 cursor-pointer overflow-hidden ${
-                  isOpen 
-                    ? `${currentTheme.activeBorder} shadow-lg shadow-slate-200/50` 
-                    : 'border-slate-200/80 hover:border-slate-300 hover:shadow-sm'
-                }`}
+              <a
+                href="mailto:support@allinonevouchers.com"
+                className="inline-flex items-center gap-2 text-xs font-black text-[#E51B24] bg-white px-4 py-2.5 rounded-xl hover:bg-slate-100 transition shadow-sm"
               >
-                <div className="p-5 sm:p-6 flex justify-between items-center gap-4 select-none">
-                  <div className="flex items-center gap-3.5">
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shrink-0 ${currentTheme.badge}`}>
-                      {faq.category}
-                    </span>
-                    <h4 className="text-sm sm:text-base font-black text-slate-900 leading-snug">
-                      {faq.q}
-                    </h4>
-                  </div>
-                  
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
-                    isOpen ? currentTheme.iconBg : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
+                <span>Email Support Desk</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
 
-                {isOpen && (
-                  <div className="px-5 sm:px-6 pb-6 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium border-t border-slate-100/80 animate-fadeIn">
-                    <p>{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+          {/* Right Column: 3D Mouse Tracking Tilt Cards */}
+          <div className="lg:col-span-7 space-y-4">
+            {FAQS.map((faq, i) => (
+              <InteractiveTiltFaqCard
+                key={i}
+                faq={faq}
+                index={i}
+                isOpen={openFaq === i}
+                onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+              />
+            ))}
+          </div>
 
-        {/* Support Footer Callout */}
-        <div className="text-center pt-2">
-          <p className="text-xs text-slate-500 font-medium">
-            Still have questions? Our support team is here to assist:{' '}
-            <a href="mailto:support@allinonevouchers.com" className="text-[#E51B24] font-bold underline hover:text-[#C4121A] transition">
-              support@allinonevouchers.com
-            </a>
-          </p>
         </div>
       </section>
 
-      {/* AUTH MODAL & TICKERS */}
+      {/* AUTH MODAL & FLOATING TICKER */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
       />
-      <WhatsAppAlerts />
       <LiveArbitrageTicker />
 
     </div>
