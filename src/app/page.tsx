@@ -320,38 +320,58 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 1. HERO SECTION WITH FESTIVE 3D BACKGROUND */}
-      <section className="relative min-h-[620px] sm:min-h-[680px] lg:min-h-[720px] border-b border-slate-200 pt-10 sm:pt-14 pb-14 sm:pb-20 overflow-hidden flex items-center">
+      {/* 1. HERO SECTION WITH VIBRANT DESKTOP & MOBILE BACKGROUND */}
+      <section className="relative min-h-[580px] sm:min-h-[660px] lg:min-h-[720px] border-b border-slate-200 pt-8 sm:pt-14 pb-14 sm:pb-20 overflow-hidden flex items-center">
         
         {/* Background Image Layer */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <Image
-            src="/hero-bg.png"
-            alt="Hero Festive Celebration Background"
-            fill
-            priority
-            quality={100}
-            className="object-cover object-center lg:object-right select-none opacity-90"
-          />
-          {/* Subtle overlay on the left to ensure text is 100% crisp and readable */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent lg:via-white/60 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-[#F4F6F9] pointer-events-none" />
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+          
+          {/* Mobile Image: Only visible on screens smaller than md */}
+          <div className="block md:hidden relative w-full h-full">
+            <Image
+              src="/hero-bg-mobile.png"
+              alt="Festive Background Mobile"
+              fill
+              priority
+              quality={100}
+              className="object-cover object-center opacity-95"
+            />
+            {/* Minimal subtle wash for mobile text */}
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-[0.5px]" />
+          </div>
+
+          {/* Desktop Image: Only visible on md screens and above */}
+          <div className="hidden md:block relative w-full h-full">
+            <Image
+              src="/hero-bg.png"
+              alt="Festive Background Desktop"
+              fill
+              priority
+              quality={100}
+              className="object-contain object-right opacity-100"
+            />
+            {/* Soft left-only fade: Text area remains readable while right festive art stays 100% vibrant */}
+            <div className="absolute inset-y-0 left-0 w-[55%] bg-gradient-to-r from-white/90 via-white/60 to-transparent" />
+          </div>
+
+          {/* Bottom ground blend */}
+          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#F4F6F9] to-transparent opacity-60" />
         </div>
 
         {/* Content Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/90 border border-red-200/80 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm">
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping" />
               <span>India's 1st Curated Arbitrage & Loot Engine</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.08] drop-shadow-xs">
+            <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.08] drop-shadow-sm">
               Save More.<br />
               <span className="text-[#E51B24]">Shop Smarter.</span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-700 max-w-lg font-medium leading-relaxed drop-shadow-xs">
+            <p className="text-sm sm:text-base text-slate-800 max-w-lg font-semibold leading-relaxed drop-shadow-xs">
               Explore handpicked price drops, verified promo codes, and wholesale gift cards that give you maximum real cashback on your daily orders.
             </p>
 
