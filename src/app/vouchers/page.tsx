@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
   CreditCard, 
@@ -17,8 +17,9 @@ import {
   Tag,
   Clock,
   Flame,
-  Gift,
-  Timer
+  X,
+  Timer,
+  Coffee
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import DynamicFintechNavbar from '@/components/Navbar';
@@ -41,9 +42,10 @@ export default function VouchersHubPage() {
   const [calcLoading, setCalcLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // Modals & Auth State
+  // Modals & Floating Drawer State
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedCheckoutBrand, setSelectedCheckoutBrand] = useState<any>(null);
 
   useEffect(() => {
@@ -73,20 +75,19 @@ export default function VouchersHubPage() {
             const realMaxCap = Math.min(Number(voucherRule?.max_denomination) || 10000, 10000);
             const dealPay = Math.round(realFaceValue - (realFaceValue * discountPct) / 100);
 
-            // Dynamic Expiry Calculation / Display
-            let expiryText = "Valid for 12 Months";
+            // Dynamic Urgency & Expiry Calculation
+            let expiryText = "Ends in 6h 30m";
             if (voucherRule?.validity_days) {
               expiryText = `Valid: ${voucherRule.validity_days} Days`;
             } else if (voucherRule?.expires_at) {
               const expDate = new Date(voucherRule.expires_at);
               expiryText = `Ends: ${expDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`;
             } else {
-              // Deal urgency tag fallback
-              const simulatedHours = (index % 5) + 3;
-              expiryText = `Deal Ends in ${simulatedHours}h`;
+              const simHours = (index % 4) + 2;
+              expiryText = `Loot Ends in ${simHours}h`;
             }
 
-            const claimedPct = Math.min(88, 62 + (index * 7) % 28);
+            const claimedPct = Math.min(92, 65 + (index * 6) % 25);
 
             return {
               id: b.id,
@@ -128,7 +129,7 @@ export default function VouchersHubPage() {
             title: c.title,
             discountValue: Number(c.discount_value) || 150,
             stackable: c.stackable_with_voucher,
-            expiryDate: c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Limited Time'
+            expiryDate: c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Limited Drops'
           })));
         }
       } catch (err) {
@@ -166,6 +167,16 @@ export default function VouchersHubPage() {
     const finalCost = Math.max(0, afterCoupon - cardCashback);
     const totalSaved = numCart - finalCost;
 
+    // Gen Z Flex Perk Generator
+    let flexPerk = "Bro, itna bacha liya ki 1 Cold Coffee free!";
+    if (totalSaved >= 1500) {
+      flexPerk = "₹1,500+ Saved! Ek poori branded hoodie free hogayi.";
+    } else if (totalSaved >= 700) {
+      flexPerk = "₹700+ bache! Weekend Movie ticket + Popcorn sorted.";
+    } else if (totalSaved >= 300) {
+      flexPerk = "₹300+ bache! Next Swiggy dessert bill free ho gaya.";
+    }
+
     setResult({
       originalCart: numCart,
       bestEffectiveCost: finalCost,
@@ -175,7 +186,8 @@ export default function VouchersHubPage() {
       couponCode: matchCoupon ? matchCoupon.code : 'SAVE150',
       cardCashback,
       brandName: curr?.name || 'Selected Brand',
-      discountPct
+      discountPct,
+      flexPerk
     });
   };
 
@@ -199,7 +211,7 @@ export default function VouchersHubPage() {
     setTimeout(() => {
       calculateArbitrage(actAmt, actSlug);
       setCalcLoading(false);
-    }, 100);
+    }, 80);
   };
 
   const copyCoupon = (code: string) => {
@@ -230,7 +242,7 @@ export default function VouchersHubPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FFF5F5] via-[#FAF6F6] to-[#F3F4F8] text-slate-900 font-sans antialiased selection:bg-[#E51B24] selection:text-white relative w-full overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#FFF5F5] via-[#FAF6F6] to-[#F3F4F8] text-slate-900 font-sans antialiased selection:bg-[#E51B24] selection:text-white relative w-full overflow-x-hidden pb-24 sm:pb-28">
       
       {/* Warm Ambient Glows */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-b from-red-500/10 via-rose-500/5 to-transparent blur-3xl pointer-events-none" />
@@ -239,24 +251,24 @@ export default function VouchersHubPage() {
       {/* Dynamic Navbar */}
       <DynamicFintechNavbar onOpenAuth={() => setIsAuthOpen(true)} brandCount={brands.length} />
 
-      <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 pt-20 sm:pt-28 pb-16 relative z-10 space-y-7 sm:space-y-10">
+      <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 pt-20 sm:pt-28 space-y-7 sm:space-y-10 relative z-10">
         
-        {/* HERO BANNER */}
+        {/* HERO TITLE BANNER */}
         <div className="text-center max-w-3xl mx-auto space-y-3 pt-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-50 to-amber-50 border border-red-200 text-[11px] font-black uppercase tracking-wider text-[#E51B24] shadow-xs">
             <Flame className="w-3.5 h-3.5 text-[#E51B24] fill-red-500 animate-pulse" />
-            <span>100% Genuine Corporate Wholesale Codes</span>
+            <span>Anti-MRP Engine • Never Pay Full Price</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-[1.12]">
-            Pura Balance Milega, <br className="hidden sm:block" />
+            Pura Bill Mat Bharo, <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-[#E51B24] via-rose-600 to-amber-600 bg-clip-text text-transparent">
-              Paise Kam Dena!
+              Secret Loot Codes Lagao!
             </span>
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-600 font-semibold leading-relaxed max-w-lg mx-auto">
-            Amazon, Swiggy, Zomato ya Myntra ka cart bharo. Pehle sasta voucher lo, merchant promo code lagao aur extra cashback jeb me rakho!
+            Food orders se lekar sneakers tak, seedha wholesale digital vouchers se checkout karo. 0-second me secret code aur PIN screen par milta hai[cite: 2]!
           </p>
         </div>
 
@@ -267,7 +279,7 @@ export default function VouchersHubPage() {
           <div className="space-y-3 w-full overflow-hidden">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <span className="p-1 rounded-lg bg-red-100 text-[#E51B24]">
+                <span className="p-1.5 rounded-xl bg-red-100 text-[#E51B24]">
                   <Ticket className="w-4 h-4" />
                 </span>
                 <div>
@@ -275,12 +287,12 @@ export default function VouchersHubPage() {
                     Free Store Promo Codes
                   </h3>
                   <span className="text-[10px] text-slate-500 font-bold block">
-                    Copy coupon and apply directly inside the store checkout
+                    Copy coupon code and paste directly in store checkout
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-black text-[#E51B24] bg-red-50 px-2 py-1 rounded-md border border-red-200 shrink-0">
-                100% Verified
+              <span className="text-[10px] font-black text-[#E51B24] bg-red-50 px-2.5 py-1 rounded-full border border-red-200 shrink-0">
+                100% Free
               </span>
             </div>
 
@@ -340,27 +352,27 @@ export default function VouchersHubPage() {
         )}
 
         {/* ======================================================== */}
-        {/* 2. THE 3X LIVE SAVINGS CALCULATOR (PRIME POSITION)       */}
+        {/* 2. THE 3X LIVE SAVINGS CALCULATOR (IN-PAGE DESKTOP VIEW) */}
         {/* ======================================================== */}
-        <div id="calculator" className="w-full rounded-[32px] bg-white border-2 border-red-100/80 shadow-xl shadow-red-500/5 p-5 sm:p-8 space-y-6 overflow-hidden relative">
+        <div id="calculator" className="w-full rounded-[32px] bg-white border-2 border-red-100/90 shadow-xl shadow-red-500/5 p-5 sm:p-8 space-y-6 overflow-hidden relative">
           
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 border-b border-slate-100">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#E51B24] bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
-                  🔥 Instant Net-Price Simulator
+                  ⚡ Anti-MRP Loot Simulator
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  Verified Real Maths
+                  Live Formula Active
                 </span>
               </div>
               <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight mt-1.5">
-                Calculate Exact Savings Before You Buy
+                Kitna bachega? Yahan simulate karke dekho
               </h2>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs text-slate-500 font-bold shrink-0">Select Store:</span>
+              <span className="text-xs text-slate-500 font-bold shrink-0">Store:</span>
               <select
                 value={selectedBrandSlug}
                 onChange={(e) => {
@@ -387,13 +399,15 @@ export default function VouchersHubPage() {
             
             {/* Left Inputs */}
             <div className="lg:col-span-7 space-y-4">
+              
+              {/* Gen Z Real-Life Scenario Chips */}
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                    Your Cart Amount (₹)
+                    Order Value (₹)
                   </label>
                   <span className="text-[10px] font-black text-[#E51B24] bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
-                    Max Safe Limit: ₹10,000
+                    Max Safe Limit: ₹10,000[cite: 2]
                   </span>
                 </div>
 
@@ -407,9 +421,8 @@ export default function VouchersHubPage() {
                     className="w-full bg-slate-50/80 border-2 border-slate-200 focus:border-[#E51B24] rounded-2xl px-4 py-3 text-2xl font-black text-slate-900 outline-none transition font-mono shadow-inner"
                   />
                   
-                  {/* Preset Amount Chips */}
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex gap-1">
-                    {['1000', '2000', '5000', '10000'].map((preset) => (
+                    {['1000', '2500', '5000', '10000'].map((preset) => (
                       <button
                         key={preset}
                         type="button"
@@ -428,9 +441,30 @@ export default function VouchersHubPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Gen Z Vibe Chips */}
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2.5">
+                  {[
+                    { label: '🍕 Late Night Swiggy', val: '450' },
+                    { label: '👟 Zara/Myntra Drop', val: '2400' },
+                    { label: '🎧 Audio Loot', val: '4999' }
+                  ].map((chip) => (
+                    <button
+                      key={chip.val}
+                      type="button"
+                      onClick={() => {
+                        setCartAmount(chip.val);
+                        handleCalculateTrigger(chip.val, selectedBrandSlug);
+                      }}
+                      className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-[#E51B24] text-slate-700 text-[11px] font-bold shrink-0 transition border border-slate-200"
+                    >
+                      {chip.label} (₹{chip.val})
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* SBI Cashback Card Option */}
+              {/* SBI Cashback Card Checkbox */}
               <div
                 onClick={() => {
                   setHasSbiCard(!hasSbiCard);
@@ -476,7 +510,7 @@ export default function VouchersHubPage() {
                   Live Net Price Receipt
                 </span>
                 <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  100% Capped
+                  100% Capped[cite: 2]
                 </span>
               </div>
 
@@ -499,7 +533,15 @@ export default function VouchersHubPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex items-baseline justify-between relative z-10">
+              {/* Gen Z Perk Box */}
+              <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2 relative z-10">
+                <Coffee className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-[11px] font-bold text-amber-200">
+                  {result?.flexPerk || "Bro, itna bacha liya ki 1 Cold Coffee free!"}
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 flex items-baseline justify-between relative z-10">
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     Total Final Cost
@@ -620,7 +662,7 @@ export default function VouchersHubPage() {
                       </div>
                     </div>
 
-                    {/* Expiry & Real Urgency Progress Bar */}
+                    {/* Expiry & Urgency Progress Bar */}
                     <div className="bg-slate-50 rounded-xl p-2.5 space-y-1.5 border border-slate-100">
                       <div className="flex justify-between items-center text-[10px] font-extrabold">
                         <span className="text-slate-600 flex items-center gap-1">
@@ -690,7 +732,7 @@ export default function VouchersHubPage() {
                         className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200/80 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <span>Visit Store</span>
-                        <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                       </a>
                     </div>
                   </div>
@@ -701,6 +743,165 @@ export default function VouchersHubPage() {
         )}
 
       </main>
+
+      {/* ======================================================== */}
+      {/* 5. STICKY BOTTOM FLOATING BAR (MOBILE + DESKTOP)          */}
+      {/* ======================================================== */}
+      <div className="fixed bottom-3 inset-x-0 z-40 px-3 sm:px-6 pointer-events-none">
+        <div className="max-w-xl mx-auto pointer-events-auto">
+          <div 
+            onClick={() => setIsDrawerOpen(true)}
+            className="rounded-2xl bg-slate-950/95 border-2 border-red-500/40 backdrop-blur-xl p-2.5 sm:p-3 text-white shadow-2xl flex items-center justify-between gap-3 cursor-pointer hover:border-red-500 transition hover:scale-[1.01] active:scale-95"
+          >
+            <div className="flex items-center gap-2.5 pl-1 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-[#E51B24] flex items-center justify-center text-white shrink-0 shadow-md shadow-red-500/40">
+                <Zap className="w-4 h-4 fill-white" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                  <span>⚡ Tap to Calculate Loot</span>
+                </span>
+                <p className="text-xs font-bold text-white truncate">
+                  Pay <span className="text-[#E51B24] font-black font-mono">₹{result ? result.bestEffectiveCost : cartAmount}</span> for ₹{result ? result.originalCart : cartAmount} Cart
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="px-4 py-2 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shrink-0 flex items-center gap-1"
+            >
+              <span>Simulate</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 6. POP-UP BOTTOM LOOT DRAWER                            */}
+      {/* ======================================================== */}
+      <AnimatePresence>
+        {isDrawerOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDrawerOpen(false)}
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
+            />
+
+            {/* Drawer Sheet */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+              className="relative w-full max-w-lg bg-white rounded-t-[32px] sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl z-10 border border-slate-200 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-xl bg-red-100 text-[#E51B24]">
+                    <Zap className="w-4 h-4 fill-[#E51B24]" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900">Instant Loot Simulator</h3>
+                    <span className="text-[10px] text-slate-400 font-bold">100% Capped up to ₹10,000[cite: 2]</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Drawer Inputs */}
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Select Merchant Store</label>
+                  <select
+                    value={selectedBrandSlug}
+                    onChange={(e) => {
+                      setSelectedBrandSlug(e.target.value);
+                      handleCalculateTrigger(cartAmount, e.target.value);
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-black text-slate-900 outline-none"
+                  >
+                    {brands.map((b) => (
+                      <option key={b.id} value={b.slug}>
+                        {b.name} ({b.discount}% Discount)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Enter Cart Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={cartAmount}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#E51B24] rounded-xl px-3.5 py-2.5 text-lg font-black text-slate-900 outline-none font-mono"
+                  />
+                </div>
+
+                {/* Scenario Quick Chips */}
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+                  {[
+                    { label: '🍕 Swiggy ₹450', val: '450' },
+                    { label: '👟 Zara ₹2400', val: '2400' },
+                    { label: '🎧 Audio ₹4999', val: '4999' }
+                  ].map((chip) => (
+                    <button
+                      key={chip.val}
+                      type="button"
+                      onClick={() => {
+                        setCartAmount(chip.val);
+                        handleCalculateTrigger(chip.val, selectedBrandSlug);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 text-[10px] font-bold text-slate-700 shrink-0 border border-slate-200"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Net Price Pill */}
+                <div className="p-3 rounded-2xl bg-slate-900 text-white space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Total Savings</span>
+                    <span className="text-emerald-400 font-black font-mono text-sm">+₹{result ? result.totalSavings : 0} Saved</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-800">
+                    <span className="text-xs font-bold text-slate-300">You Pay</span>
+                    <span className="text-2xl font-black font-mono text-[#E51B24]">₹{result ? result.bestEffectiveCost : cartAmount}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDrawerOpen(false);
+                    const targetBrand = brands.find((b) => b.slug === selectedBrandSlug) || brands[0];
+                    if (targetBrand) triggerVoucherCheckout(targetBrand);
+                  }}
+                  className="w-full py-3 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-red-500/30 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>Checkout at ₹{result ? result.bestEffectiveCost : cartAmount}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* AUTH & CHECKOUT MODALS */}
       <AuthModal
