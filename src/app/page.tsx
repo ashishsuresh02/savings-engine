@@ -320,35 +320,50 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 1. HERO SECTION */}
-      <section className="relative bg-gradient-to-b from-white via-slate-50 to-[#F4F6F9] border-b border-slate-200 pt-10 sm:pt-14 pb-14 sm:pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(#E51B24_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03] pointer-events-none" />
+      {/* 1. HERO SECTION WITH FESTIVE 3D BACKGROUND */}
+      <section className="relative min-h-[620px] sm:min-h-[680px] lg:min-h-[720px] border-b border-slate-200 pt-10 sm:pt-14 pb-14 sm:pb-20 overflow-hidden flex items-center">
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+        {/* Background Image Layer */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <Image
+            src="/hero-bg.png"
+            alt="Hero Festive Celebration Background"
+            fill
+            priority
+            quality={100}
+            className="object-cover object-center lg:object-right select-none opacity-90"
+          />
+          {/* Subtle overlay on the left to ensure text is 100% crisp and readable */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent lg:via-white/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-[#F4F6F9] pointer-events-none" />
+        </div>
+
+        {/* Content Grid */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50 border border-red-200 px-3.5 py-1.5 rounded-full shadow-sm">
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/90 border border-red-200/80 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping" />
               <span>India's 1st Curated Arbitrage & Loot Engine</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.08]">
+            <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.08] drop-shadow-xs">
               Save More.<br />
               <span className="text-[#E51B24]">Shop Smarter.</span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-600 max-w-lg font-medium leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-700 max-w-lg font-medium leading-relaxed drop-shadow-xs">
               Explore handpicked price drops, verified promo codes, and wholesale gift cards that give you maximum real cashback on your daily orders.
             </p>
 
             {/* Instant Search Bar */}
-            <div className="max-w-xl flex items-center rounded-2xl bg-white border-2 border-slate-200 focus-within:border-[#E51B24] shadow-md p-1.5 transition">
+            <div className="max-w-xl flex items-center rounded-2xl bg-white/95 border-2 border-slate-200/90 focus-within:border-[#E51B24] shadow-xl backdrop-blur-md p-1.5 transition">
               <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search deals on Earbuds, Shoes, Jackets, Amazon, Myntra..."
-                className="w-full px-3 py-2 text-sm text-slate-800 font-medium outline-none placeholder:text-slate-400"
+                className="w-full px-3 py-2 text-sm text-slate-800 font-medium outline-none placeholder:text-slate-400 bg-transparent"
               />
               <button
                 onClick={() => document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' })}
