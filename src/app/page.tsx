@@ -29,6 +29,7 @@ import DynamicFintechNavbar from '@/components/Navbar';
 import AuthModal from '@/components/AuthModal';
 import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
+import PromoSlider, { BannerSlide } from '@/components/PromoSlider';
 
 const FAQS = [
   { 
@@ -47,6 +48,54 @@ const FAQS = [
     q: "How can brands partner with AllInOneVouchers?", 
     a: "Brands can get their products featured in our curated loot feed or sponsor brand reels by submitting a business collaboration request to support@allinonevouchers.com." 
   }
+];
+
+// TOP HERO CAROUSEL BANNERS (Auto-slide)
+const HERO_BANNERS: BannerSlide[] = [
+  {
+    id: 'hero-1',
+    title: 'Swiggy & Zomato Mega Feast: Flat ₹150 OFF + Instant Delivery',
+    subtitle: 'Stack wholesale food vouchers with restaurant promo codes for up to 40% net discount',
+    badge: 'Trending Loot',
+    image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop&q=80',
+    link_url: '/vouchers',
+  },
+  {
+    id: 'hero-2',
+    title: 'Amazon & Flipkart Tech Fest: Up to 65% Price Drop',
+    subtitle: 'Extra 5% instant cashback unlocked when using select credit card vouchers',
+    badge: 'Price Arbitrage',
+    image_url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&auto=format&fit=crop&q=80',
+    link_url: '#loot-deals',
+  },
+  {
+    id: 'hero-3',
+    title: 'Myntra Fashion Carnival: Extra 18% Off with Secret Vault PIN',
+    subtitle: 'Unlock verified digital vouchers directly delivered to your Member Vault',
+    badge: 'Limited Stock',
+    image_url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&auto=format&fit=crop&q=80',
+    link_url: '/vouchers',
+  },
+];
+
+// BOTTOM MINI CAROUSEL BANNERS (Auto-slide)
+const MINI_BANK_BANNERS: BannerSlide[] = [
+  {
+    id: 'mini-1',
+    title: 'HDFC, SBI & ICICI Cards: Extra 5% Statement Cashback',
+    subtitle: 'Auto-stacked with all wholesale gift vouchers above ₹999 value',
+    badge: 'Bank Perk',
+    image_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
+    link_url: '/vouchers',
+  },
+  {
+    id: 'mini-2',
+    title: 'PhonePe & Paytm UPI Wallet Arbitrage',
+    subtitle: 'Pay via UPI to unlock instant surprise vouchers & exclusive codes',
+    badge: 'Wallet Exclusive',
+    image_url: 'https://images.unsplash.com/photo-1556742049-0a67e5572293?w=800&auto=format&fit=crop&q=80',
+    link_url: '#loot-deals',
+  },
 ];
 
 // 4-LAYER INTERACTIVE LIVE 3D HERO
@@ -164,7 +213,6 @@ function TrulyLive3DHero() {
 
 // DYNAMIC RED INFINITE BRAND LOGO MARQUEE (PURE LOGOS ONLY)
 function InfiniteBrandMarquee({ brands = [] }: { brands: any[] }) {
-  // Fallback logos if DB loading or empty
   const defaultLogos = [
     { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg' },
     { logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Swiggy_logo.svg' },
@@ -179,7 +227,6 @@ function InfiniteBrandMarquee({ brands = [] }: { brands: any[] }) {
 
   return (
     <div className="w-full bg-[#E51B24] border-y border-red-600 py-4 overflow-hidden relative select-none shadow-lg">
-      {/* Side Fade Gradients on Bright Red Strip */}
       <div className="absolute left-0 inset-y-0 w-24 sm:w-36 bg-gradient-to-r from-[#E51B24] to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 inset-y-0 w-24 sm:w-36 bg-gradient-to-l from-[#E51B24] to-transparent z-10 pointer-events-none" />
 
@@ -318,7 +365,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. INFINITE MARQUEE STRIP (Pass Dynamic Brands) */}
+      {/* TOP DYNAMIC HERO PROMO SLIDER */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-6">
+        <PromoSlider 
+          slides={HERO_BANNERS} 
+          variant="hero" 
+          heightClass="h-56 sm:h-72 md:h-84 lg:h-96" 
+          autoSlideInterval={4500} 
+        />
+      </section>
+
+      {/* 2. INFINITE MARQUEE STRIP */}
       <InfiniteBrandMarquee brands={brands} />
 
       {/* 3. NATIVE DISPLAY BANNER AD */}
@@ -457,6 +514,16 @@ export default function Home() {
             })}
           </div>
         )}
+      </section>
+
+      {/* BOTTOM MINI ARBITRAGE BANK PROMO SLIDER */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <PromoSlider 
+          slides={MINI_BANK_BANNERS} 
+          variant="mini" 
+          heightClass="h-36 sm:h-44 md:h-48" 
+          autoSlideInterval={4000} 
+        />
       </section>
 
       {/* 5. VOUCHERS SECTION TEASER */}
