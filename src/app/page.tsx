@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   motion, 
   useMotionValue, 
@@ -25,7 +25,10 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Timer
+  Timer,
+  Tag,
+  CreditCard,
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -400,6 +403,7 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>(['ALL']);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -409,6 +413,18 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState({ hours: 3, minutes: 42, seconds: 19 });
 
   const dealsScrollRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Handle outside click to close live search dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -468,6 +484,30 @@ export default function Home() {
 
     loadHomepageData();
   }, []);
+
+  // SMART SEARCH ENGINE RESULTS MATCHING (Deals + Related Vouchers)
+  const searchResults = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return { matchingDeals: [], matchingBrand: null, hasSearch: false };
+
+    const matchedDeals = deals.filter((d) => 
+      d.title.toLowerCase().includes(query) || 
+      d.brand_name.toLowerCase().includes(query) ||
+      (d.category && d.category.toLowerCase().includes(query))
+    ).slice(0, 3);
+
+    const matchedBrand = brands.find((b) => 
+      b.name.toLowerCase().includes(query) || 
+      b.slug.toLowerCase().includes(query) ||
+      matchedDeals.some(d => d.brand_name.toLowerCase().includes(b.name.toLowerCase()))
+    ) || brands[0];
+
+    return {
+      matchingDeals: matchedDeals,
+      matchingBrand: matchedBrand,
+      hasSearch: true
+    };
+  }, [searchQuery, deals, brands]);
 
   const filteredDeals = deals.filter((d) => {
     const matchesCat = selectedCategory === 'ALL' || d.category === selectedCategory;
@@ -568,8 +608,8 @@ export default function Home() {
               Explore handpicked price drops, verified promo codes, and wholesale gift cards that give you maximum real cashback on your daily orders.
             </p>
 
-            {/* HIGH-CONVERTING MODERN SEARCH ENGINE BAR */}
-            <div className="max-w-xl space-y-2.5">
+            {/* HIGH-CONVERTING SMART LOOT AI SEARCH BAR WITH REAL-TIME MATRIX */}
+            <div ref={searchContainerRef} className="max-w-xl space-y-2.5 relative">
               <div className="relative flex items-center rounded-2xl bg-white/95 border-2 border-slate-200 hover:border-slate-300 focus-within:border-[#E51B24] focus-within:shadow-[0_8px_30px_rgb(229,27,36,0.14)] shadow-lg backdrop-blur-md p-1.5 transition-all duration-200">
                 <div className="pl-3.5 pr-2 flex items-center justify-center shrink-0">
                   <Search className="w-5 h-5 text-slate-400 group-focus-within:text-[#E51B24] transition-colors" />
@@ -578,25 +618,154 @@ export default function Home() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsSearchFocused(true);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      setIsSearchFocused(false);
                       document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' });
                     }
                   }}
-                  placeholder="Search Amazon, Swiggy, Myntra, Earbuds..."
+                  placeholder="Search item, e.g. Pizza, Earbuds, Shoes, Amazon..."
                   className="w-full py-2.5 text-sm text-slate-800 font-semibold outline-none placeholder:text-slate-400 placeholder:font-normal bg-transparent"
                 />
 
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setIsSearchFocused(false);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 mr-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => {
+                    setIsSearchFocused(false);
+                    document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                   className="px-5 sm:px-7 py-3 rounded-xl bg-gradient-to-r from-[#E51B24] to-[#C4121A] hover:from-[#C4121A] hover:to-[#E51B24] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40 shrink-0 flex items-center gap-1.5 active:scale-95 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-white/90" />
                   <span>Find Deals</span>
                 </button>
               </div>
+
+              {/* LIVE DROPDOWN MATRIX (EMBEDDED PRODUCT + VOUCHER STACK) */}
+              <AnimatePresence>
+                {isSearchFocused && searchQuery.trim().length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.18 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-white/98 rounded-3xl border border-slate-200 shadow-2xl p-4 z-50 backdrop-blur-xl space-y-3.5"
+                  >
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        <Sparkles className="w-3.5 h-3.5 text-[#E51B24]" />
+                        <span>Instant Arbitrage Stacks for "{searchQuery}"</span>
+                      </div>
+                      <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Double Savings Active
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                      {/* Left: Matching Curated Loot Item */}
+                      <div className="md:col-span-7 space-y-2">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block pl-1">
+                          1. Verified Store Deal:
+                        </span>
+
+                        {searchResults.matchingDeals.length > 0 ? (
+                          <div className="space-y-2">
+                            {searchResults.matchingDeals.map((deal: any) => (
+                              <div
+                                key={deal.id}
+                                className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-red-200 hover:bg-red-50/30 transition flex items-center justify-between gap-3 group"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-11 h-11 rounded-xl bg-white p-1 border border-slate-200 flex items-center justify-center shrink-0">
+                                    <img
+                                      src={deal.image_url}
+                                      alt={deal.title}
+                                      className="max-h-full max-w-full object-contain"
+                                      onError={(e: any) => { e.currentTarget.src = "https://placehold.co/80x80/png?text=Deal"; }}
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-[#E51B24] transition-colors">
+                                      {deal.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      <span className="text-xs font-black text-slate-900">₹{deal.deal_price}</span>
+                                      <span className="text-[10px] text-slate-400 line-through">₹{deal.mrp_price}</span>
+                                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded">
+                                        {deal.brand_name}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <a
+                                  href={deal.affiliate_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-2 rounded-xl bg-[#0B2B5C] hover:bg-[#E51B24] text-white text-[11px] font-black shrink-0 flex items-center gap-1 transition"
+                                >
+                                  <span>Grab</span>
+                                  <ArrowUpRight className="w-3 h-3" />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-1">
+                            <span className="text-xs font-bold text-slate-800">
+                              Looking for "{searchQuery}" on major stores?
+                            </span>
+                            <p className="text-[11px] text-slate-500 leading-snug">
+                              Get the wholesale voucher first, then open merchant checkout with our direct code.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Wholesale Voucher Stacker Pitch */}
+                      <div className="md:col-span-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl p-3.5 flex flex-col justify-between space-y-3 relative overflow-hidden border border-slate-800">
+                        <div className="space-y-1.5 relative z-10">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                            2. Stack Wholesale Voucher
+                          </span>
+                          <h4 className="text-xs font-black text-white leading-snug">
+                            Pay with {searchResults.matchingBrand?.name || 'Store'} Voucher
+                          </h4>
+                          <p className="text-[10px] text-slate-300">
+                            Save up to <span className="text-emerald-400 font-bold">{searchResults.matchingBrand?.discount || 10}% extra</span> on this order with 0-minute PIN unlock.
+                          </p>
+                        </div>
+
+                        <Link
+                          href="/vouchers"
+                          className="w-full py-2.5 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white text-[11px] font-black uppercase tracking-wider text-center transition flex items-center justify-center gap-1.5 shadow-md shadow-red-500/30 relative z-10"
+                        >
+                          <span>Buy Voucher &amp; Stack</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Quick Click Search Tags */}
               <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium pl-1 overflow-x-auto scrollbar-none">
