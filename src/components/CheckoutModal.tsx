@@ -12,7 +12,8 @@ import {
   Mail, 
   ShieldCheck,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  ShoppingBag
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -83,6 +84,17 @@ export default function CheckoutModal({
   const MERCHANT_NAME = "AllInOneVouchers";
   const upiIntentUrl = `upi://pay?pa=${MERCHANT_UPI}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${dealPrice}&cu=INR&tn=${encodeURIComponent(`Voucher_${brandSlug}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
+
+  // Store Redirect Link Generator
+  const getStoreUrl = () => {
+    const slug = (brandSlug || '').toLowerCase();
+    if (slug.includes('amazon')) return 'https://www.amazon.in/gp/payment/rewards';
+    if (slug.includes('swiggy')) return 'https://www.swiggy.com';
+    if (slug.includes('zomato')) return 'https://www.zomato.com';
+    if (slug.includes('myntra')) return 'https://www.myntra.com';
+    if (slug.includes('flipkart')) return 'https://www.flipkart.com';
+    return 'https://google.com';
+  };
 
   const handleProceedToPay = (e: React.FormEvent) => {
     e.preventDefault();
@@ -419,13 +431,27 @@ export default function CheckoutModal({
               </button>
             </div>
 
-            <div className="pt-2 flex flex-col gap-2">
+            {/* DOUBLE ARBITRAGE REDIRECT BUTTONS */}
+            <div className="pt-2 flex flex-col gap-2.5">
+              <a
+                href={getStoreUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (unlockedCode) navigator.clipboard.writeText(unlockedCode);
+                }}
+                className="w-full py-3.5 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/25 flex items-center justify-center gap-1.5"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Auto-Copy &amp; Open {brandName} Checkout</span>
+              </a>
+
               <a
                 href="/dashboard"
-                className="w-full py-3 bg-[#0B2B5C] hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5"
               >
                 <span>View in Member Vault</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
               </a>
             </div>
           </div>
