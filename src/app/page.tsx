@@ -6,7 +6,7 @@ import {
   useMotionValue, 
   useSpring, 
   useTransform,
-  AnimatePresence
+  AnimatePresence 
 } from 'framer-motion';
 import { 
   ArrowUpRight, 
@@ -21,7 +21,11 @@ import {
   Percent,
   Layers,
   Award,
-  ExternalLink
+  ExternalLink,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Timer
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,6 +36,7 @@ import LiveArbitrageTicker from '@/components/LiveArbitrageTicker';
 import WhatsAppAlerts from '@/components/WhatsAppAlerts';
 import PromoSlider, { BannerSlide } from '@/components/PromoSlider';
 
+// Dynamic FAQ Items
 const FAQS = [
   {
     category: "3X Stacking",
@@ -133,8 +138,8 @@ function TrulyLive3DHero() {
   const mouseX = useSpring(x, { stiffness: 90, damping: 22 });
   const mouseY = useSpring(y, { stiffness: 90, damping: 22 });
 
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ['6deg', '-6deg']);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ['-7deg', '7deg']);
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-7, 7]);
 
   const layerStageX = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
   const layerStageY = useTransform(mouseY, [-0.5, 0.5], [-5, 5]);
@@ -278,7 +283,7 @@ function InfiniteBrandMarquee({ brands = [] }: { brands: any[] }) {
   );
 }
 
-// 3D INTERACTIVE TILT FAQ CARD COMPONENT
+// 3D INTERACTIVE TILT FAQ CARD COMPONENT (TYPE-SAFE)
 interface TiltFaqProps {
   faq: typeof FAQS[0];
   index: number;
@@ -295,8 +300,8 @@ function InteractiveTiltFaqCard({ faq, index, isOpen, onToggle }: TiltFaqProps) 
   const springX = useSpring(mouseX, { stiffness: 160, damping: 18 });
   const springY = useSpring(mouseY, { stiffness: 160, damping: 18 });
 
-  const rotateX = useTransform(springY, [-0.5, 0.5], ['5deg', '-5deg']);
-  const rotateY = useTransform(springX, [-0.5, 0.5], ['-5deg', '5deg']);
+  const rotateX = useTransform(springY, [-0.5, 0.5], [5, -5]);
+  const rotateY = useTransform(springX, [-0.5, 0.5], [-5, 5]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -392,6 +397,7 @@ function InteractiveTiltFaqCard({ faq, index, isOpen, onToggle }: TiltFaqProps) 
 export default function Home() {
   const [brands, setBrands] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>(['ALL']);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -399,13 +405,30 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  // Live Flash Countdown Timer (Hours, Minutes, Seconds)
+  const [timeLeft, setTimeLeft] = useState({ hours: 3, minutes: 42, seconds: 19 });
+
+  const dealsScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return { hours: 5, minutes: 30, seconds: 0 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     async function loadHomepageData() {
       try {
         setLoading(true);
         if (!supabase) return;
 
-        // 1. Fetch Brands for Teaser & Marquee
+        // 1. Fetch Brands
         const { data: bData } = await supabase
           .from('brands')
           .select('*')
@@ -430,7 +453,12 @@ export default function Home() {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (dData) setDeals(dData);
+        if (dData) {
+          setDeals(dData);
+          // Extract unique categories dynamically from DB
+          const uniqueCats = Array.from(new Set(dData.map((d: any) => d.category).filter(Boolean))) as string[];
+          setCategories(['ALL', ...uniqueCats]);
+        }
       } catch (err) {
         console.error("Homepage load error:", err);
       } finally {
@@ -449,6 +477,13 @@ export default function Home() {
     return matchesCat && matchesSearch;
   });
 
+  const scrollDeals = (direction: 'left' | 'right') => {
+    if (dealsScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -340 : 340;
+      dealsScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F4F6F9] text-slate-900 font-sans antialiased selection:bg-[#E51B24] selection:text-white">
 
@@ -458,12 +493,11 @@ export default function Home() {
         brandCount={brands.length}
       />
 
-      {/* 1. HERO SECTION (POLISHED BRAND LOGO + MODERN SEARCH BAR) */}
-      <section className="relative w-full min-h-[580px] sm:min-h-[660px] lg:min-h-[720px] border-b border-slate-200 pt-6 sm:pt-10 pb-14 sm:pb-18 overflow-hidden flex items-center">
+      {/* 1. HERO SECTION */}
+      <section className="relative w-full min-h-[600px] sm:min-h-[680px] lg:min-h-[740px] border-b border-slate-200 pt-6 sm:pt-10 pb-12 sm:pb-16 overflow-hidden flex flex-col justify-center">
         
         {/* Background Layer: 100% Flush, No Gaps */}
         <div className="absolute inset-0 w-full h-full z-0 pointer-events-none select-none overflow-hidden">
-          {/* Mobile Background */}
           <div className="block md:hidden relative w-full h-full">
             <Image
               src="/hero-bg-mobile.png"
@@ -476,7 +510,6 @@ export default function Home() {
             <div className="absolute inset-0 bg-white/30 backdrop-blur-[0.5px]" />
           </div>
 
-          {/* Desktop Background */}
           <div className="hidden md:block relative w-full h-full">
             <Image
               src="/hero-bg.png"
@@ -496,7 +529,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10 w-full">
           <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
             
-            {/* BRAND LOGO + PILL BADGE COMBO */}
+            {/* BRAND LOGO + PILL BADGE & LIVE TIMER */}
             <div className="space-y-4">
               <div className="relative h-12 sm:h-14 lg:h-16 w-60 sm:w-72 lg:w-80 drop-shadow-md">
                 <Image
@@ -508,9 +541,20 @@ export default function Home() {
                 />
               </div>
 
-              <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping shrink-0" />
-                <span>India's 1st Curated Arbitrage & Loot Engine</span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#E51B24] bg-red-50/95 border border-red-200/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-[#E51B24] animate-ping shrink-0" />
+                  <span>India's 1st Curated Arbitrage & Loot Engine</span>
+                </div>
+
+                {/* Live Flash Timer Badge */}
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase bg-slate-900 text-white px-3 py-1.5 rounded-full shadow-md border border-slate-800">
+                  <Timer className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                  <span className="text-amber-400">Flash Loot Ends:</span>
+                  <span className="font-mono tracking-widest text-white">
+                    {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -573,6 +617,38 @@ export default function Home() {
               </div>
             </div>
 
+            {/* QUICK HIGHLIGHT STRIP: Today's Top Deals | Ending Soon | Best Cashback */}
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  setSelectedCategory('ALL');
+                  document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/90 hover:bg-white border border-slate-200/90 hover:border-red-300 shadow-sm text-xs font-black text-slate-800 transition hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>🔥 Today's Top Deals</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedCategory('Loot');
+                  document.getElementById('loot-deals')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100/80 border border-amber-200 shadow-sm text-xs font-black text-amber-900 transition hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>⚡ Ending Soon</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  document.getElementById('vouchers')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 shadow-sm text-xs font-black text-emerald-900 transition hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>🏆 Best Cashback</span>
+              </button>
+            </div>
+
           </div>
 
           {/* 3D INTERACTIVE HERO STAGE */}
@@ -619,70 +695,108 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. EARNKARO / CASHKARO STYLE FLASH LOOT DEALS */}
+      {/* 4. EARNKARO / CASHKARO STYLE FLASH LOOT DEALS WITH DYNAMIC CAROUSEL */}
       <section id="loot-deals" className="max-w-7xl mx-auto px-4 sm:px-6 py-10 border-b border-slate-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#E51B24] text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                <Flame className="w-3 h-3 fill-white" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="px-2.5 py-1 rounded-full bg-[#E51B24] text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                <Flame className="w-3.5 h-3.5 fill-white" />
                 <span>Live Deals Feed</span>
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Trending Price Drops & Online Loot
-              </h2>
+              
+              {/* Urgency Counter Badge inside Deals header */}
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-600 text-[11px] font-bold">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Next Price Reset in: {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}</span>
+              </span>
             </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-2">
+              Trending Price Drops &amp; Online Loot
+            </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Curated verified products directly linking to official merchant checkout stores.
+              Live price drops sourced across Amazon, Flipkart, Myntra &amp; D2C stores with verified discounts.
             </p>
           </div>
 
-          {/* Category Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {['ALL', 'Electronics', 'Fashion', 'Footwear', 'Loot'].map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer shrink-0 ${
-                  selectedCategory === cat
-                    ? 'bg-[#E51B24] text-white shadow-sm'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                {cat === 'Loot' ? '🔥 Under ₹499' : cat}
-              </button>
-            ))}
+          {/* Desktop Carousel Navigation Arrows */}
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              onClick={() => scrollDeals('left')}
+              className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-red-300 flex items-center justify-center text-slate-700 hover:text-[#E51B24] shadow-sm transition active:scale-95 cursor-pointer"
+              title="Previous Deals"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollDeals('right')}
+              className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-red-300 flex items-center justify-center text-slate-700 hover:text-[#E51B24] shadow-sm transition active:scale-95 cursor-pointer"
+              title="Next Deals"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Product Deals Grid */}
+        {/* Dynamic Category Filter Carousel (EarnKaro Style) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-none">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide transition cursor-pointer shrink-0 ${
+                selectedCategory === cat
+                  ? 'bg-[#E51B24] text-white shadow-md shadow-red-500/20'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              {cat === 'Loot' ? '🔥 Under ₹499' : cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Product Deals Horizontal Carousel (Mobile Snap + Desktop Smooth Track) */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="flex gap-4 sm:gap-6 overflow-hidden">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-72 rounded-3xl bg-slate-200 animate-pulse" />
+              <div key={i} className="min-w-[270px] sm:min-w-[290px] h-84 rounded-3xl bg-slate-200 animate-pulse shrink-0" />
             ))}
           </div>
         ) : filteredDeals.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 text-xs font-medium">
-            No live deals in this category yet. Check back soon!
+            No live deals in this category right now. Check back soon!
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div 
+            ref={dealsScrollRef}
+            className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory py-2 pb-4 scrollbar-none"
+          >
             {filteredDeals.map((deal) => {
               const discountPct = Math.round(((deal.mrp_price - deal.deal_price) / deal.mrp_price) * 100);
 
               return (
                 <div
                   key={deal.id}
-                  className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col justify-between hover:shadow-xl hover:border-red-200 transition-all group relative"
+                  className="snap-start min-w-[260px] sm:min-w-[290px] max-w-[290px] bg-white border border-slate-200 rounded-3xl p-4 flex flex-col justify-between hover:shadow-xl hover:border-red-200 transition-all duration-300 group shrink-0 relative"
                 >
+                  {/* Top Badges */}
                   <div className="absolute top-3 left-3 z-10">
                     <span className="px-2.5 py-1 rounded-full bg-[#E51B24] text-white text-[10px] font-black tracking-wider flex items-center gap-1 shadow-sm">
                       <span>{discountPct}% OFF</span>
                     </span>
                   </div>
 
+                  {deal.category && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-bold uppercase">
+                        {deal.category}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Product Image Stage */}
                   <div className="relative w-full h-44 rounded-2xl bg-slate-50 mb-3 overflow-hidden flex items-center justify-center p-3">
                     <img
                       src={deal.image_url}
@@ -694,6 +808,7 @@ export default function Home() {
                     />
                   </div>
 
+                  {/* Details */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
@@ -706,7 +821,7 @@ export default function Home() {
                       )}
                     </div>
 
-                    <h3 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">
+                    <h3 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug h-8">
                       {deal.title}
                     </h3>
 
@@ -715,12 +830,12 @@ export default function Home() {
                       <span className="text-xs font-semibold text-slate-400 line-through">₹{deal.mrp_price.toLocaleString('en-IN')}</span>
                     </div>
 
-                    {/* Direct Affiliate Redirect */}
+                    {/* Direct Store Redirect Button */}
                     <a
                       href={deal.affiliate_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-2.5 rounded-xl bg-[#0B2B5C] hover:bg-[#E51B24] text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-sm mt-2 cursor-pointer"
+                      className="w-full py-2.5 rounded-xl bg-[#0B2B5C] hover:bg-[#E51B24] text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow-sm mt-2 active:scale-95 cursor-pointer"
                     >
                       <span>Grab Deal</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
@@ -744,7 +859,7 @@ export default function Home() {
       </section>
 
       {/* 5. VOUCHERS SECTION TEASER */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
+      <section id="vouchers" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2">
@@ -760,7 +875,7 @@ export default function Home() {
             href="/vouchers"
             className="text-xs font-black text-[#E51B24] hover:underline flex items-center gap-1 self-start sm:self-auto"
           >
-            <span>View All Vouchers & Calculate 3X Savings</span>
+            <span>View All Vouchers &amp; Calculate 3X Savings</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -833,10 +948,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* WHATSAPP ALERTS */}
+      {/* WHATSAPP VIP ALERTS */}
       <WhatsAppAlerts />
 
-      {/* 7. DRIBBBLE-STYLE 3D TILT FAQS (LAST SECTION BEFORE FOOTER) */}
+      {/* 7. DRIBBBLE-STYLE 3D TILT FAQS (PLACED RIGHT BEFORE FOOTER) */}
       <section id="faq" className="max-w-7xl mx-auto px-4 sm:px-6 py-20 border-t border-slate-200/80">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
