@@ -63,7 +63,6 @@ export default function VouchersHubPage() {
   const [selectedBrandSlug, setSelectedBrandSlug] = useState('');
   const [cartAmount, setCartAmount] = useState('1000');
   const [hasSbiCard, setHasSbiCard] = useState(true);
-  const [calcLoading, setCalcLoading] = useState(false);
 
   // Modals & Bottom Drawer State
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -271,7 +270,7 @@ export default function VouchersHubPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-600 font-semibold leading-relaxed max-w-lg mx-auto">
-            Food orders se lekar sneakers tak, seedha wholesale digital vouchers se checkout karo. 0-second me secret code aur PIN screen par milta hai[cite: 2]!
+            Food orders se lekar sneakers tak, seedha wholesale digital vouchers se checkout karo. 0-second me secret code aur PIN screen par milta hai[cite: 4]!
           </p>
         </div>
 
@@ -396,7 +395,7 @@ export default function VouchersHubPage() {
                     Order Value (₹)
                   </label>
                   <span className="text-[10px] font-black text-[#E51B24] bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
-                    Max Safe Limit: ₹10,000[cite: 2]
+                    Max Safe Limit: ₹10,000[cite: 4]
                   </span>
                 </div>
 
@@ -707,7 +706,7 @@ export default function VouchersHubPage() {
                         className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200/80 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <span>Visit Store</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
+                        <ArrowUpRight className="w-3.5 h-3.5" />
                       </a>
                     </div>
                   </div>
@@ -781,7 +780,7 @@ export default function VouchersHubPage() {
                   </span>
                   <div>
                     <h3 className="text-base font-black text-slate-900">Instant Loot Simulator</h3>
-                    <span className="text-[10px] text-slate-400 font-bold">100% Capped up to ₹10,000[cite: 2]</span>
+                    <span className="text-[10px] text-slate-400 font-bold">100% Capped up to ₹10,000[cite: 4]</span>
                   </div>
                 </div>
 
