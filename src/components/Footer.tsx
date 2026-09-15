@@ -78,7 +78,7 @@ export default function Footer() {
           <div className="lg:col-span-4 space-y-4">
             <Link href="/" className="inline-block relative h-10 w-48">
               <Image 
-                src="/logo1.png" 
+                src="/logo2.png"
                 alt="AllInOneVouchers Logo" 
                 width={190} 
                 height={42} 

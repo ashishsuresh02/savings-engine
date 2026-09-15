@@ -360,8 +360,8 @@ export default function Home() {
           <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
             
             {/* BRAND LOGO + PILL BADGE COMBO */}
-            <div className="space-y-3">
-              <div className="relative h-8 sm:h-9 w-44 sm:w-52 drop-shadow-sm">
+            <div className="space-y-4">
+              <div className="relative h-12 sm:h-14 lg:h-16 w-60 sm:w-72 lg:w-80 drop-shadow-md">
                 <Image
                   src="/logo1.png"
                   alt="AllInOneVouchers Logo"
