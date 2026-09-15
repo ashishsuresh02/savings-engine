@@ -584,61 +584,6 @@ export default function Home() {
       <WhatsAppAlerts />
       <LiveArbitrageTicker />
 
-      {/* FOOTER */}
-      <footer className="bg-[#0A0D14] text-slate-400 pt-16 pb-12 border-t border-slate-800 text-xs font-sans relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-            
-            <div className="lg:col-span-2 space-y-5">
-              <div className="relative h-10 w-48 flex items-center">
-                <Image 
-                  src="/logo1.png" 
-                  alt="AllInOneVouchers Logo" 
-                  width={180} 
-                  height={40} 
-                  className="w-full h-full object-contain filter brightness-125"
-                />
-              </div>
-              <p className="text-slate-400 text-xs leading-relaxed max-w-sm font-medium">
-                India's premier retail savings engine. Wholesale brand cards, verified coupons, and curated affiliate drops.
-              </p>
-            </div>
-
-            <div className="space-y-3.5">
-              <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Explore Platforms</h4>
-              <ul className="space-y-2.5 font-medium text-slate-400">
-                <li><Link href="/vouchers" className="hover:text-white transition">Buy Vouchers</Link></li>
-                <li><a href="#loot-deals" className="hover:text-white transition">Live Product Loot</a></li>
-                <li><Link href="/reels" className="hover:text-white transition">Sponsored Deals Reels</Link></li>
-                <li><a href="#about" className="hover:text-white transition">About Us</a></li>
-              </ul>
-            </div>
-
-            <div className="space-y-3.5">
-              <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Partner Stores</h4>
-              <ul className="space-y-2.5 font-medium text-slate-400">
-                <li><a href="#loot-deals" className="hover:text-white transition">Amazon India</a></li>
-                <li><a href="#loot-deals" className="hover:text-white transition">Swiggy Gourmet</a></li>
-                <li><a href="#loot-deals" className="hover:text-white transition">Zomato Dining</a></li>
-                <li><a href="#loot-deals" className="hover:text-white transition">Myntra Fashion</a></li>
-              </ul>
-            </div>
-
-            <div className="space-y-3.5">
-              <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Support & Community</h4>
-              <ul className="space-y-2.5 font-medium text-slate-400">
-                <li><a href="https://t.me/allinonevouchers" target="_blank" rel="noreferrer" className="hover:text-white transition">Telegram Alerts</a></li>
-                <li><a href="#faq" className="hover:text-white transition">FAQs</a></li>
-                <li><a href="mailto:support@allinonevouchers.com" className="hover:text-white transition">support@allinonevouchers.com</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px] font-medium">
-            <p>© 2026 AllInOneVouchers.com. Built for scalable retail savings.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
