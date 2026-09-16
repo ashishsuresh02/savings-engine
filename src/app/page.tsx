@@ -1068,155 +1068,255 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. ABOUT US & BRAND COLLABORATION TRUST SECTION (AWWWARDS BENTO ARCHITECTURE) */}
-      <section id="about" className="max-w-7xl mx-auto px-4 sm:px-6 py-20 relative select-none">
-        {/* Ambient Background Blur Beams */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-80 bg-gradient-to-r from-red-500/10 via-rose-500/5 to-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      {/* 6. KINETIC SCROLL-REVEAL & 3D VOUCHER POP-OUT ABOUT SECTION */}
+      <section id="about" className="max-w-7xl mx-auto px-4 sm:px-6 py-24 relative overflow-hidden select-none">
+        
+        {/* Ambient Warm Atmosphere Glows */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-gradient-to-r from-red-500/10 via-rose-500/10 to-amber-500/10 blur-3xl rounded-full pointer-events-none -z-10" />
 
-        <div className="rounded-[40px] bg-slate-950 p-8 sm:p-14 text-white relative overflow-hidden border border-slate-800 shadow-[0_30px_100px_rgba(15,23,42,0.45)]">
+        {/* 1. KINETIC SPLIT HEADLINE ENTRANCE (LEFT & RIGHT SLIDE) */}
+        <div className="text-center space-y-4 mb-16 overflow-hidden">
           
-          {/* Micro Mesh Dots Pattern */}
-          <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:28px_28px] opacity-25 pointer-events-none" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 border border-red-200 text-[#E51B24] text-xs font-black uppercase tracking-widest shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
+            <span>Inside The Arbitrage Engine</span>
+          </motion.div>
 
-          {/* Section Header */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 border-b border-slate-800/80 relative z-10">
-            <div className="space-y-4 max-w-2xl text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-500/20 via-rose-500/15 to-transparent border border-red-500/30 text-red-400 text-[11px] font-black uppercase tracking-widest">
-                <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
-                <span>India's Decentralized Arbitrage Layer</span>
-              </div>
+          {/* Big Kinetic Split Words */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 font-black tracking-tighter text-4xl sm:text-6xl lg:text-7xl leading-none">
+            <motion.span
+              initial={{ opacity: 0, x: -90 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+              className="text-slate-900"
+            >
+              WHO WE ARE.
+            </motion.span>
 
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] text-white">
-                Engineered to Break <br />
-                <span className="bg-gradient-to-r from-[#E51B24] via-rose-400 to-amber-300 bg-clip-text text-transparent">
-                  Retail Price Traps.
-                </span>
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">
-                AllInOneVouchers directly bridges corporate bulk inventory, store checkout coupon codes, and bank card statements into one automated single-click execution pipeline.
-              </p>
-            </div>
-
-            {/* Live Verified Protocol Badge */}
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md shrink-0">
-              <div className="w-12 h-12 rounded-xl bg-[#E51B24]/20 border border-[#E51B24]/40 flex items-center justify-center text-[#E51B24]">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <div className="text-left">
-                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">Bank Grade Desk</span>
-                <span className="text-sm font-black text-white">100% Zero-Loss Protocol</span>
-              </div>
-            </div>
+            <motion.span
+              initial={{ opacity: 0, x: 90 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              className="bg-gradient-to-r from-[#E51B24] via-rose-600 to-amber-600 bg-clip-text text-transparent"
+            >
+              HOW YOU WIN.
+            </motion.span>
           </div>
 
-          {/* Awwwards 3D Interactive Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-10 relative z-10">
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-xs sm:text-sm text-slate-600 font-semibold max-w-xl mx-auto leading-relaxed pt-2"
+          >
+            Hum eCommerce directories ya fake coupon blogs nahi hain. Hum corporate wholesale vouchers aur live merchant deals ko jodte hain taaki koi bhi full price na bhare[cite: 3].
+          </motion.p>
+        </div>
+
+        {/* 2. THE VAULT UNBOXING & VOUCHER POP-OUT INTERACTIVE STAGE */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          {/* Left Side: 3D Vault Box with Voucher Pop-Out Animation */}
+          <div className="lg:col-span-5 flex justify-center items-center relative min-h-[380px] sm:min-h-[440px]">
             
-            {/* Bento Card 1: Wholesale Arbitrage (Span 4) */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="md:col-span-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-7 sm:p-8 flex flex-col justify-between space-y-6 hover:border-red-500/50 hover:shadow-[0_20px_40px_rgba(229,27,36,0.12)] transition-all group relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all pointer-events-none" />
+            {/* Glow Behind Box */}
+            <div className="absolute w-64 h-64 bg-red-500/15 blur-3xl rounded-full pointer-events-none" />
 
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-400 flex items-center justify-center font-black group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                  <Percent className="w-6 h-6" />
+            {/* The Digital Vault Box Base */}
+            <div className="relative w-72 sm:w-80 h-80 rounded-[36px] bg-gradient-to-b from-white via-slate-50 to-slate-100 border-2 border-slate-200/90 shadow-2xl p-6 flex flex-col justify-end items-center overflow-visible">
+              
+              {/* Box Top Slot Trim */}
+              <div className="absolute top-8 inset-x-8 h-4 rounded-full bg-slate-200/80 border border-slate-300 shadow-inner" />
+
+              {/* PHYSICAL VOUCHER POPPING OUT UPWARDS ON SCROLL */}
+              <motion.div
+                initial={{ y: 90, opacity: 0, scale: 0.85, rotate: -6 }}
+                whileInView={{ y: -50, opacity: 1, scale: 1, rotate: -2 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 120, 
+                  damping: 14, 
+                  delay: 0.25 
+                }}
+                whileHover={{ y: -65, scale: 1.04, rotate: 0 }}
+                className="absolute top-2 w-[270px] sm:w-[290px] bg-gradient-to-br from-[#E51B24] to-[#B50E16] text-white rounded-2xl p-4 shadow-[0_20px_45px_rgba(229,27,36,0.35)] border border-red-400/40 cursor-pointer z-30 select-none"
+              >
+                {/* Voucher Perforations */}
+                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 border-r border-red-300" />
+                <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 border-l border-red-300" />
+
+                <div className="space-y-2 relative z-10">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/20">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-200">
+                      ★ Wholesale Pass
+                    </span>
+                    <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded-full">
+                      0-Min PIN
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-end pt-1">
+                    <div>
+                      <span className="text-[9px] text-white/80 uppercase font-semibold block">Flat Arbitrage Cut</span>
+                      <span className="text-2xl font-black font-mono tracking-tight">FLAT 15% OFF</span>
+                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-white text-[#E51B24] flex items-center justify-center font-black shadow-sm">
+                      <Percent className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-dashed border-white/30 flex justify-between items-center text-[10px] font-mono text-white/90">
+                    <span>CODE: <strong className="text-white tracking-widest">VAULT-LOCKED</strong></span>
+                    <span className="text-amber-200 font-bold">100% Legit</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] font-mono text-red-400 uppercase tracking-widest block mb-1">Layer 01 • Sourcing</span>
-                  <h3 className="text-xl font-black text-white">Wholesale Arbitrage</h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                  We bulk-acquire digital brand allocations directly from authorized corporate registries, passing upfront enterprise discounts directly to buyers with zero markup.
-                </p>
+              </motion.div>
+
+              {/* Box Front Face Branding */}
+              <div className="w-full text-center space-y-1 pt-6 z-20">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
+                  Direct Vault Sourcing
+                </span>
+                <h4 className="text-base font-black text-slate-900">
+                  AllInOneVouchers Hub
+                </h4>
+                <span className="inline-block px-3 py-1 rounded-xl bg-red-50 text-[#E51B24] font-bold text-[10px] border border-red-100">
+                  Authorized Enterprise Pass
+                </span>
               </div>
 
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                <span>Enterprise Bulk Flow</span>
-                <span className="text-red-400 font-black">Up to 15% Upfront</span>
-              </div>
-            </motion.div>
-
-            {/* Bento Card 2: 3X Stacking Stack Engine (Span 4) */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="md:col-span-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-7 sm:p-8 flex flex-col justify-between space-y-6 hover:border-blue-500/50 hover:shadow-[0_20px_40px_rgba(59,130,246,0.12)] transition-all group relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all pointer-events-none" />
-
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center font-black group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                  <Layers className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest block mb-1">Layer 02 • Pipeline</span>
-                  <h3 className="text-xl font-black text-white">3X Stacking Formula</h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                  Wholesale brand voucher + verified active merchant promo codes + credit card cashback statement refund combined simultaneously into one order.
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                <span>Mathematical Delta</span>
-                <span className="text-blue-400 font-black">Net ~40% Off</span>
-              </div>
-            </motion.div>
-
-            {/* Bento Card 3: Brand Partnerships (Span 4) */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="md:col-span-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-7 sm:p-8 flex flex-col justify-between space-y-6 hover:border-emerald-500/50 hover:shadow-[0_20px_40px_rgba(16,185,129,0.12)] transition-all group relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
-
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-black group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                  <Award className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest block mb-1">Layer 03 • Ecosystem</span>
-                  <h3 className="text-xl font-black text-white">Brand Partnerships</h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                  Direct integration with D2C giants and marketplace aggregators to guarantee instant 16-digit voucher validation and fraud-proof checkout clearing.
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                <span>Delivery Latency</span>
-                <span className="text-emerald-400 font-black">0-Minute PIN</span>
-              </div>
-            </motion.div>
-
+            </div>
           </div>
 
-          {/* Bottom Trust Stat Bar */}
-          <div className="mt-10 pt-8 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-white">₹1.8Cr+</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Real Cashback Unlocked</span>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-white">0 Min</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Secret PIN Unlock Time</span>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-white">100%</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Corporate Authenticity</span>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-white">24x7</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Direct Concierge Desk</span>
-            </div>
+          {/* Right Side: What We Do & How It Works Interactive Cards */}
+          <div className="lg:col-span-7 space-y-4">
+            
+            {/* Feature Card 1: What We Do */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              whileHover={{ scale: 1.015 }}
+              className="p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-red-300 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 sm:gap-5 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 text-[#E51B24] flex items-center justify-center shrink-0 group-hover:bg-[#E51B24] group-hover:text-white transition-colors duration-300 shadow-xs">
+                <Percent className="w-5 h-5" />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-[#E51B24] tracking-wider bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                    01 • The Source
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    Hum Wholesale Gift Cards Bulk Me Khareedte Hain
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                  Brands (Swiggy, Amazon, Zomato, Myntra) corporate desk se wholesale cut par gift cards deti hain. Hum wahi wholesale discount bina kisi middleman ke seedha aapko pass karte hain[cite: 3].
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Feature Card 2: 3X Stacking Formula */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              whileHover={{ scale: 1.015 }}
+              className="p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-blue-300 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 sm:gap-5 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-[#0B2B5C] flex items-center justify-center shrink-0 group-hover:bg-[#0B2B5C] group-hover:text-white transition-colors duration-300 shadow-xs">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-blue-700 tracking-wider bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                    02 • The Multiplier
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    3X Stacking: Ek Sath 3 Discount Jodte Hain
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                  Sirf ek coupon par depend mat raho. Sasta voucher lo + Store promo code lagao + Credit card cashback pao. Teeno milkar aapka final kharcha 30% se 40% tak kam kar dete hain[cite: 3].
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Feature Card 3: Instant 0-Minute Delivery */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+              whileHover={{ scale: 1.015 }}
+              className="p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-emerald-300 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 sm:gap-5 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300 shadow-xs">
+                <Award className="w-5 h-5" />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-emerald-700 tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    03 • The Guarantee
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    Instant Secret PIN & Zero-Wait Guarantee
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                  Payment complete hote hi 16-digit voucher code aur confidential PIN screen par unlock hota hai aur aapke WhatsApp/Vault me direct sync ho jata hai[cite: 3]. Zero wait time[cite: 3].
+                </p>
+              </div>
+            </motion.div>
+
           </div>
 
         </div>
+
+        {/* Quick Interactive Callout Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+          className="mt-12 p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-red-50 via-white to-amber-50 border border-red-200/90 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm"
+        >
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-10 h-10 rounded-2xl bg-[#E51B24] text-white flex items-center justify-center font-black shrink-0 shadow-md shadow-red-500/20">
+              <Zap className="w-5 h-5 fill-white" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-black text-slate-900">
+                Abhi tak pura retail price pay kar rahe the?
+              </h4>
+              <p className="text-[11px] text-slate-500 font-semibold">
+                Check out our live brands inventory & calculate real savings right now[cite: 3].
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/vouchers"
+            className="px-5 py-2.5 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-red-500/20 flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+          >
+            <span>Explore Vouchers</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </motion.div>
+
       </section>
 
       {/* WHATSAPP VIP ALERTS */}
