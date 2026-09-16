@@ -11,7 +11,7 @@ import {
   Flame, 
   ChevronLeft, 
   ChevronRight,
-  Film
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -26,7 +26,6 @@ export interface ReelItem {
   is_sponsored: boolean;
   target_brand_slug: string;
   cta_url?: string;
-  display_order?: number;
 }
 
 export default function SponsoredReelsFeed({ 
@@ -38,36 +37,27 @@ export default function SponsoredReelsFeed({
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // 100% Dynamic Supabase Fetch from sponsored_reels table
-  useEffect(() => {
-    let isMounted = true;
+  const loadReels = async () => {
+    try {
+      setLoading(true);
+      if (!supabase) return;
 
-    async function loadDynamicReels() {
-      try {
-        setLoading(true);
-        if (!supabase) return;
+      const { data, error } = await supabase
+        .from('sponsored_reels')
+        .select('*')
+        .order('display_order', { ascending: true });
 
-        const { data, error } = await supabase
-          .from('sponsored_reels')
-          .select('*')
-          .order('display_order', { ascending: true });
-
-        if (error) throw error;
-
-        if (isMounted && data) {
-          setReels(data);
-        }
-      } catch (err: any) {
-        console.error('Reels fetch error:', err.message);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+      if (error) throw error;
+      setReels(data || []);
+    } catch (err: any) {
+      console.error('Reels load error:', err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    loadDynamicReels();
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    loadReels();
   }, []);
 
   const scrollCarousel = (direction: 'left' | 'right') => {
@@ -77,15 +67,12 @@ export default function SponsoredReelsFeed({
     }
   };
 
-  // Agar admin se koi reel nahi daali gayi ho toh empty section render nahi hoga
-  if (!loading && reels.length === 0) {
-    return null;
-  }
+  if (!loading && reels.length === 0) return null;
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 space-y-8 select-none">
       
-      {/* Header with Navigation */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-[#E51B24] text-xs font-black">
@@ -96,7 +83,7 @@ export default function SponsoredReelsFeed({
             Watch &amp; Unlock Stacking Deals
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Live short-form video proof on how to stack coupons and wholesale cards[cite: 7, 8].
+            Tap video to play with audio or grab direct store checkout links.
           </p>
         </div>
 
@@ -120,135 +107,91 @@ export default function SponsoredReelsFeed({
         </div>
       </div>
 
-      {/* Dynamic Reel Feed Stream */}
+      {/* Video Reels Track */}
       {loading ? (
         <div className="flex gap-6 overflow-hidden py-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div 
-              key={i} 
-              className="shrink-0 w-[270px] sm:w-[310px] h-[520px] rounded-[32px] bg-slate-200 animate-pulse" 
-            />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="shrink-0 w-[270px] sm:w-[310px] h-[520px] rounded-[32px] bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : (
         <div 
           ref={scrollContainerRef}
-          className="flex items-stretch gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory will-change-transform"
+          className="flex items-stretch gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {reels.map((item) => (
-            <DynamicReelCard 
-              key={item.id} 
-              item={item} 
-              onSelectBrand={onSelectBrand} 
-            />
+            <ReelCard key={item.id} item={item} onSelectBrand={onSelectBrand} />
           ))}
         </div>
       )}
-
-      {/* Partner Callout */}
-      <div className="p-6 sm:p-8 rounded-[32px] bg-[#0A0D14] border border-slate-800 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 w-80 h-80 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="space-y-1 text-center sm:text-left relative z-10">
-          <span className="text-sm font-extrabold text-white block">Want to sponsor your brand reel here?</span>
-          <p className="text-xs text-slate-400 font-medium max-w-xl">
-            Drive targeted buyers straight to your e-commerce store with high-conversion video placements[cite: 8].
-          </p>
-        </div>
-        <a
-          href="mailto:partners@allinonevouchers.com?subject=Brand%20Sponsorship"
-          className="px-6 py-3 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white font-black text-xs uppercase tracking-wider shrink-0 transition shadow-md shadow-red-500/20 active:scale-95 relative z-10 cursor-pointer"
-        >
-          Partner With Us →
-        </a>
-      </div>
 
     </section>
   );
 }
 
-// DYNAMIC VIDEO CARD WITH AUTOPLAY ON INTERSECTION
-function DynamicReelCard({ 
-  item, 
-  onSelectBrand 
-}: { 
-  item: ReelItem; 
-  onSelectBrand: (slug: string) => void 
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
+// ULTRA-SAFE VIDEO COMPONENT
+function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slug: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [videoError, setVideoError] = useState(false);
 
+  // Auto-play safely with Muted policy
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        const video = videoRef.current;
-        if (!video || videoError) return;
-
-        if (entry.isIntersecting) {
-          video.muted = true;
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => setIsPlaying(true))
-              .catch(() => setIsPlaying(false));
-          }
-        } else {
-          video.pause();
-          setIsPlaying(false);
-        }
-      },
-      { threshold: 0.6 }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [videoError]);
-
-  const togglePlay = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
 
-    if (isPlaying) {
-      video.pause();
-      setIsPlaying(false);
-    } else {
-      video.muted = isMuted;
-      video.play()
-        .then(() => setIsPlaying(true))
+    // Chrome/Safari strictly require explicit muted property before play call
+    video.muted = true;
+    video.defaultMuted = true;
+    
+    const playAttempt = video.play();
+    if (playAttempt !== undefined) {
+      playAttempt
+        .then(() => {
+          setIsPlaying(true);
+          setVideoError(false);
+        })
         .catch(() => {
-          video.muted = true;
-          setIsMuted(true);
-          video.play().then(() => setIsPlaying(true));
+          // If browser restricts autoplay, user can tap play button
+          setIsPlaying(false);
         });
     }
-  }, [isPlaying, isMuted]);
+  }, [item.video_url]);
 
-  const toggleMute = useCallback((e: React.MouseEvent) => {
+  const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !isMuted;
-    setIsMuted(!isMuted);
-  }, [isMuted]);
+
+    if (video.paused) {
+      video.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
 
   return (
-    <div 
-      ref={cardRef}
-      className="snap-start shrink-0 w-[270px] sm:w-[310px] h-[520px] rounded-[32px] overflow-hidden border border-slate-200/90 bg-slate-950 shadow-lg hover:shadow-2xl transition-all duration-300 relative group flex flex-col justify-between select-none"
-    >
-      {/* Video Stream Stage */}
+    <div className="snap-start shrink-0 w-[270px] sm:w-[310px] h-[520px] rounded-[32px] overflow-hidden border border-slate-200 bg-slate-950 shadow-lg relative group flex flex-col justify-between select-none">
+      
+      {/* Video / Player Canvas */}
       <div 
-        className="absolute inset-0 w-full h-full cursor-pointer bg-slate-900 overflow-hidden"
+        className="absolute inset-0 w-full h-full cursor-pointer bg-slate-900"
         onClick={togglePlay}
       >
-        {!videoError && item.video_url ? (
+        {!videoError ? (
           <video
             ref={videoRef}
             src={item.video_url}
@@ -257,25 +200,23 @@ function DynamicReelCard({
             muted={isMuted}
             playsInline
             autoPlay
-            preload="auto"
+            crossOrigin="anonymous"
+            preload="metadata"
             onError={() => setVideoError(true)}
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 will-change-transform"
+            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
           />
         ) : (
-          <div className="w-full h-full relative">
-            <img 
-              src={item.thumbnail_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600'} 
-              alt={item.title}
-              className="w-full h-full object-cover opacity-70"
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-              <Film className="w-8 h-8 text-rose-500 mb-2 opacity-80" />
-              <span className="text-xs font-bold text-slate-300">Preview Mode</span>
-            </div>
+          /* Error Fallback with Link Notice */
+          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-slate-400 space-y-2">
+            <span className="text-2xl">⚠️</span>
+            <p className="text-xs font-bold text-white">Video Link Incompatible</p>
+            <p className="text-[10px] text-slate-400">
+              Browser cannot stream this link directly. Ensure URL ends in <code className="text-red-400">.mp4</code>.
+            </p>
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/50 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/40 pointer-events-none" />
       </div>
 
       {/* Top Header Controls */}
@@ -291,39 +232,40 @@ function DynamicReelCard({
           </span>
         )}
 
-        <button
-          type="button"
-          onClick={toggleMute}
-          aria-label={isMuted ? "Unmute video" : "Mute video"}
-          className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black pointer-events-auto shadow-sm cursor-pointer"
-        >
-          {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
-        </button>
+        {!videoError && (
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black pointer-events-auto cursor-pointer"
+          >
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
+          </button>
+        )}
       </div>
 
-      {/* Center Play Icon when Paused */}
-      {!isPlaying && (
+      {/* Center Play Icon when paused */}
+      {!isPlaying && !videoError && (
         <div 
           onClick={togglePlay}
-          className="absolute inset-0 z-10 flex items-center justify-center bg-black/25 cursor-pointer"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 cursor-pointer"
         >
-          <div className="w-14 h-14 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-2xl transition transform group-hover:scale-110">
+          <div className="w-14 h-14 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-xl">
             <Play className="w-6 h-6 fill-slate-900 translate-x-0.5" />
           </div>
         </div>
       )}
 
-      {/* Bottom Content / Direct Action Buttons */}
+      {/* Bottom Content Area */}
       <div className="relative z-20 p-5 space-y-3 pointer-events-auto">
         <div className="space-y-1">
-          <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#E51B24] text-white shadow-xs">
+          <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#E51B24] text-white">
             {item.deal_tag}
           </span>
-          <h3 className="text-sm sm:text-base font-black text-white leading-snug drop-shadow-sm line-clamp-2">
+          <h3 className="text-sm font-black text-white leading-snug line-clamp-2">
             {item.title}
           </h3>
           {item.description && (
-            <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed font-medium">
+            <p className="text-[11px] text-slate-300 line-clamp-1 font-medium">
               {item.description}
             </p>
           )}
@@ -334,7 +276,7 @@ function DynamicReelCard({
             href={item.cta_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5 text-[#E51B24]" />
             <span>Grab Store Deal</span>
@@ -342,9 +284,8 @@ function DynamicReelCard({
           </a>
         ) : (
           <button
-            type="button"
             onClick={() => onSelectBrand(item.target_brand_slug)}
-            className="w-full py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5 text-[#E51B24]" />
             <span>Stack {item.brand_name} Deal</span>
