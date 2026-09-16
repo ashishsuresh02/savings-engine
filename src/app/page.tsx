@@ -1118,11 +1118,11 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-xs sm:text-sm text-slate-600 font-semibold max-w-xl mx-auto leading-relaxed pt-2"
           >
-            Hum eCommerce directories ya fake coupon blogs nahi hain. Hum corporate wholesale vouchers aur live merchant deals ko jodte hain taaki koi bhi full price na bhare[cite: 3].
+            We are not another generic coupon blog or fake code directory. We bridge enterprise wholesale vouchers with live merchant deals so you never pay full retail price again.
           </motion.p>
         </div>
 
-        {/* 2. THE VAULT UNBOXING & VOUCHER POP-OUT INTERACTIVE STAGE */}
+        {/* 2. THE VAULT UNBOXING & VOUCHER POP-OUT STAGE */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           {/* Left Side: 3D Vault Box with Voucher Pop-Out Animation */}
@@ -1158,10 +1158,10 @@ export default function Home() {
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between items-center pb-2 border-b border-white/20">
                     <span className="text-[10px] font-black uppercase tracking-widest text-amber-200">
-                      ★ Wholesale Pass
+                      Wholesale Pass
                     </span>
                     <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded-full">
-                      0-Min PIN
+                      Instant PIN
                     </span>
                   </div>
 
@@ -1177,7 +1177,7 @@ export default function Home() {
 
                   <div className="pt-2 border-t border-dashed border-white/30 flex justify-between items-center text-[10px] font-mono text-white/90">
                     <span>CODE: <strong className="text-white tracking-widest">VAULT-LOCKED</strong></span>
-                    <span className="text-amber-200 font-bold">100% Legit</span>
+                    <span className="text-amber-200 font-bold">100% Genuine</span>
                   </div>
                 </div>
               </motion.div>
@@ -1191,14 +1191,14 @@ export default function Home() {
                   AllInOneVouchers Hub
                 </h4>
                 <span className="inline-block px-3 py-1 rounded-xl bg-red-50 text-[#E51B24] font-bold text-[10px] border border-red-100">
-                  Authorized Enterprise Pass
+                  Enterprise Wholesale Clearance
                 </span>
               </div>
 
             </div>
           </div>
 
-          {/* Right Side: What We Do & How It Works Interactive Cards */}
+          {/* Right Side: What We Do & How It Works Cards */}
           <div className="lg:col-span-7 space-y-4">
             
             {/* Feature Card 1: What We Do */}
@@ -1216,14 +1216,14 @@ export default function Home() {
               <div className="space-y-1.5 text-left">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black uppercase text-[#E51B24] tracking-wider bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                    01 • The Source
+                    01 • Direct Sourcing
                   </span>
                   <h3 className="text-base sm:text-lg font-black text-slate-900">
-                    Hum Wholesale Gift Cards Bulk Me Khareedte Hain
+                    Bulk Wholesale Gift Cards
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  Brands (Swiggy, Amazon, Zomato, Myntra) corporate desk se wholesale cut par gift cards deti hain. Hum wahi wholesale discount bina kisi middleman ke seedha aapko pass karte hain[cite: 3].
+                  Leading brands (Swiggy, Amazon, Zomato, Myntra) release wholesale allocations through corporate registries[cite: 3]. We pass these bulk enterprise savings directly to your screen with zero markup[cite: 3].
                 </p>
               </div>
             </motion.div>
@@ -1246,11 +1246,11 @@ export default function Home() {
                     02 • The Multiplier
                   </span>
                   <h3 className="text-base sm:text-lg font-black text-slate-900">
-                    3X Stacking: Ek Sath 3 Discount Jodte Hain
+                    3X Savings Stacking Formula
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  Sirf ek coupon par depend mat raho. Sasta voucher lo + Store promo code lagao + Credit card cashback pao. Teeno milkar aapka final kharcha 30% se 40% tak kam kar dete hain[cite: 3].
+                  Never depend on a single promo code. Buy discounted vouchers + apply active in-app merchant codes + earn credit card cashbacks simultaneously to slash up to 40% off your bill[cite: 3].
                 </p>
               </div>
             </motion.div>
@@ -1273,11 +1273,11 @@ export default function Home() {
                     03 • The Guarantee
                   </span>
                   <h3 className="text-base sm:text-lg font-black text-slate-900">
-                    Instant Secret PIN & Zero-Wait Guarantee
+                    Instant Secret PIN & Zero Latency
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  Payment complete hote hi 16-digit voucher code aur confidential PIN screen par unlock hota hai aur aapke WhatsApp/Vault me direct sync ho jata hai[cite: 3]. Zero wait time[cite: 3].
+                  The moment payment confirms, your 16-digit voucher code and private PIN unlock on-screen with zero lag, syncing automatically to your encrypted Member Vault and WhatsApp[cite: 3].
                 </p>
               </div>
             </motion.div>
@@ -1300,10 +1300,10 @@ export default function Home() {
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-black text-slate-900">
-                Abhi tak pura retail price pay kar rahe the?
+                Still paying full retail price at checkout?
               </h4>
               <p className="text-[11px] text-slate-500 font-semibold">
-                Check out our live brands inventory & calculate real savings right now[cite: 3].
+                Explore our live voucher inventory and calculate your net stacked savings right now[cite: 3].
               </p>
             </div>
           </div>
