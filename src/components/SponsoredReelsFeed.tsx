@@ -10,8 +10,7 @@ import {
   ArrowUpRight, 
   Flame, 
   ChevronLeft, 
-  ChevronRight,
-  RefreshCw
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -37,26 +36,25 @@ export default function SponsoredReelsFeed({
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const loadReels = async () => {
-    try {
-      setLoading(true);
-      if (!supabase) return;
-
-      const { data, error } = await supabase
-        .from('sponsored_reels')
-        .select('*')
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-      setReels(data || []);
-    } catch (err: any) {
-      console.error('Reels load error:', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    async function loadReels() {
+      try {
+        setLoading(true);
+        if (!supabase) return;
+
+        const { data, error } = await supabase
+          .from('sponsored_reels')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (error) throw error;
+        setReels(data || []);
+      } catch (err: any) {
+        console.error('Reels load error:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
     loadReels();
   }, []);
 
@@ -130,19 +128,16 @@ export default function SponsoredReelsFeed({
   );
 }
 
-// ULTRA-SAFE VIDEO COMPONENT
 function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slug: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [videoError, setVideoError] = useState(false);
 
   // Auto-play safely with Muted policy
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Chrome/Safari strictly require explicit muted property before play call
     video.muted = true;
     video.defaultMuted = true;
     
@@ -151,10 +146,8 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
       playAttempt
         .then(() => {
           setIsPlaying(true);
-          setVideoError(false);
         })
         .catch(() => {
-          // If browser restricts autoplay, user can tap play button
           setIsPlaying(false);
         });
     }
@@ -186,35 +179,22 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
   return (
     <div className="snap-start shrink-0 w-[270px] sm:w-[310px] h-[520px] rounded-[32px] overflow-hidden border border-slate-200 bg-slate-950 shadow-lg relative group flex flex-col justify-between select-none">
       
-      {/* Video / Player Canvas */}
+      {/* Video Container */}
       <div 
         className="absolute inset-0 w-full h-full cursor-pointer bg-slate-900"
         onClick={togglePlay}
       >
-        {!videoError ? (
-          <video
-            ref={videoRef}
-            src={item.video_url}
-            poster={item.thumbnail_url || undefined}
-            loop
-            muted={isMuted}
-            playsInline
-            autoPlay
-            crossOrigin="anonymous"
-            preload="metadata"
-            onError={() => setVideoError(true)}
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-          />
-        ) : (
-          /* Error Fallback with Link Notice */
-          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-slate-400 space-y-2">
-            <span className="text-2xl">⚠️</span>
-            <p className="text-xs font-bold text-white">Video Link Incompatible</p>
-            <p className="text-[10px] text-slate-400">
-              Browser cannot stream this link directly. Ensure URL ends in <code className="text-red-400">.mp4</code>.
-            </p>
-          </div>
-        )}
+        <video
+          ref={videoRef}
+          src={item.video_url}
+          poster={item.thumbnail_url || undefined}
+          loop
+          muted={isMuted}
+          playsInline
+          autoPlay
+          preload="auto"
+          className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+        />
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/40 pointer-events-none" />
       </div>
@@ -232,19 +212,17 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
           </span>
         )}
 
-        {!videoError && (
-          <button
-            type="button"
-            onClick={toggleMute}
-            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black pointer-events-auto cursor-pointer"
-          >
-            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={toggleMute}
+          className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black pointer-events-auto cursor-pointer"
+        >
+          {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
+        </button>
       </div>
 
       {/* Center Play Icon when paused */}
-      {!isPlaying && !videoError && (
+      {!isPlaying && (
         <div 
           onClick={togglePlay}
           className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 cursor-pointer"
@@ -255,7 +233,7 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
         </div>
       )}
 
-      {/* Bottom Content Area */}
+      {/* Bottom Content */}
       <div className="relative z-20 p-5 space-y-3 pointer-events-auto">
         <div className="space-y-1">
           <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#E51B24] text-white">
