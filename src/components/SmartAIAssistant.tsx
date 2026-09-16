@@ -9,12 +9,8 @@ import {
   Sparkles, 
   RotateCcw,
   Zap,
-  ArrowRight,
-  ShieldCheck,
-  TrendingDown,
-  Percent
+  ShieldCheck
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,6 +28,7 @@ export default function SmartAIAssistant() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,45 +91,127 @@ export default function SmartAIAssistant() {
   return (
     <>
       {/* ======================================================== */}
-      {/* 1. ULTRA-SMOOTH GLOWING FLOATING TRIGGER BUTTON         */}
+      {/* 1. MOVABLE 3D ROBO HOLDING VOUCHER (DRAGGABLE ANYWHERE) */}
       {/* ======================================================== */}
-      <div className="fixed bottom-5 right-5 z-50">
-        <motion.div
-          animate={{ scale: [1, 1.03, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="relative"
-        >
-          {/* Ambient Glow */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#E51B24] via-rose-500 to-[#0B2B5C] rounded-full blur-md opacity-70 group-hover:opacity-100 transition duration-300" />
+      <motion.div
+        drag
+        dragMomentum={false}
+        onDragStart={() => {
+          isDraggingRef.current = true;
+        }}
+        onDragEnd={() => {
+          setTimeout(() => {
+            isDraggingRef.current = false;
+          }, 120);
+        }}
+        onClick={() => {
+          if (!isDraggingRef.current) {
+            setIsOpen((prev) => !prev);
+          }
+        }}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.94 }}
+        className="fixed bottom-6 right-6 z-50 cursor-grab active:cursor-grabbing select-none"
+        title="Drag me anywhere or tap to calculate!"
+      >
+        <div className="relative flex items-center justify-center">
+          
+          {/* Ambient Glow Aura */}
+          <div className="absolute inset-0 bg-red-500/25 rounded-full blur-xl animate-pulse pointer-events-none" />
 
-          <motion.button
-            whileHover={{ scale: 1.06, y: -2 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => setIsOpen(!isOpen)}
-            className="relative px-4 sm:px-5 py-3 rounded-full bg-[#0B2B5C] hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider shadow-2xl flex items-center gap-2.5 border border-white/20 cursor-pointer overflow-hidden backdrop-blur-xl transition-all"
-          >
-            {/* Shimmer sweep effect */}
-            <motion.div 
-              animate={{ x: ['-100%', '200%'] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-              className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
-            />
+          {/* Micro Helper Speech Tag */}
+          {!isOpen && (
+            <motion.div
+              animate={{ y: [0, -4, 0] }}
+              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+              className="absolute -top-10 right-0 bg-slate-950 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl shadow-xl border border-red-500/40 whitespace-nowrap flex items-center gap-1.5 pointer-events-none"
+            >
+              <Sparkles className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span>Ask AI Saver • Drag Me</span>
+            </motion.div>
+          )}
 
-            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#E51B24] to-rose-400 flex items-center justify-center shadow-inner">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
+          {/* 3D GLOSSY ROBO VECTOR WITH GOLD VOUCHER */}
+          <div className="w-16 h-16 sm:w-20 sm:h-20 relative flex items-center justify-center filter drop-shadow-[0_12px_24px_rgba(229,27,36,0.35)]">
+            <svg viewBox="0 0 120 120" className="w-full h-full overflow-visible">
+              <defs>
+                <linearGradient id="aiRoboBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FFFFFF" />
+                  <stop offset="50%" stopColor="#E2E8F0" />
+                  <stop offset="100%" stopColor="#94A3B8" />
+                </linearGradient>
 
-            <span className="font-extrabold tracking-wide drop-shadow-sm">
-              {isOpen ? 'Close Saver' : 'Ask AI Saver'}
-            </span>
+                <linearGradient id="aiRoboVisor" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#0B2B5C" />
+                  <stop offset="100%" stopColor="#020617" />
+                </linearGradient>
 
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-          </motion.button>
-        </motion.div>
-      </div>
+                <linearGradient id="aiVoucherFoil" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FF4D4D" />
+                  <stop offset="50%" stopColor="#E51B24" />
+                  <stop offset="100%" stopColor="#990007" />
+                </linearGradient>
+
+                <linearGradient id="aiGoldTrim" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FDE047" />
+                  <stop offset="100%" stopColor="#CA8A04" />
+                </linearGradient>
+              </defs>
+
+              {/* Antenna with Pulsing Beacon */}
+              <line x1="60" y1="28" x2="60" y2="14" stroke="#94A3B8" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="60" cy="12" r="5" fill="#E51B24" className="animate-ping" />
+              <circle cx="60" cy="12" r="5" fill="#E51B24" />
+
+              {/* Ears / Sensors */}
+              <rect x="22" y="44" width="8" height="18" rx="4" fill="#64748B" />
+              <rect x="90" y="44" width="8" height="18" rx="4" fill="#64748B" />
+
+              {/* Robo Head Capsule */}
+              <rect x="28" y="24" width="64" height="54" rx="24" fill="url(#aiRoboBody)" stroke="#CBD5E1" strokeWidth="2.5" />
+
+              {/* Visor Screen */}
+              <rect x="36" y="34" width="48" height="32" rx="14" fill="url(#aiRoboVisor)" stroke="#334155" strokeWidth="1.5" />
+
+              {/* Glowing Eyes */}
+              <circle cx="48" cy="50" r="5" fill="#38BDF8" className="animate-pulse" />
+              <circle cx="72" cy="50" r="5" fill="#38BDF8" className="animate-pulse" />
+              <circle cx="50" cy="48" r="1.5" fill="#FFFFFF" />
+              <circle cx="74" cy="48" r="1.5" fill="#FFFFFF" />
+
+              {/* Smile Line */}
+              <path d="M 54 58 Q 60 62 66 58" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+
+              {/* Torso */}
+              <path d="M 40 80 Q 60 76 80 80 L 84 102 Q 60 106 36 102 Z" fill="url(#aiRoboBody)" stroke="#CBD5E1" strokeWidth="2" />
+              <circle cx="60" cy="92" r="4.5" fill="#E51B24" className="animate-pulse" />
+
+              {/* Left Arm Idle */}
+              <path d="M 36 84 Q 24 90 28 102" fill="none" stroke="#94A3B8" strokeWidth="6" strokeLinecap="round" />
+
+              {/* Right Arm Holding Voucher Up */}
+              <path d="M 82 84 Q 96 82 92 68" fill="none" stroke="#94A3B8" strokeWidth="6" strokeLinecap="round" />
+
+              {/* PHYSICAL FLOATING VOUCHER CARD */}
+              <g transform="translate(76, 44) rotate(14)">
+                <rect x="1" y="1" width="38" height="24" rx="4" fill="#000000" opacity="0.25" />
+                <rect x="0" y="0" width="38" height="24" rx="4" fill="url(#aiVoucherFoil)" stroke="url(#aiGoldTrim)" strokeWidth="1.5" />
+                <line x1="26" y1="0" x2="26" y2="24" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="2,2" opacity="0.7" />
+                <circle cx="26" cy="0" r="2.5" fill="#E2E8F0" />
+                <circle cx="26" cy="24" r="2.5" fill="#E2E8F0" />
+                <text x="4" y="10" fill="#FDE047" fontSize="5.5" fontWeight="900" fontFamily="sans-serif">LOOT</text>
+                <text x="4" y="18" fill="#FFFFFF" fontSize="6.5" fontWeight="900" fontFamily="sans-serif">₹500</text>
+                <text x="29" y="14" fill="#FFFFFF" fontSize="5" fontWeight="900" fontFamily="sans-serif">%</text>
+              </g>
+
+              {/* Stars */}
+              <circle cx="114" cy="40" r="1.5" fill="#FDE047" className="animate-ping" />
+              <circle cx="82" cy="38" r="1.2" fill="#FDE047" />
+            </svg>
+          </div>
+
+        </div>
+      </motion.div>
 
       {/* ======================================================== */}
       {/* 2. MODERN GLASSMORPHIC CHAT PANEL                        */}
@@ -144,12 +223,10 @@ export default function SmartAIAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 25, scale: 0.92 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-            className="fixed bottom-20 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[425px] h-[580px] max-h-[85vh] bg-white/95 backdrop-blur-2xl border border-slate-200/80 rounded-[32px] shadow-[0_25px_70px_rgba(11,43,92,0.22)] flex flex-col overflow-hidden text-slate-900"
+            className="fixed bottom-24 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[425px] h-[580px] max-h-[85vh] bg-white/95 backdrop-blur-2xl border border-slate-200/80 rounded-[32px] shadow-[0_25px_70px_rgba(11,43,92,0.22)] flex flex-col overflow-hidden text-slate-900"
           >
             {/* Header */}
             <div className="relative bg-gradient-to-r from-[#0B2B5C] via-[#14428B] to-[#0B2B5C] p-4 text-white flex items-center justify-between border-b border-white/10 overflow-hidden shadow-sm">
-              
-              {/* Background ambient lighting in header */}
               <div className="absolute top-0 right-0 w-36 h-36 bg-rose-500/20 rounded-full blur-2xl pointer-events-none" />
 
               <div className="flex items-center gap-3 relative z-10">
