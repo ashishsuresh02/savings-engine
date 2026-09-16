@@ -1028,40 +1028,61 @@ export default function Home() {
       </section>
 
       {/* 5. VOUCHERS SECTION TEASER */}
-      <section id="vouchers" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-b border-slate-200">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <section id="vouchers" className="max-w-7xl mx-auto px-4 sm:px-6 py-14 border-b border-slate-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[#E51B24] text-xl">🏷️</span>
-              <h2 className="text-xl font-black text-slate-900">Wholesale Gift Vouchers</h2>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-[#E51B24] text-xs font-black mb-2">
+              <span>🏷️</span>
+              <span>Wholesale Vault</span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              100% verified codes with secret PIN delivery for instant cart payment.
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Wholesale Gift Vouchers
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+              100% verified codes with secret PIN delivery for instant cart payment and 3X stacking.
             </p>
           </div>
 
           <Link
             href="/vouchers"
-            className="text-xs font-black text-[#E51B24] hover:underline flex items-center gap-1 self-start sm:self-auto"
+            className="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-[#E51B24] text-white text-xs font-black transition flex items-center gap-2 self-start sm:self-auto shadow-sm"
           >
             <span>View All Vouchers &amp; Calculate 3X Savings</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
           {brands.slice(0, 4).map((b) => (
             <Link
               key={b.id}
               href="/vouchers"
-              className="bg-white border border-slate-200 rounded-3xl p-5 hover:border-red-300 hover:shadow-lg transition group flex flex-col justify-between"
+              className="relative bg-white border border-slate-200/90 rounded-[28px] p-6 hover:border-[#E51B24]/40 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between overflow-hidden"
             >
-              <div className="w-12 h-12 rounded-2xl bg-slate-50 p-2 border border-slate-100 flex items-center justify-center mb-4">
-                <img src={b.logoUrl} alt={b.name} className="max-h-8 max-w-full object-contain" />
+              {/* Subtle background glow on hover */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-xl group-hover:bg-red-500/10 transition-colors pointer-events-none" />
+
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 p-2.5 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                  <img src={b.logoUrl || b.logo_url} alt={b.name} className="max-h-9 max-w-full object-contain" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-red-50 text-[#E51B24] text-[10px] font-black tracking-wider uppercase border border-red-100">
+                  Instant
+                </span>
               </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 group-hover:text-[#E51B24] transition">{b.name}</h3>
-                <span className="text-xs font-extrabold text-[#E51B24] block mt-0.5">Flat {b.discount}% Cut</span>
+
+              <div className="relative z-10 space-y-1">
+                <h3 className="text-sm font-black text-slate-900 group-hover:text-[#E51B24] transition line-clamp-1">
+                  {b.name}
+                </h3>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                    Flat {b.discount || b.brand_vouchers?.[0]?.resale_discount_pct || 10}% OFF
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-400 group-hover:translate-x-1 transition-transform inline-block">
+                    →
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
