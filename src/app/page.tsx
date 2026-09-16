@@ -1068,52 +1068,154 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. ABOUT US & BRAND COLLABORATION TRUST SECTION */}
-      <section id="about" className="max-w-7xl mx-auto px-4 sm:px-6 py-16 border-b border-slate-200">
-        <div className="bg-white border border-slate-200 rounded-[36px] p-8 sm:p-12 shadow-sm space-y-10">
-          <div className="max-w-2xl space-y-3 text-left">
-            <span className="text-xs font-black text-[#E51B24] uppercase tracking-wider bg-red-50 border border-red-200 px-3 py-1 rounded-full">
-              What We Do
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-              Empowering India to Never Pay Full Retail Price Again.
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
-              AllInOneVouchers is an automated financial savings platform designed to bridge the gap between wholesale voucher inventory, merchant promo codes, and consumer credit card rebates.
-            </p>
-          </div>
+      {/* 6. ABOUT US & BRAND COLLABORATION TRUST SECTION (AWWWARDS BENTO ARCHITECTURE) */}
+      <section id="about" className="max-w-7xl mx-auto px-4 sm:px-6 py-20 relative select-none">
+        {/* Ambient Background Blur Beams */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-80 bg-gradient-to-r from-red-500/10 via-rose-500/5 to-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 text-[#E51B24] flex items-center justify-center font-black">
-                <Percent className="w-5 h-5" />
+        <div className="rounded-[40px] bg-slate-950 p-8 sm:p-14 text-white relative overflow-hidden border border-slate-800 shadow-[0_30px_100px_rgba(15,23,42,0.45)]">
+          
+          {/* Micro Mesh Dots Pattern */}
+          <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:28px_28px] opacity-25 pointer-events-none" />
+
+          {/* Section Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 border-b border-slate-800/80 relative z-10">
+            <div className="space-y-4 max-w-2xl text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-500/20 via-rose-500/15 to-transparent border border-red-500/30 text-red-400 text-[11px] font-black uppercase tracking-widest">
+                <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
+                <span>India's Decentralized Arbitrage Layer</span>
               </div>
-              <h3 className="text-base font-black text-slate-900">Wholesale Arbitrage</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                We bulk-source brand gift cards directly from corporate channels, passing real upfront savings directly to end consumers.
+
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] text-white">
+                Engineered to Break <br />
+                <span className="bg-gradient-to-r from-[#E51B24] via-rose-400 to-amber-300 bg-clip-text text-transparent">
+                  Retail Price Traps.
+                </span>
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">
+                AllInOneVouchers directly bridges corporate bulk inventory, store checkout coupon codes, and bank card statements into one automated single-click execution pipeline.
               </p>
             </div>
 
-            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0B2B5C] flex items-center justify-center font-black">
-                <Layers className="w-5 h-5" />
+            {/* Live Verified Protocol Badge */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-[#E51B24]/20 border border-[#E51B24]/40 flex items-center justify-center text-[#E51B24]">
+                <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-slate-900">3X Stacking Stack Engine</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Stacking wholesale vouchers + verified store coupons + credit card cashbacks in one calculation pipeline to find true lowest costs.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">
-                <Award className="w-5 h-5" />
+              <div className="text-left">
+                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">Bank Grade Desk</span>
+                <span className="text-sm font-black text-white">100% Zero-Loss Protocol</span>
               </div>
-              <h3 className="text-base font-black text-slate-900">Brand Partnerships</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                We work directly with direct-to-consumer and enterprise brands to deliver high-converting user traffic and verified order volume.
-              </p>
             </div>
           </div>
+
+          {/* Awwwards 3D Interactive Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-10 relative z-10">
+            
+            {/* Bento Card 1: Wholesale Arbitrage (Span 4) */}
+            <motion.div 
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="md:col-span-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-7 sm:p-8 flex flex-col justify-between space-y-6 hover:border-red-500/50 hover:shadow-[0_20px_40px_rgba(229,27,36,0.12)] transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all pointer-events-none" />
+
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-400 flex items-center justify-center font-black group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                  <Percent className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-red-400 uppercase tracking-widest block mb-1">Layer 01 • Sourcing</span>
+                  <h3 className="text-xl font-black text-white">Wholesale Arbitrage</h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  We bulk-acquire digital brand allocations directly from authorized corporate registries, passing upfront enterprise discounts directly to buyers with zero markup.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Enterprise Bulk Flow</span>
+                <span className="text-red-400 font-black">Up to 15% Upfront</span>
+              </div>
+            </motion.div>
+
+            {/* Bento Card 2: 3X Stacking Stack Engine (Span 4) */}
+            <motion.div 
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="md:col-span-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-7 sm:p-8 flex flex-col justify-between space-y-6 hover:border-blue-500/50 hover:shadow-[0_20px_40px_rgba(59,130,246,0.12)] transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all pointer-events-none" />
+
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center font-black group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest block mb-1">Layer 02 • Pipeline</span>
+                  <h3 className="text-xl font-black text-white">3X Stacking Formula</h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  Wholesale brand voucher + verified active merchant promo codes + credit card cashback statement refund combined simultaneously into one order.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Mathematical Delta</span>
+                <span className="text-blue-400 font-black">Net ~40% Off</span>
+              </div>
+            </motion.div>
+
+            {/* Bento Card 3: Brand Partnerships (Span 4) */}
+            <motion.div 
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="md:col-span-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-7 sm:p-8 flex flex-col justify-between space-y-6 hover:border-emerald-500/50 hover:shadow-[0_20px_40px_rgba(16,185,129,0.12)] transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
+
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-black group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest block mb-1">Layer 03 • Ecosystem</span>
+                  <h3 className="text-xl font-black text-white">Brand Partnerships</h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  Direct integration with D2C giants and marketplace aggregators to guarantee instant 16-digit voucher validation and fraud-proof checkout clearing.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Delivery Latency</span>
+                <span className="text-emerald-400 font-black">0-Minute PIN</span>
+              </div>
+            </motion.div>
+
+          </div>
+
+          {/* Bottom Trust Stat Bar */}
+          <div className="mt-10 pt-8 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="space-y-1">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-white">₹1.8Cr+</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Real Cashback Unlocked</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-white">0 Min</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Secret PIN Unlock Time</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-white">100%</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Corporate Authenticity</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-white">24x7</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Direct Concierge Desk</span>
+            </div>
+          </div>
+
         </div>
       </section>
 
