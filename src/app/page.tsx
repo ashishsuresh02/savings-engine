@@ -1223,7 +1223,7 @@ export default function Home() {
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  Leading brands (Swiggy, Amazon, Zomato, Myntra) release wholesale allocations through corporate registries[cite: 3]. We pass these bulk enterprise savings directly to your screen with zero markup[cite: 3].
+                  Leading brands (Swiggy, Amazon, Zomato, Myntra) release wholesale allocations through corporate registries. We pass these bulk enterprise savings directly to your screen with zero markup.
                 </p>
               </div>
             </motion.div>
@@ -1250,7 +1250,7 @@ export default function Home() {
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  Never depend on a single promo code. Buy discounted vouchers + apply active in-app merchant codes + earn credit card cashbacks simultaneously to slash up to 40% off your bill[cite: 3].
+                  Never depend on a single promo code. Buy discounted vouchers + apply active in-app merchant codes + earn credit card cashbacks simultaneously to slash up to 40% off your bill.
                 </p>
               </div>
             </motion.div>
@@ -1277,7 +1277,7 @@ export default function Home() {
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                  The moment payment confirms, your 16-digit voucher code and private PIN unlock on-screen with zero lag, syncing automatically to your encrypted Member Vault and WhatsApp[cite: 3].
+                  The moment payment confirms, your 16-digit voucher code and private PIN unlock on-screen with zero lag, syncing automatically to your encrypted Member Vault and WhatsApp.
                 </p>
               </div>
             </motion.div>
@@ -1303,7 +1303,7 @@ export default function Home() {
                 Still paying full retail price at checkout?
               </h4>
               <p className="text-[11px] text-slate-500 font-semibold">
-                Explore our live voucher inventory and calculate your net stacked savings right now[cite: 3].
+                Explore our live voucher inventory and calculate your net stacked savings right now.
               </p>
             </div>
           </div>
