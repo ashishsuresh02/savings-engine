@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Play, 
   Volume2, 
@@ -10,7 +10,8 @@ import {
   ArrowUpRight, 
   Flame, 
   ChevronLeft, 
-  ChevronRight
+  ChevronRight,
+  Film
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -119,7 +120,7 @@ export default function SponsoredReelsFeed({
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {reels.map((item) => (
-            <ReelCard key={item.id} item={item} onSelectBrand={onSelectBrand} />
+            <SmartReelCard key={item.id} item={item} onSelectBrand={onSelectBrand} />
           ))}
         </div>
       )}
@@ -128,30 +129,25 @@ export default function SponsoredReelsFeed({
   );
 }
 
-function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slug: string) => void }) {
+// SMART REEL CARD WITH AUTO-FALLBACK
+function SmartReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slug: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  // Auto-play safely with Muted policy
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || hasError) return;
 
     video.muted = true;
-    video.defaultMuted = true;
-    
     const playAttempt = video.play();
     if (playAttempt !== undefined) {
       playAttempt
-        .then(() => {
-          setIsPlaying(true);
-        })
-        .catch(() => {
-          setIsPlaying(false);
-        });
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
     }
-  }, [item.video_url]);
+  }, [item.video_url, hasError]);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -159,9 +155,7 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
     if (!video) return;
 
     if (video.paused) {
-      video.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
+      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     } else {
       video.pause();
       setIsPlaying(false);
@@ -179,50 +173,64 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
   return (
     <div className="snap-start shrink-0 w-[270px] sm:w-[310px] h-[520px] rounded-[32px] overflow-hidden border border-slate-200 bg-slate-950 shadow-lg relative group flex flex-col justify-between select-none">
       
-      {/* Video Container */}
+      {/* Media Player or Poster Fallback */}
       <div 
-        className="absolute inset-0 w-full h-full cursor-pointer bg-slate-900"
-        onClick={togglePlay}
+        className="absolute inset-0 w-full h-full cursor-pointer bg-slate-900 overflow-hidden"
+        onClick={!hasError ? togglePlay : undefined}
       >
-        <video
-          ref={videoRef}
-          src={item.video_url}
-          poster={item.thumbnail_url || undefined}
-          loop
-          muted={isMuted}
-          playsInline
-          autoPlay
-          preload="auto"
-          className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-        />
+        {!hasError && item.video_url ? (
+          <video
+            ref={videoRef}
+            src={item.video_url}
+            poster={item.thumbnail_url || undefined}
+            loop
+            muted={isMuted}
+            playsInline
+            autoPlay
+            preload="metadata"
+            onError={() => setHasError(true)}
+            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+          />
+        ) : (
+          /* Fallback Mode if video format is webpage link or unstreamable */
+          <div className="w-full h-full relative flex items-center justify-center">
+            <img 
+              src={item.thumbnail_url || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600"} 
+              alt={item.title}
+              className="w-full h-full object-cover opacity-50"
+            />
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-4 text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
+                <Film className="w-5 h-5 text-rose-400" />
+              </div>
+              <span className="text-xs font-bold text-white">Click link below to watch story</span>
+            </div>
+          </div>
+        )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/40 pointer-events-none" />
       </div>
 
       {/* Top Header Controls */}
       <div className="relative z-20 p-4 flex items-center justify-between pointer-events-none">
-        {item.is_sponsored ? (
-          <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[10px] font-black tracking-wider uppercase text-white flex items-center gap-1.5 shadow-sm">
-            <Sparkles className="w-3 h-3 text-red-400" />
-            <span>{item.brand_name}</span>
-          </span>
-        ) : (
-          <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[10px] font-bold tracking-wider uppercase text-slate-200">
-            {item.brand_name}
-          </span>
-        )}
+        <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[10px] font-black tracking-wider uppercase text-white flex items-center gap-1.5 shadow-sm">
+          <Sparkles className="w-3 h-3 text-red-400" />
+          <span>{item.brand_name}</span>
+        </span>
 
-        <button
-          type="button"
-          onClick={toggleMute}
-          className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black pointer-events-auto cursor-pointer"
-        >
-          {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
-        </button>
+        {!hasError && (
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition hover:bg-black pointer-events-auto cursor-pointer"
+          >
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
+          </button>
+        )}
       </div>
 
       {/* Center Play Icon when paused */}
-      {!isPlaying && (
+      {!isPlaying && !hasError && (
         <div 
           onClick={togglePlay}
           className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 cursor-pointer"
@@ -234,7 +242,7 @@ function ReelCard({ item, onSelectBrand }: { item: ReelItem; onSelectBrand: (slu
       )}
 
       {/* Bottom Content */}
-      <div className="relative z-20 p-5 space-y-3 pointer-events-auto">
+      <div className="relative z-20 p-5 space-y-3 pointer-events-auto bg-gradient-to-t from-black via-black/80 to-transparent">
         <div className="space-y-1">
           <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#E51B24] text-white">
             {item.deal_tag}
