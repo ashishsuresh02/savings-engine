@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ShieldCheck, 
   RefreshCw, 
@@ -21,7 +21,12 @@ import {
   ArrowRight,
   LogOut,
   Flame,
-  ShoppingBag
+  ShoppingBag,
+  Film,
+  Upload,
+  Download,
+  FileSpreadsheet,
+  FileJson
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -188,7 +193,7 @@ function BrandManager({
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-          <Plus className="w-4 h-4 text-[#E51B24]" /> Add / Update Store & Voucher
+          <Plus className="w-4 h-4 text-[#E51B24]" /> Add / Update Store &amp; Voucher
         </h3>
 
         <form onSubmit={handleCreate} className="space-y-3.5 text-xs">
@@ -562,10 +567,10 @@ function DealManager({
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none cursor-pointer"
             >
-              <option value="Electronics">Electronics & Audio</option>
-              <option value="Fashion">Fashion & Clothing</option>
-              <option value="Footwear">Footwear & Shoes</option>
-              <option value="Beauty">Beauty & Grooming</option>
+              <option value="Electronics">Electronics &amp; Audio</option>
+              <option value="Fashion">Fashion &amp; Clothing</option>
+              <option value="Footwear">Footwear &amp; Shoes</option>
+              <option value="Beauty">Beauty &amp; Grooming</option>
               <option value="Loot">Under ₹499 Loot Deals</option>
             </select>
           </div>
@@ -895,7 +900,232 @@ function InventoryManager({
 }
 
 // ==========================================
-// 4. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
+// 4. REELS LOOT STUDIO (VIDEO & DEEP LINK EMBED)
+// ==========================================
+function ReelManager({
+  brands,
+  reels,
+  onRefresh,
+  showStatus
+}: {
+  brands: any[];
+  reels: any[];
+  onRefresh: () => void;
+  showStatus: (msg: string, type: 'success' | 'error') => void;
+}) {
+  const [selectedBrand, setSelectedBrand] = useState(brands[0]?.name || 'Myntra');
+  const [reelTitle, setReelTitle] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [affiliateUrl, setAffiliateUrl] = useState('');
+  const [voucherSlug, setVoucherSlug] = useState(brands[0]?.slug || 'myntra');
+  const [discountTag, setDiscountTag] = useState('Flat 15% OFF');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreateReel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.from('brand_reels').insert([{
+        brand_name: selectedBrand,
+        reel_title: reelTitle.trim(),
+        video_url: videoUrl.trim(),
+        affiliate_url: affiliateUrl.trim(),
+        voucher_slug: voucherSlug.trim().toLowerCase(),
+        discount_tag: discountTag.trim(),
+        views_count: 1420
+      }]);
+
+      if (error) throw error;
+
+      showStatus('Reel successfully published to Studio!', 'success');
+      setReelTitle('');
+      setVideoUrl('');
+      setAffiliateUrl('');
+      onRefresh();
+    } catch (err: any) {
+      showStatus(err.message || 'Failed to save reel', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteReel = async (id: string, title: string) => {
+    if (!confirm(`Delete reel "${title}"?`)) return;
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase.from('brand_reels').delete().eq('id', id);
+      if (error) throw error;
+      showStatus('Reel deleted', 'success');
+      onRefresh();
+    } catch (err: any) {
+      showStatus(err.message, 'error');
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <Film className="w-4 h-4 text-[#E51B24]" /> Add Viral Loot Reel
+        </h3>
+
+        <form onSubmit={handleCreateReel} className="space-y-3.5 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Target Brand Store</label>
+            <select
+              value={selectedBrand}
+              onChange={(e) => {
+                setSelectedBrand(e.target.value);
+                const matched = brands.find(b => b.name === e.target.value);
+                if (matched) setVoucherSlug(matched.slug);
+              }}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none cursor-pointer"
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.name}>{b.name}</option>
+              ))}
+              <option value="Myntra">Myntra</option>
+              <option value="Amazon">Amazon</option>
+              <option value="Zomato">Zomato</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Reel Title / Hook *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Zara/Myntra Sneakers Loot under ₹999"
+              value={reelTitle}
+              onChange={(e) => setReelTitle(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none focus:border-[#E51B24]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Direct Video URL (MP4 / CDN) *</label>
+            <input
+              type="url"
+              required
+              placeholder="https://.../video.mp4"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-mono text-[11px]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Direct Product Affiliate Link *</label>
+            <input
+              type="url"
+              required
+              placeholder="https://myntra.com/product?aff_id=..."
+              value={affiliateUrl}
+              onChange={(e) => setAffiliateUrl(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-mono text-[11px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Linked Voucher Slug</label>
+              <input
+                type="text"
+                value={voucherSlug}
+                onChange={(e) => setVoucherSlug(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Loot Badge Tag</label>
+              <input
+                type="text"
+                value={discountTag}
+                onChange={(e) => setDiscountTag(e.target.value)}
+                placeholder="Flat 15% OFF"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
+          >
+            {loading ? 'Publishing Reel...' : 'Publish Reel to Feed'}
+          </button>
+        </form>
+      </div>
+
+      <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
+          <span>Active Loot Reels Feed</span>
+          <span className="text-xs font-bold text-slate-400">{reels.length} Active Reels</span>
+        </h3>
+
+        <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
+          {reels.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs font-medium">
+              No curated reels added yet. Upload your first reel on the left.
+            </div>
+          ) : (
+            reels.map((r) => (
+              <div
+                key={r.id}
+                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4 text-xs"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-16 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden text-white font-mono text-[10px]">
+                    <Film className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                        {r.brand_name}
+                      </span>
+                      <span className="text-red-600 font-bold text-[10px]">
+                        {r.discount_tag}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-slate-900 truncate max-w-xs">{r.reel_title}</h4>
+                    <span className="text-slate-400 text-[10px] block truncate font-mono mt-0.5">
+                      Voucher: /{r.voucher_slug}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={r.affiliate_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
+                    title="Test Link"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    onClick={() => handleDeleteReel(r.id, r.reel_title)}
+                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] transition cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 5. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
 // ==========================================
 function OrderManager({ 
   orders, 
@@ -953,7 +1183,7 @@ function OrderManager({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[#E51B24]" /> Customer Orders & Google Email UTR Ledger
+            <Clock className="w-4 h-4 text-[#E51B24]" /> Customer Orders &amp; Google Email UTR Ledger
           </h3>
           <p className="text-xs text-slate-500 font-medium">Verify incoming 12-digit UPI UTR reference codes against your statement.</p>
         </div>
@@ -1001,7 +1231,7 @@ function OrderManager({
                     </div>
                     {ord.user_phone && ord.user_phone !== '9999999999' && (
                       <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                        <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>+91 {ord.user_phone}</span>
                       </div>
                     )}
@@ -1047,7 +1277,7 @@ function OrderManager({
 }
 
 // ==========================================
-// 5. COUPONS & PROMO MANAGER (FULL CRUD)
+// 6. COUPONS & PROMO MANAGER (FULL CRUD)
 // ==========================================
 function CouponManager({ 
   brands, 
@@ -1250,10 +1480,10 @@ function CouponManager({
 }
 
 // ==========================================
-// 6. MASTER CONTROLLER (WITH SECURE AUTH GATE)
+// 7. MASTER CONTROLLER (WITH BULK IMPORT / EXPORT)
 // ==========================================
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'DEALS' | 'BRANDS' | 'INVENTORY' | 'ORDERS' | 'COUPONS'>('DEALS');
+  const [activeTab, setActiveTab] = useState<'DEALS' | 'BRANDS' | 'INVENTORY' | 'ORDERS' | 'COUPONS' | 'REELS'>('DEALS');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
 
@@ -1263,14 +1493,43 @@ export default function AdminDashboard() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Master Data
+  // Master Datasets
   const [brands, setBrands] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
+  const [reels, setReels] = useState<any[]>([]);
 
-  // Verify Session on Load
+  // Bulk Import Modal States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importFormat, setImportFormat] = useState<'CSV' | 'JSON'>('CSV');
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getTableName = () => {
+    switch (activeTab) {
+      case 'DEALS': return 'curated_deals';
+      case 'BRANDS': return 'brands';
+      case 'INVENTORY': return 'voucher_inventory';
+      case 'COUPONS': return 'brand_coupons';
+      case 'REELS': return 'brand_reels';
+      default: return 'customer_orders';
+    }
+  };
+
+  const getActiveDataset = () => {
+    switch (activeTab) {
+      case 'DEALS': return deals;
+      case 'BRANDS': return brands;
+      case 'INVENTORY': return inventory;
+      case 'COUPONS': return coupons;
+      case 'REELS': return reels;
+      default: return orders;
+    }
+  };
+
   useEffect(() => {
     async function checkSession() {
       if (!supabase) return;
@@ -1317,44 +1576,21 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
-      // 1. Brands
-      const { data: bData } = await supabase
-        .from('brands')
-        .select(`
-          id, name, slug, logo_url, website_url, is_active,
-          brand_vouchers(id, resale_discount_pct, wholesale_discount_pct, min_denomination, max_denomination)
-        `)
-        .order('name', { ascending: true });
-      if (bData) setBrands(bData);
+      const [bRes, dRes, invRes, ordRes, cRes, rRes] = await Promise.all([
+        supabase.from('brands').select(`id, name, slug, logo_url, website_url, is_active, brand_vouchers(id, resale_discount_pct, wholesale_discount_pct, min_denomination, max_denomination)`).order('name', { ascending: true }),
+        supabase.from('curated_deals').select('*').order('created_at', { ascending: false }),
+        supabase.from('voucher_inventory').select('id, brand_name, voucher_code, voucher_pin, face_value, buying_price, selling_price, status').order('created_at', { ascending: false }),
+        supabase.from('customer_orders').select('id, user_email, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered, created_at').order('created_at', { ascending: false }),
+        supabase.from('brand_coupons').select('id, coupon_code, title, discount_value, stackable_with_voucher, is_verified, brands(name)').order('created_at', { ascending: false }),
+        supabase.from('brand_reels').select('*').order('created_at', { ascending: false })
+      ]);
 
-      // 2. Curated Product Deals (EarnKaro Style)
-      const { data: dData } = await supabase
-        .from('curated_deals')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (dData) setDeals(dData);
-
-      // 3. Vault Inventory Codes
-      const { data: invData } = await supabase
-        .from('voucher_inventory')
-        .select('id, brand_name, voucher_code, voucher_pin, face_value, buying_price, selling_price, status')
-        .order('created_at', { ascending: false });
-      if (invData) setInventory(invData);
-
-      // 4. Customer Orders (Now Includes user_email & user_phone)
-      const { data: ordData } = await supabase
-        .from('customer_orders')
-        .select('id, user_email, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered, created_at')
-        .order('created_at', { ascending: false });
-      if (ordData) setOrders(ordData);
-
-      // 5. Coupons
-      const { data: cData } = await supabase
-        .from('brand_coupons')
-        .select('id, coupon_code, title, discount_value, stackable_with_voucher, is_verified, brands(name)')
-        .order('created_at', { ascending: false });
-      if (cData) setCoupons(cData);
-
+      if (bRes.data) setBrands(bRes.data);
+      if (dRes.data) setDeals(dRes.data);
+      if (invRes.data) setInventory(invRes.data);
+      if (ordRes.data) setOrders(ordRes.data);
+      if (cRes.data) setCoupons(cRes.data);
+      if (rRes.data) setReels(rRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -1365,6 +1601,124 @@ export default function AdminDashboard() {
   const showStatus = (text: string, type: 'success' | 'error') => {
     setStatusMessage({ text, type });
     setTimeout(() => setStatusMessage({ text: '', type: '' }), 4000);
+  };
+
+  // EXPORT ENGINE
+  const handleExportCSV = () => {
+    const dataset = getActiveDataset();
+    if (!dataset || dataset.length === 0) {
+      alert('No data available to export in this tab.');
+      return;
+    }
+    const cols = Object.keys(dataset[0]).filter(k => typeof dataset[0][k] !== 'object');
+    const headerRow = cols.join(',');
+    const rows = dataset.map((row) =>
+      cols
+        .map((col) => {
+          let cell = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+          if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+            cell = `"${cell.replace(/"/g, '""')}"`;
+          }
+          return cell;
+        })
+        .join(',')
+    );
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headerRow, ...rows].join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `${getTableName()}_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportJSON = () => {
+    const dataset = getActiveDataset();
+    if (!dataset || dataset.length === 0) {
+      alert('No data available to export in this tab.');
+      return;
+    }
+    const jsonStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(dataset, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', jsonStr);
+    downloadAnchor.setAttribute('download', `${getTableName()}_export_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    document.body.removeChild(downloadAnchor);
+  };
+
+  // BULK IMPORT PARSER
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setImportText(text);
+      if (file.name.endsWith('.json')) {
+        setImportFormat('JSON');
+      } else {
+        setImportFormat('CSV');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const processBulkImport = async () => {
+    const targetTable = getTableName();
+    if (!importText.trim() || !supabase) {
+      alert('Please provide valid CSV or JSON text data.');
+      return;
+    }
+
+    try {
+      setImportStatus('Processing & Validating...');
+      let parsedRows: any[] = [];
+
+      if (importFormat === 'JSON') {
+        parsedRows = JSON.parse(importText);
+        if (!Array.isArray(parsedRows)) throw new Error('Root JSON element must be an Array.');
+      } else {
+        const lines = importText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length < 2) throw new Error('CSV must have a header line and at least 1 record row.');
+
+        const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+        parsedRows = lines.slice(1).map((line) => {
+          const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((v) => v.trim().replace(/^"|"$/g, ''));
+          const rowObj: any = {};
+          headers.forEach((h, idx) => {
+            let val: any = values[idx];
+            if (val === 'true') val = true;
+            if (val === 'false') val = false;
+            if (!isNaN(Number(val)) && val !== '') val = Number(val);
+            rowObj[h] = val;
+          });
+          return rowObj;
+        });
+      }
+
+      parsedRows = parsedRows.map((r) => {
+        const cleanObj = { ...r };
+        if (!cleanObj.id || cleanObj.id === '') delete cleanObj.id;
+        return cleanObj;
+      });
+
+      setImportStatus(`Importing ${parsedRows.length} records into ${targetTable}...`);
+
+      const { error } = await supabase.from(targetTable).insert(parsedRows);
+      if (error) throw error;
+
+      alert(`✅ Imported ${parsedRows.length} records into ${targetTable}!`);
+      setShowImportModal(false);
+      setImportText('');
+      setImportStatus(null);
+      fetchData();
+    } catch (err: any) {
+      alert(`Import Failed: ${err.message}`);
+      setImportStatus(null);
+    }
   };
 
   if (!isAuthenticated) {
@@ -1443,34 +1797,63 @@ export default function AdminDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-[#E51B24] text-[11px] font-black uppercase tracking-wider mb-1.5 border border-red-200">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Fintech & Affiliate Master Console</span>
+              <span>Fintech &amp; Affiliate Master Console</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               AllInOneVouchers Control
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Manage live product deals, brands, vouchers, promo codes, and UTR ledger entries.
+              Manage live product deals, brands, vouchers, promo codes, reels studio, and UTR ledger entries[cite: 6].
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5 text-amber-500" />
+              <span>Bulk Import</span>
+            </button>
+
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-0.5">
+              <button
+                onClick={handleExportCSV}
+                className="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                title="Export CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>CSV</span>
+              </button>
+              <button
+                onClick={handleExportJSON}
+                className="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                title="Export JSON"
+              >
+                <FileJson className="w-3.5 h-3.5 text-blue-600" />
+                <span>JSON</span>
+              </button>
+            </div>
+
             <button
               onClick={fetchData}
               disabled={loading}
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Sync All</span>
             </button>
+
             <a
               href="/"
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2 rounded-xl bg-[#0B2B5C] hover:bg-slate-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+              className="px-3.5 py-2 rounded-xl bg-[#0B2B5C] hover:bg-slate-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
             >
               <span>Live Site</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
+
             <button
               onClick={handleLogout}
               className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-[#E51B24] text-slate-600 transition cursor-pointer"
@@ -1492,7 +1875,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 5-Tab Navigation Bar */}
+        {/* 6-Tab Navigation Bar */}
         <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveTab('DEALS')}
@@ -1501,7 +1884,7 @@ export default function AdminDashboard() {
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
-            <span>Loot Deals & Products ({deals.length})</span>
+            <span>Loot Deals &amp; Products ({deals.length})</span>
           </button>
 
           <button
@@ -1511,7 +1894,7 @@ export default function AdminDashboard() {
             }`}
           >
             <Store className="w-3.5 h-3.5" />
-            <span>Stores & Deals ({brands.length})</span>
+            <span>Stores &amp; Deals ({brands.length})</span>
           </button>
 
           <button
@@ -1531,7 +1914,7 @@ export default function AdminDashboard() {
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Orders & UTRs ({orders.length})</span>
+            <span>Orders &amp; UTRs ({orders.length})</span>
           </button>
 
           <button
@@ -1542,6 +1925,16 @@ export default function AdminDashboard() {
           >
             <Tag className="w-3.5 h-3.5" />
             <span>Store Coupons ({coupons.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('REELS')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'REELS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Film className="w-3.5 h-3.5" />
+            <span>Reels Studio ({reels.length})</span>
           </button>
         </div>
 
@@ -1561,8 +1954,105 @@ export default function AdminDashboard() {
         {activeTab === 'COUPONS' && (
           <CouponManager brands={brands} coupons={coupons} onRefresh={fetchData} showStatus={showStatus} />
         )}
+        {activeTab === 'REELS' && (
+          <ReelManager brands={brands} reels={reels} onRefresh={fetchData} showStatus={showStatus} />
+        )}
 
       </div>
+
+      {/* ======================================================== */}
+      {/* BULK IMPORT MODAL (CSV / JSON)                           */}
+      {/* ======================================================== */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Upload className="w-5 h-5 text-[#E51B24]" />
+                <h3 className="text-base font-black">Bulk Import into '{getTableName()}'</h3>
+              </div>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600">Format:</span>
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button
+                    onClick={() => setImportFormat('CSV')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                      importFormat === 'CSV' ? 'bg-[#E51B24] text-white' : 'text-slate-600'
+                    }`}
+                  >
+                    CSV
+                  </button>
+                  <button
+                    onClick={() => setImportFormat('JSON')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                      importFormat === 'JSON' ? 'bg-[#E51B24] text-white' : 'text-slate-600'
+                    }`}
+                  >
+                    JSON
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".csv,.json"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-800 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>Choose File ({importFormat})</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-600">
+                Or Paste Raw {importFormat} Below:
+              </label>
+              <textarea
+                rows={9}
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder={
+                  importFormat === 'CSV'
+                    ? `title,brand_name,deal_price,mrp_price,category,affiliate_url\nOnePlus Buds,Amazon,1499,2999,Electronics,https://amazon.in/...`
+                    : `[\n  {\n    "title": "OnePlus Buds",\n    "brand_name": "Amazon",\n    "deal_price": 1499\n  }\n]`
+                }
+                className="w-full bg-slate-50 border border-slate-200 focus:border-[#E51B24] rounded-2xl p-3.5 text-xs font-mono text-slate-900 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs text-amber-600 font-mono">
+                {importStatus || `Target Table: ${getTableName()}`}
+              </span>
+              <button
+                onClick={processBulkImport}
+                className="px-6 py-2.5 rounded-xl bg-[#E51B24] hover:bg-[#CC141D] text-white text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-lg shadow-red-500/20"
+              >
+                Execute Bulk Insert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
