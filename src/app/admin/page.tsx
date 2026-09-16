@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ShieldCheck, 
   RefreshCw, 
@@ -21,10 +21,9 @@ import {
   ArrowRight,
   LogOut,
   Flame,
-  ShoppingBag,
   Film,
+  Play,
   Upload,
-  Download,
   FileSpreadsheet,
   FileJson
 } from 'lucide-react';
@@ -900,232 +899,7 @@ function InventoryManager({
 }
 
 // ==========================================
-// 4. REELS LOOT STUDIO (VIDEO & DEEP LINK EMBED)
-// ==========================================
-function ReelManager({
-  brands,
-  reels,
-  onRefresh,
-  showStatus
-}: {
-  brands: any[];
-  reels: any[];
-  onRefresh: () => void;
-  showStatus: (msg: string, type: 'success' | 'error') => void;
-}) {
-  const [selectedBrand, setSelectedBrand] = useState(brands[0]?.name || 'Myntra');
-  const [reelTitle, setReelTitle] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
-  const [affiliateUrl, setAffiliateUrl] = useState('');
-  const [voucherSlug, setVoucherSlug] = useState(brands[0]?.slug || 'myntra');
-  const [discountTag, setDiscountTag] = useState('Flat 15% OFF');
-  const [loading, setLoading] = useState(false);
-
-  const handleCreateReel = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) return;
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.from('brand_reels').insert([{
-        brand_name: selectedBrand,
-        reel_title: reelTitle.trim(),
-        video_url: videoUrl.trim(),
-        affiliate_url: affiliateUrl.trim(),
-        voucher_slug: voucherSlug.trim().toLowerCase(),
-        discount_tag: discountTag.trim(),
-        views_count: 1420
-      }]);
-
-      if (error) throw error;
-
-      showStatus('Reel successfully published to Studio!', 'success');
-      setReelTitle('');
-      setVideoUrl('');
-      setAffiliateUrl('');
-      onRefresh();
-    } catch (err: any) {
-      showStatus(err.message || 'Failed to save reel', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteReel = async (id: string, title: string) => {
-    if (!confirm(`Delete reel "${title}"?`)) return;
-    if (!supabase) return;
-
-    try {
-      const { error } = await supabase.from('brand_reels').delete().eq('id', id);
-      if (error) throw error;
-      showStatus('Reel deleted', 'success');
-      onRefresh();
-    } catch (err: any) {
-      showStatus(err.message, 'error');
-    }
-  };
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-          <Film className="w-4 h-4 text-[#E51B24]" /> Add Viral Loot Reel
-        </h3>
-
-        <form onSubmit={handleCreateReel} className="space-y-3.5 text-xs">
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Target Brand Store</label>
-            <select
-              value={selectedBrand}
-              onChange={(e) => {
-                setSelectedBrand(e.target.value);
-                const matched = brands.find(b => b.name === e.target.value);
-                if (matched) setVoucherSlug(matched.slug);
-              }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none cursor-pointer"
-            >
-              {brands.map((b) => (
-                <option key={b.id} value={b.name}>{b.name}</option>
-              ))}
-              <option value="Myntra">Myntra</option>
-              <option value="Amazon">Amazon</option>
-              <option value="Zomato">Zomato</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Reel Title / Hook *</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Zara/Myntra Sneakers Loot under ₹999"
-              value={reelTitle}
-              onChange={(e) => setReelTitle(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold outline-none focus:border-[#E51B24]"
-            />
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Direct Video URL (MP4 / CDN) *</label>
-            <input
-              type="url"
-              required
-              placeholder="https://.../video.mp4"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-mono text-[11px]"
-            />
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Direct Product Affiliate Link *</label>
-            <input
-              type="url"
-              required
-              placeholder="https://myntra.com/product?aff_id=..."
-              value={affiliateUrl}
-              onChange={(e) => setAffiliateUrl(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#E51B24] font-mono text-[11px]"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Linked Voucher Slug</label>
-              <input
-                type="text"
-                value={voucherSlug}
-                onChange={(e) => setVoucherSlug(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Loot Badge Tag</label>
-              <input
-                type="text"
-                value={discountTag}
-                onChange={(e) => setDiscountTag(e.target.value)}
-                placeholder="Flat 15% OFF"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
-          >
-            {loading ? 'Publishing Reel...' : 'Publish Reel to Feed'}
-          </button>
-        </form>
-      </div>
-
-      <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-        <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
-          <span>Active Loot Reels Feed</span>
-          <span className="text-xs font-bold text-slate-400">{reels.length} Active Reels</span>
-        </h3>
-
-        <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
-          {reels.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs font-medium">
-              No curated reels added yet. Upload your first reel on the left.
-            </div>
-          ) : (
-            reels.map((r) => (
-              <div
-                key={r.id}
-                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4 text-xs"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-16 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden text-white font-mono text-[10px]">
-                    <Film className="w-5 h-5 text-red-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
-                        {r.brand_name}
-                      </span>
-                      <span className="text-red-600 font-bold text-[10px]">
-                        {r.discount_tag}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-slate-900 truncate max-w-xs">{r.reel_title}</h4>
-                    <span className="text-slate-400 text-[10px] block truncate font-mono mt-0.5">
-                      Voucher: /{r.voucher_slug}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <a
-                    href={r.affiliate_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
-                    title="Test Link"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                  <button
-                    onClick={() => handleDeleteReel(r.id, r.reel_title)}
-                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] transition cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
-// 5. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
+// 4. ORDERS & GOOGLE GMAIL / UTR AUDIT MANAGER
 // ==========================================
 function OrderManager({ 
   orders, 
@@ -1277,7 +1051,7 @@ function OrderManager({
 }
 
 // ==========================================
-// 6. COUPONS & PROMO MANAGER (FULL CRUD)
+// 5. COUPONS & PROMO MANAGER (FULL CRUD)
 // ==========================================
 function CouponManager({ 
   brands, 
@@ -1480,7 +1254,296 @@ function CouponManager({
 }
 
 // ==========================================
-// 7. MASTER CONTROLLER (WITH BULK IMPORT / EXPORT)
+// 6. SPONSORED REELS ENGINE (EXACT FROM YOUR REELS PAGE)[cite: 7]
+// ==========================================
+function ReelManager({
+  brands,
+  reels,
+  onRefresh,
+  showStatus
+}: {
+  brands: any[];
+  reels: any[];
+  onRefresh: () => void;
+  showStatus: (msg: string, type: 'success' | 'error') => void;
+}) {
+  const [brandName, setBrandName] = useState(brands[0]?.name || "Domino's Pizza");
+  const [videoUrl, setVideoUrl] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dealTag, setDealTag] = useState('FLAT 15% OFF');
+  const [isSponsored, setIsSponsored] = useState(true);
+  const [targetBrandSlug, setTargetBrandSlug] = useState(brands[0]?.slug || 'dominos');
+  const [ctaUrl, setCtaUrl] = useState('');
+  const [displayOrder, setDisplayOrder] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const handleAddReel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    setLoading(true);
+
+    try {
+      const payload = {
+        brand_name: brandName,
+        video_url: videoUrl.trim(),
+        thumbnail_url: thumbnailUrl.trim() || null,
+        title: title.trim(),
+        description: description.trim(),
+        deal_tag: dealTag.trim(),
+        is_sponsored: isSponsored,
+        target_brand_slug: targetBrandSlug.trim(),
+        cta_url: ctaUrl.trim() || null,
+        display_order: Number(displayOrder) || 1
+      };
+
+      const { error } = await supabase.from('sponsored_reels').insert([payload]);
+      if (error) throw error;
+
+      showStatus('New Reel successfully deployed to live feed!', 'success');
+      setTitle('');
+      setDescription('');
+      setVideoUrl('');
+      setThumbnailUrl('');
+      setCtaUrl('');
+      onRefresh();
+    } catch (err: any) {
+      showStatus(err.message || 'Insertion failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteReel = async (id: string, reelTitle: string) => {
+    if (!confirm(`Delete reel "${reelTitle}"?`)) return;
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase.from('sponsored_reels').delete().eq('id', id);
+      if (error) throw error;
+      showStatus('Reel deleted from database.', 'success');
+      onRefresh();
+    } catch (err: any) {
+      showStatus(err.message || 'Delete error', 'error');
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Upload Form */}
+      <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <Film className="w-4 h-4 text-[#E51B24]" /> Deploy Video Reel Ad
+        </h3>
+
+        <form onSubmit={handleAddReel} className="space-y-3.5 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Brand Name *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Domino's Pizza, Swiggy, Nike"
+              value={brandName}
+              onChange={(e) => {
+                setBrandName(e.target.value);
+                const matched = brands.find(b => b.name.toLowerCase() === e.target.value.toLowerCase());
+                if (matched) setTargetBrandSlug(matched.slug);
+              }}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold outline-none focus:border-[#E51B24]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Video URL (.mp4 direct link) *</label>
+            <input
+              type="url"
+              required
+              placeholder="https://assets.mixkit.co/.../video.mp4"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono text-[11px] outline-none focus:border-[#E51B24]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Reel Title *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Domino's 13% Secret Pizza Arbitrage"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold outline-none focus:border-[#E51B24]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Offer / Deal Tag</label>
+              <input
+                type="text"
+                required
+                placeholder="FLAT 15% OFF"
+                value={dealTag}
+                onChange={(e) => setDealTag(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-black"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Display Priority</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={displayOrder}
+                onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Target Brand Slug</label>
+              <input
+                type="text"
+                value={targetBrandSlug}
+                onChange={(e) => setTargetBrandSlug(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono text-[11px]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Affiliate CTA URL</label>
+              <input
+                type="url"
+                placeholder="https://brand.com/?aff_id=..."
+                value={ctaUrl}
+                onChange={(e) => setCtaUrl(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono text-[11px]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Thumbnail Cover URL (Optional)</label>
+            <input
+              type="url"
+              placeholder="https://.../thumb.jpg"
+              value={thumbnailUrl}
+              onChange={(e) => setThumbnailUrl(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-[11px]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Description / Stacking Hook</label>
+            <textarea
+              rows={2}
+              placeholder="Explain how users stack coupons and wholesale cards..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 outline-none focus:border-[#E51B24] resize-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="admin-sponsored-check"
+              checked={isSponsored}
+              onChange={(e) => setIsSponsored(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 accent-[#E51B24] cursor-pointer"
+            />
+            <label htmlFor="admin-sponsored-check" className="text-slate-700 font-bold cursor-pointer">
+              Mark as Sponsored Ad Campaign
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-[#E51B24] hover:bg-[#CC141D] disabled:opacity-50 text-white font-black uppercase tracking-wider rounded-xl transition shadow-md shadow-red-500/20 active:scale-95 cursor-pointer"
+          >
+            {loading ? 'Publishing Reel...' : 'Publish Reel to Feed'}
+          </button>
+        </form>
+      </div>
+
+      {/* Reel Feed List */}
+      <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 className="text-base font-black text-slate-900 flex items-center justify-between">
+          <span>Active Video Campaigns</span>
+          <span className="text-xs font-bold text-slate-400">{reels.length} Active Reels</span>
+        </h3>
+
+        <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
+          {reels.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs font-medium">
+              No reels found in sponsored_reels table. Deploy your first reel on the left.
+            </div>
+          ) : (
+            reels.map((reel) => (
+              <div
+                key={reel.id}
+                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4 text-xs"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-16 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden relative text-white">
+                    <Play className="w-5 h-5 text-white/70" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                        {reel.brand_name}
+                      </span>
+                      {reel.is_sponsored && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
+                          Sponsored
+                        </span>
+                      )}
+                      <span className="text-[#E51B24] font-black text-[10px]">
+                        {reel.deal_tag}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-slate-900 truncate max-w-xs">{reel.title}</h4>
+                    <p className="text-[10px] text-slate-500 truncate font-mono mt-0.5">
+                      Slug: /{reel.target_brand_slug} • Order: #{reel.display_order}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {reel.cta_url && (
+                    <a
+                      href={reel.cta_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
+                      title="Test Affiliate Deal Link"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => handleDeleteReel(reel.id, reel.title)}
+                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#E51B24] transition cursor-pointer"
+                    title="Delete Reel"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 7. MASTER CONTROLLER (WITH COMPLETE BULK IMPORT & EXPORT)
 // ==========================================
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'DEALS' | 'BRANDS' | 'INVENTORY' | 'ORDERS' | 'COUPONS' | 'REELS'>('DEALS');
@@ -1493,7 +1556,7 @@ export default function AdminDashboard() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Master Datasets
+  // Master Data
   const [brands, setBrands] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
@@ -1501,7 +1564,7 @@ export default function AdminDashboard() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [reels, setReels] = useState<any[]>([]);
 
-  // Bulk Import Modal States
+  // Bulk Import / Export States
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
   const [importFormat, setImportFormat] = useState<'CSV' | 'JSON'>('CSV');
@@ -1514,7 +1577,7 @@ export default function AdminDashboard() {
       case 'BRANDS': return 'brands';
       case 'INVENTORY': return 'voucher_inventory';
       case 'COUPONS': return 'brand_coupons';
-      case 'REELS': return 'brand_reels';
+      case 'REELS': return 'sponsored_reels';
       default: return 'customer_orders';
     }
   };
@@ -1582,7 +1645,7 @@ export default function AdminDashboard() {
         supabase.from('voucher_inventory').select('id, brand_name, voucher_code, voucher_pin, face_value, buying_price, selling_price, status').order('created_at', { ascending: false }),
         supabase.from('customer_orders').select('id, user_email, user_phone, brand_name, amount_paid, profit_earned, payment_method, payment_status, voucher_code_delivered, created_at').order('created_at', { ascending: false }),
         supabase.from('brand_coupons').select('id, coupon_code, title, discount_value, stackable_with_voucher, is_verified, brands(name)').order('created_at', { ascending: false }),
-        supabase.from('brand_reels').select('*').order('created_at', { ascending: false })
+        supabase.from('sponsored_reels').select('*').order('display_order', { ascending: true })
       ]);
 
       if (bRes.data) setBrands(bRes.data);
@@ -1603,7 +1666,7 @@ export default function AdminDashboard() {
     setTimeout(() => setStatusMessage({ text: '', type: '' }), 4000);
   };
 
-  // EXPORT ENGINE
+  // EXPORT ENGINE (CSV / JSON)
   const handleExportCSV = () => {
     const dataset = getActiveDataset();
     if (!dataset || dataset.length === 0) {
@@ -1648,7 +1711,7 @@ export default function AdminDashboard() {
     document.body.removeChild(downloadAnchor);
   };
 
-  // BULK IMPORT PARSER
+  // BULK IMPORT PARSER (CSV / JSON)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1710,7 +1773,7 @@ export default function AdminDashboard() {
       const { error } = await supabase.from(targetTable).insert(parsedRows);
       if (error) throw error;
 
-      alert(`✅ Imported ${parsedRows.length} records into ${targetTable}!`);
+      alert(`✅ Successfully imported ${parsedRows.length} records into ${targetTable}!`);
       setShowImportModal(false);
       setImportText('');
       setImportStatus(null);
@@ -1803,7 +1866,7 @@ export default function AdminDashboard() {
               AllInOneVouchers Control
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Manage live product deals, brands, vouchers, promo codes, reels studio, and UTR ledger entries[cite: 6].
+              Manage live product deals, brands, vouchers, promo codes, video reels, and UTR ledger entries.
             </p>
           </div>
 
@@ -1813,7 +1876,7 @@ export default function AdminDashboard() {
               className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-amber-500" />
-              <span>Bulk Import</span>
+              <span>Bulk Import ({activeTab})</span>
             </button>
 
             <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-0.5">
@@ -1864,7 +1927,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Status Message Notification */}
+        {/* Status Notification */}
         {statusMessage.text && (
           <div className={`p-4 rounded-2xl text-xs font-bold transition ${
             statusMessage.type === 'success' 
@@ -1875,7 +1938,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 6-Tab Navigation Bar */}
+        {/* 6-Tab Navigation Bar Including Reels */}
         <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveTab('DEALS')}
@@ -1884,7 +1947,7 @@ export default function AdminDashboard() {
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
-            <span>Loot Deals &amp; Products ({deals.length})</span>
+            <span>Loot Deals ({deals.length})</span>
           </button>
 
           <button
@@ -1908,6 +1971,16 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab('REELS')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'REELS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Film className="w-3.5 h-3.5" />
+            <span>Reels Studio ({reels.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('ORDERS')}
             className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'ORDERS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
@@ -1926,19 +1999,9 @@ export default function AdminDashboard() {
             <Tag className="w-3.5 h-3.5" />
             <span>Store Coupons ({coupons.length})</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('REELS')}
-            className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
-              activeTab === 'REELS' ? 'bg-[#E51B24] text-white shadow' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Film className="w-3.5 h-3.5" />
-            <span>Reels Studio ({reels.length})</span>
-          </button>
         </div>
 
-        {/* Tab Content Display */}
+        {/* Tab Modules */}
         {activeTab === 'DEALS' && (
           <DealManager brands={brands} deals={deals} onRefresh={fetchData} showStatus={showStatus} />
         )}
@@ -1948,14 +2011,14 @@ export default function AdminDashboard() {
         {activeTab === 'INVENTORY' && (
           <InventoryManager brands={brands} inventory={inventory} onRefresh={fetchData} showStatus={showStatus} />
         )}
+        {activeTab === 'REELS' && (
+          <ReelManager brands={brands} reels={reels} onRefresh={fetchData} showStatus={showStatus} />
+        )}
         {activeTab === 'ORDERS' && (
           <OrderManager orders={orders} onRefresh={fetchData} showStatus={showStatus} />
         )}
         {activeTab === 'COUPONS' && (
           <CouponManager brands={brands} coupons={coupons} onRefresh={fetchData} showStatus={showStatus} />
-        )}
-        {activeTab === 'REELS' && (
-          <ReelManager brands={brands} reels={reels} onRefresh={fetchData} showStatus={showStatus} />
         )}
 
       </div>
@@ -1964,7 +2027,7 @@ export default function AdminDashboard() {
       {/* BULK IMPORT MODAL (CSV / JSON)                           */}
       {/* ======================================================== */}
       {showImportModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl text-slate-900">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
